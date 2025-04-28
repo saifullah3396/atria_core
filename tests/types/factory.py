@@ -7,32 +7,32 @@ from PIL import Image as PILImage
 from polyfactory import Use
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from atria.data.structures.data_instance.document import DocumentInstance
-from atria.data.structures.data_instance.image import ImageInstance
-from atria.data.structures.data_instance.tokenized_object import TokenizedObjectInstance
-from atria.data.structures.generic.annotated_object import (
+from atria_core.types.data_instance.document import DocumentInstance
+from atria_core.types.data_instance.image import ImageInstance
+from atria_core.types.data_instance.tokenized_object import TokenizedObjectInstance
+from atria_core.types.generic.annotated_object import (
     AnnotatedObject,
     AnnotatedObjectSequence,
 )
-from atria.data.structures.generic.bounding_box import (
+from atria_core.types.generic.bounding_box import (
     BoundingBox,
     BoundingBoxMode,
     BoundingBoxSequence,
 )
-from atria.data.structures.generic.image import Image
-from atria.data.structures.generic.label import Label, LabelSequence
-from atria.data.structures.generic.ocr import (
+from atria_core.types.generic.image import Image
+from atria_core.types.generic.label import Label, LabelSequence
+from atria_core.types.generic.ocr import (
     OCR,
     OCRGraph,
     OCRGraphLink,
     OCRGraphNode,
     OCRType,
 )
-from atria.data.structures.generic.question_answer_pair import (
+from atria_core.types.generic.question_answer_pair import (
     QuestionAnswerPair,
     QuestionAnswerPairSequence,
 )
-from atria.data.structures.ocr_parsers.hocr_graph_parser import HOCRGraphParser
+from atria_core.types.ocr_parsers.hocr_graph_parser import HOCRGraphParser
 
 MOCK_HOCR_TESSERACT = """
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -133,6 +133,9 @@ class OCRGraphNodeFactory(ModelFactory[OCRGraphNode]):
     word = Use(lambda: Faker().word())
     level = Use(lambda: Faker().random_element(elements=("word", "line", "paragraph")))
     bbox = Use(lambda: BoundingBoxFactory.build(mode=BoundingBoxMode.XYXY))
+    segment_level_bbox = Use(
+        lambda: BoundingBoxFactory.build(mode=BoundingBoxMode.XYXY)
+    )
     conf = Use(lambda: round(Faker().pyfloat(min_value=0, max_value=1), 2))
     angle = Use(lambda: round(Faker().pyfloat(min_value=0, max_value=360), 2))
     label = Use(lambda: LabelFactory.build())

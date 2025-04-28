@@ -1,14 +1,14 @@
 import pytest
-from data.structures.conftest import TokenizedObjectInstanceFactory
-from data.structures.tests_base import BaseDataModelTestBase
 
-from atria.data.structures.base.data_model import BatchedBaseDataModel
-from atria.data.structures.data_instance.tokenized_object import (
+from atria_core.types.base.data_model import BatchedBaseDataModel
+from atria_core.types.data_instance.tokenized_object import (
     BatchedTokenizedObjectInstance,
     TokenizedObjectInstance,
 )
-from atria.data.structures.generic.image import Image
-from atria.data.structures.generic.label import Label
+from atria_core.types.generic.image import Image
+from atria_core.types.generic.label import Label
+from tests.types.factory import TokenizedObjectInstanceFactory
+from tests.types.tests_base import BaseDataModelTestBase
 
 
 class TestTokenizedObjectInstance(BaseDataModelTestBase):

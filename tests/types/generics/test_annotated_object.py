@@ -1,18 +1,15 @@
 from typing import List
 
 import pytest
-from data.structures.conftest import (
-    AnnotatedObjectFactory,
-    AnnotatedObjectSequenceFactory,
-)
-from data.structures.tests_base import BaseDataModelTestBase
 
-from atria.data.structures.base.data_model import BaseDataModel
-from atria.data.structures.generic.annotated_object import (
+from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.generic.annotated_object import (
     AnnotatedObjectSequence,
     BatchedAnnotatedObject,
     BatchedAnnotatedObjectSequence,
 )
+from tests.types.factory import AnnotatedObjectFactory, AnnotatedObjectSequenceFactory
+from tests.types.tests_base import BaseDataModelTestBase
 
 
 class TestAnnotatedObject(BaseDataModelTestBase):

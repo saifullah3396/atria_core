@@ -6,10 +6,10 @@ from typing import List, Type, Union
 import pytest
 import torch
 from pydantic import Field
-from utilities import _compare_values
 
-from atria.data.structures.base.data_model import BaseDataModel, BatchedBaseDataModel
 from atria_core.logger.logger import get_logger
+from atria_core.types.base.data_model import BaseDataModel, BatchedBaseDataModel
+from tests.utilities import _compare_values
 
 logger = get_logger(__name__)
 
@@ -243,6 +243,7 @@ class MockDataModelParent(MockDataModel):
 
 
 class BatchedMockDataModelParent(BatchedMockDataModel):
+    example_data_model_child: BatchedMockDataModelChild
     example_data_model_child: BatchedMockDataModelChild
     example_data_model_child: BatchedMockDataModelChild
     example_data_model_child: BatchedMockDataModelChild

@@ -4,14 +4,14 @@ from typing import List
 import numpy as np
 import pytest
 import torch
-from data.structures.conftest import ImageFactory
-from data.structures.tests_base import BaseDataModelTestBase
 from PIL import Image as PILImage
 from pydantic import ValidationError
 from utilities import _compare_values
 
-from atria.data.structures.base.data_model import BaseDataModel
-from atria.data.structures.generic.image import BatchedImage, Image
+from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.generic.image import BatchedImage, Image
+from tests.types.factory import ImageFactory
+from tests.types.tests_base import BaseDataModelTestBase
 
 
 class TestImage(BaseDataModelTestBase):

@@ -1,15 +1,15 @@
 import pytest
-from data.structures.conftest import DocumentInstanceFactory
-from data.structures.tests_base import BaseDataModelTestBase
 
-from atria.data.structures.base.data_model import BatchedBaseDataModel
-from atria.data.structures.data_instance.document import (
+from atria_core.types.base.data_model import BatchedBaseDataModel
+from atria_core.types.data_instance.document import (
     BatchedDocumentInstance,
     DocumentInstance,
 )
-from atria.data.structures.generic.image import Image
-from atria.data.structures.generic.label import Label
-from atria.data.structures.generic.ocr import OCRType
+from atria_core.types.generic.image import Image
+from atria_core.types.generic.label import Label
+from atria_core.types.generic.ocr import OCRType
+from tests.types.factory import DocumentInstanceFactory
+from tests.types.tests_base import BaseDataModelTestBase
 
 
 class TestDocumentInstance(BaseDataModelTestBase):

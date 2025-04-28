@@ -1,14 +1,14 @@
 from typing import List, Type
 
 import pytest
-from data.structures.tests_base import (
+
+from atria_core.types.base.data_model import BaseDataModel
+from tests.types.tests_base import (
     BaseDataModelTestBase,
     BatchedMockDataModelParent,
     MockDataModelChild,
     MockDataModelParent,
 )
-
-from atria.data.structures.base.data_model import BaseDataModel
 
 
 class TestMockDataModelParent(BaseDataModelTestBase):

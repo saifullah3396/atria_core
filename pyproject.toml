@@ -18,6 +18,7 @@ dependencies = [
     "numpy==1.26.4",
     "omegaconf==2.3.0",
     "Pillow==10.0.0",
+    "polyfactory>=2.21.0",
     "pytorch_ignite==0.5.0.post2",
     "rich==14.0.0",
     "torch==2.2.2",
@@ -104,7 +105,7 @@ skip-magic-trailing-comma = true
 pythonpath = [".", "src", "tests"]
 # Set additional command line options for pytest
 # Ref: https://docs.pytest.org/en/stable/reference/reference.html#command-line-flags
-addopts = "-rXs --strict-config --strict-markers --tb=short"
+addopts = "-rXs --strict-config --strict-markers --tb=short --import-mode=importlib"
 xfail_strict = true         # Treat tests that are marked as xfail but pass as test failures
 # filterwarnings = ["error"]  # Treat all warnings as errors
 asyncio_default_fixture_loop_scope = "function"

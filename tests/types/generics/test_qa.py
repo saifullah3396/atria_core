@@ -1,17 +1,17 @@
 from typing import List
 
 import pytest
-from data.structures.conftest import (
-    QuestionAnswerPairSequenceFactory,
-    QuestionAnswerPairsFactory,
-)
-from data.structures.tests_base import BaseDataModelTestBase
 
-from atria.data.structures.generic.question_answer_pair import (
+from atria_core.types.generic.question_answer_pair import (
     BatchedQuestionAnswerPair,
     BatchedQuestionAnswerPairSequence,
     QuestionAnswerPairSequence,
 )
+from tests.types.factory import (
+    QuestionAnswerPairSequenceFactory,
+    QuestionAnswerPairsFactory,
+)
+from tests.types.tests_base import BaseDataModelTestBase
 
 
 class TestQuestionAnswerPair(BaseDataModelTestBase):

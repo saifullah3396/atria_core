@@ -1,14 +1,14 @@
 from typing import List
 
 import pytest
-from data.structures.conftest import LabelFactory, LabelSequenceFactory
-from data.structures.tests_base import BaseDataModelTestBase
 
-from atria.data.structures.generic.label import (
+from atria_core.types.generic.label import (
     BatchedLabel,
     BatchedLabelSequence,
     LabelSequence,
 )
+from tests.types.factory import LabelFactory, LabelSequenceFactory
+from tests.types.tests_base import BaseDataModelTestBase
 
 
 class TestLabel(BaseDataModelTestBase):

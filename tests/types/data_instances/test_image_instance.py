@@ -1,14 +1,11 @@
 import pytest
-from data.structures.conftest import ImageInstanceFactory
-from data.structures.tests_base import BaseDataModelTestBase
 
-from atria.data.structures.base.data_model import BatchedBaseDataModel
-from atria.data.structures.data_instance.image import (
-    BatchedImageInstance,
-    ImageInstance,
-)
-from atria.data.structures.generic.image import Image
-from atria.data.structures.generic.label import Label
+from atria_core.types.base.data_model import BatchedBaseDataModel
+from atria_core.types.data_instance.image import BatchedImageInstance, ImageInstance
+from atria_core.types.generic.image import Image
+from atria_core.types.generic.label import Label
+from tests.types.factory import ImageInstanceFactory
+from tests.types.tests_base import BaseDataModelTestBase
 
 
 class TestImageInstance(BaseDataModelTestBase):
@@ -41,4 +38,7 @@ class TestImageInstance(BaseDataModelTestBase):
             256,
         ), "Image content shape mismatch"
 
+        assert image_instance.image.shape == (3, 256, 256), "Image size mismatch"
+        assert image_instance.image.shape == (3, 256, 256), "Image size mismatch"
+        assert image_instance.image.shape == (3, 256, 256), "Image size mismatch"
         assert image_instance.image.shape == (3, 256, 256), "Image size mismatch"

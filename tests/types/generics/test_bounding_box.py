@@ -1,16 +1,16 @@
 from typing import List
 
 import pytest
-from data.structures.conftest import BoundingBoxFactory, SequenceBoundingBoxesFactory
-from data.structures.tests_base import BaseDataModelTestBase
 
-from atria.data.structures.base.data_model import BaseDataModel
-from atria.data.structures.generic.bounding_box import (
+from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.generic.bounding_box import (
     BatchedBoundingBox,
     BatchedBoundingBoxSequence,
     BoundingBoxMode,
     BoundingBoxSequence,
 )
+from tests.types.factory import BoundingBoxFactory, SequenceBoundingBoxesFactory
+from tests.types.tests_base import BaseDataModelTestBase
 
 
 class TestBoundingBox(BaseDataModelTestBase):
