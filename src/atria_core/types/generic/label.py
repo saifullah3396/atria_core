@@ -254,5 +254,3 @@ class BatchedLabelSequence(BatchedBaseDataModel):
                 value.ndim == 2
             ), f"Expected a 2D tensor of shape (B, L), got {value.ndim}D tensor"
         return value
-        return value
-        return value

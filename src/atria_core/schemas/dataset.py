@@ -93,5 +93,3 @@ class DatasetUploadResponse(BaseModel):
 
 class DatasetRollbackUploadRequest(BaseModel):
     dataset_version: DatasetVersion
-    dataset_version: DatasetVersion
-    dataset_version: DatasetVersion

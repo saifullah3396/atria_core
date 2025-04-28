@@ -156,4 +156,3 @@ def _apply_to_type(
             [_apply_to_type(sample, input_type, func) for sample in x]
         )
     raise TypeError((f"x must contain {input_type}, dicts or lists; found {type(x)}"))
-    raise TypeError((f"x must contain {input_type}, dicts or lists; found {type(x)}"))

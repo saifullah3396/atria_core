@@ -30,5 +30,3 @@ class RunUpdate(RunBase, OptionalModel):
 
 class Run(RunBase, BaseDatabaseSchema):
     experiment_id: SerializableUUID
-    experiment_id: SerializableUUID
-    experiment_id: SerializableUUID
