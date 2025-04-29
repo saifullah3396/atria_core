@@ -41,11 +41,9 @@ class BaseDataInstance(BaseDataModel):
     serialization, validation, and utility methods for pretty-printing and visualization.
 
     Attributes:
-        index (int | None): The index of the data instance. Defaults to None.
         id (UUID): A unique identifier for the data instance. Defaults to a randomly generated UUID.
     """
 
-    index: int | None = None
     id: UUID = Field(default_factory=uuid4)
 
     @field_serializer("id")
@@ -113,11 +111,9 @@ class BatchedBaseDataInstance(BatchedBaseDataModel):
     serialization, validation, and utility methods for pretty-printing and visualization.
 
     Attributes:
-        index (List[int]): The indices of the data instances in the batch.
         id (List[UUID]): A list of unique identifiers for the data instances in the batch.
     """
 
-    index: List[int] | None
     id: List[UUID]
 
     def visualize(self) -> None:
