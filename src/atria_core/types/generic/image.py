@@ -156,7 +156,7 @@ class Image(BaseDataModel):
         """
         from torchvision.transforms.functional import to_tensor
 
-        if not self._is_tensor:
+        if not self._is_tensor or self._is_tensor is None:
             logger.debug(f"Converting {self.__class__.__name__} to tensors.")
             if isinstance(self.content, PILImage):
                 self.content = to_tensor(self.content)
@@ -175,7 +175,7 @@ class Image(BaseDataModel):
         """
         from torchvision.transforms.functional import to_pil_image
 
-        if self._is_tensor:
+        if self._is_tensor or self._is_tensor is None:
             logger.debug(f"Converting {self.__class__.__name__} from tensors.")
             if isinstance(self.content, torch.Tensor):
                 self.content = to_pil_image(self.content)

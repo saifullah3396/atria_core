@@ -53,7 +53,7 @@ class OCRType(str, Enum):
         GOOGLE_VISION (str): Google Vision OCR.
         AWS_REKOGNITION (str): AWS Rekognition OCR.
         AZURE_OCR (str): Azure OCR.
-        CUSTOM (str): Custom OCR implementation.
+        OTHER (str): Custom OCR implementation.
     """
 
     TESSERACT = "tesseract"
@@ -62,6 +62,7 @@ class OCRType(str, Enum):
     AWS_REKOGNITION = "aws_rekognition"
     AZURE_OCR = "azure_ocr"
     CUSTOM = "custom"
+    OTHER = "other"
 
 
 class OCRLevel(Enum):

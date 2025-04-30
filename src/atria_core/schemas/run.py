@@ -7,15 +7,15 @@ from atria_core.schemas.utils import NameStr, SerializableDateTime, Serializable
 
 
 class RunStatus(str, enum.Enum):
-    pending = "pending"
-    running = "running"
-    completed = "completed"
-    failed = "failed"
+    UNINITIATED = "uninitiated"
+    PENDING = "pending"
+    FAILED = "failed"
+    COMPLETED = "completed"
 
 
 class RunBase(BaseModel):
     name: NameStr = Field(..., min_length=1, max_length=255)
-    status: RunStatus = Field(default=RunStatus.pending)
+    status: RunStatus = Field(default=RunStatus.PENDING)
     error_message: str | None = None
     finished_at: SerializableDateTime | None = None
 

@@ -23,6 +23,7 @@ dependencies = [
     "rich==14.0.0",
     "torch==2.2.2",
     "torchvision==0.17.2",
+    "beautifulsoup4==4.12.2",
 ]
 
 [tool.uv]
@@ -109,3 +110,8 @@ addopts = "-rXs --strict-config --strict-markers --tb=short --import-mode=import
 xfail_strict = true         # Treat tests that are marked as xfail but pass as test failures
 # filterwarnings = ["error"]  # Treat all warnings as errors
 asyncio_default_fixture_loop_scope = "function"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

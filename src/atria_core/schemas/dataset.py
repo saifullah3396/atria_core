@@ -1,5 +1,6 @@
 from enum import Enum
 
+from atria_core.schemas.config import Config
 from pydantic import BaseModel, Field
 
 from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
@@ -10,17 +11,17 @@ from atria_core.types.datasets.splits import DatasetSplit  # noqa
 
 
 class UploadStatus(str, Enum):
-    NOT_STARTED = "not_started"
+    UNINITIATED = "uninitiated"
     PENDING = "pending"
     FAILED = "failed"
-    SUCCESS = "success"
+    COMPLETED = "completed"
 
 
 class ProcessingStatus(str, Enum):
-    NOT_STARTED = "not_started"
+    UNINITIATED = "uninitiated"
     PENDING = "pending"
     FAILED = "failed"
-    SUCCESS = "success"
+    COMPLETED = "completed"
 
 
 class DatasetBase(BaseModel):
@@ -31,6 +32,7 @@ class DatasetBase(BaseModel):
 
 
 class DatasetCreate(DatasetBase):
+    config_name: str = "default"
     user_id: SerializableUUID
 
 
@@ -45,11 +47,11 @@ class Dataset(DatasetBase, BaseDatabaseSchema):
 
 class DatasetVersionBase(BaseModel):
     tag: str = "default"
-    total_shard_count: int = 0
-    uploaded_shard_count: int = 0
-    upload_status: UploadStatus = UploadStatus.NOT_STARTED
-    processing_status: ProcessingStatus = ProcessingStatus.NOT_STARTED
-    metadata: DatasetMetadata
+    total_shard_count: int | None = None
+    uploaded_shard_count: int | None = None
+    upload_status: UploadStatus = UploadStatus.UNINITIATED
+    processing_status: ProcessingStatus = ProcessingStatus.UNINITIATED
+    metadata: DatasetMetadata | None = None
 
 
 class DatasetVersionCreate(DatasetVersionBase):
@@ -72,8 +74,8 @@ class DatasetUploadRequest(BaseModel):
     shard_index: int
     total_shard_count: int
     dataset_name: str
+    dataset_config_name: str
     dataset_description: str
-    dataset_tag: str
     dataset_split: DatasetSplit
     is_public: bool = False
     config: dict | None = None
