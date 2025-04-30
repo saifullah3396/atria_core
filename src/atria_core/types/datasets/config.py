@@ -70,12 +70,6 @@ class AtriaHubDatasetConfig(AtriaDatasetConfig):
 
     This class extends `AtriaDatasetConfig` to include additional properties specific
     to datasets hosted on Hub.
-
-    Attributes:
-        hf_repo (str): The Hub repository name for the dataset.
     """
 
-    __target__: str = (
-        "atria.data.dataset.atria_huggingface_dataset.AtriaHuggingfaceDataset"
-    )
-    hf_repo: str
+    __target__: str = "atria.hub.atria_hub_dataset.AtriaHubDataset"

@@ -69,6 +69,8 @@ dependencies = [
     { name = "pillow" },
     { name = "polyfactory" },
     { name = "rich" },
+    { name = "torch" },
+    { name = "torchvision" },
 ]
 
 [package.optional-dependencies]
