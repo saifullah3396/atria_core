@@ -244,6 +244,3 @@ class MockDataModelParent(MockDataModel):
 
 class BatchedMockDataModelParent(BatchedMockDataModel):
     example_data_model_child: BatchedMockDataModelChild
-    example_data_model_child: BatchedMockDataModelChild
-    example_data_model_child: BatchedMockDataModelChild
-    example_data_model_child: BatchedMockDataModelChild

@@ -23,6 +23,8 @@ from typing import Dict, List, Union
 
 from pydantic import BaseModel
 
+from atria_core.constants import _DEFAULT_ATRIA_DATASETS_CACHE_DIR
+
 
 class AtriaDatasetConfig(BaseModel):
     """
@@ -32,18 +34,17 @@ class AtriaDatasetConfig(BaseModel):
     including metadata such as name, description, version, and data URLs.
 
     Attributes:
-        name (str): The name of the dataset.
-        description (str | None): A brief description of the dataset. Defaults to None.
-        version (str): The version of the dataset. Defaults to "0.0.0".
+        config_name (str): The name of the dataset.
         data_urls (Union[str, List[str], Dict[str, str]] | None): The URLs for accessing
             the dataset. Can be a single URL, a list of URLs, or a dictionary mapping
             keys to URLs. Defaults to None.
+        streaming_mode (bool): Indicates whether the dataset should be loaded in
     """
 
-    name: str
-    description: str | None = None
-    version: str = "0.0.0"
+    __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
+    data_dir: str = _DEFAULT_ATRIA_DATASETS_CACHE_DIR
     data_urls: Union[str, List[str], Dict[str, str]] | None = None
+    streaming_mode: bool = False
 
 
 class AtriaHuggingfaceDatasetConfig(AtriaDatasetConfig):
@@ -57,4 +58,24 @@ class AtriaHuggingfaceDatasetConfig(AtriaDatasetConfig):
         hf_repo (str): The Hugging Face repository name for the dataset.
     """
 
+    __target__: str = (
+        "atria.data.dataset.atria_huggingface_dataset.AtriaHuggingfaceDataset"
+    )
+    hf_repo: str
+
+
+class AtriaHubDatasetConfig(AtriaDatasetConfig):
+    """
+    Configuration class for Hub datasets.
+
+    This class extends `AtriaDatasetConfig` to include additional properties specific
+    to datasets hosted on Hub.
+
+    Attributes:
+        hf_repo (str): The Hub repository name for the dataset.
+    """
+
+    __target__: str = (
+        "atria.data.dataset.atria_huggingface_dataset.AtriaHuggingfaceDataset"
+    )
     hf_repo: str

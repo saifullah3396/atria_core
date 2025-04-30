@@ -39,6 +39,3 @@ class TestImageInstance(BaseDataModelTestBase):
         ), "Image content shape mismatch"
 
         assert image_instance.image.shape == (3, 256, 256), "Image size mismatch"
-        assert image_instance.image.shape == (3, 256, 256), "Image size mismatch"
-        assert image_instance.image.shape == (3, 256, 256), "Image size mismatch"
-        assert image_instance.image.shape == (3, 256, 256), "Image size mismatch"

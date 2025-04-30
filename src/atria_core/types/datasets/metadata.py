@@ -9,7 +9,7 @@ Classes:
     - DatasetShardInfo: Represents information about a dataset shard.
     - SplitInfo: Represents information about a dataset split.
     - DatasetLabels: Represents classification and token labels for a dataset.
-    - AtriaDatasetMetadata: Represents metadata for a dataset, including configuration and labels.
+    - DatasetMetadata: Represents metadata for a dataset, including configuration and labels.
     - AtriaDatasetStorageInfo: Represents storage information for a dataset, including metadata and split info.
 
 Dependencies:
@@ -34,7 +34,6 @@ from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 from rich.pretty import pretty_repr
 
 from atria_core.logger import get_logger
-from atria_core.types.datasets.config import AtriaDatasetConfig
 from atria_core.utilities.repr import RepresentationMixin
 
 if TYPE_CHECKING:
@@ -163,27 +162,25 @@ class DatasetLabels(BaseModel):
         return super().__repr__()
 
 
-class AtriaDatasetMetadata(BaseModel, RepresentationMixin):
+class DatasetMetadata(BaseModel, RepresentationMixin):
     """
     Represents metadata for a dataset, including configuration and labels.
 
     Attributes:
-        dataset_name (str | None): The name of the dataset.
         citation (str | None): The citation for the dataset.
         homepage (str | None): The homepage URL for the dataset.
         license (str | None): The license for the dataset.
-        config (AtriaDatasetConfig | None): The configuration for the dataset.
         dataset_labels (DatasetLabels | None): The labels for the dataset.
         data_model (Type[BaseDataInstance] | None): The data model class for the dataset.
     """
 
     model_config = ConfigDict(validate_assignment=True, extra="forbid")
-    dataset_name: str | None = None
+    version: str = "0.0.0"
     citation: str | None = None
+    description: str | None = (None,)
     homepage: str | None = None
     license: str | None = None
-    config: AtriaDatasetConfig | None = None
-    dataset_labels: DatasetLabels | None = None
+    dataset_labels: DatasetLabels = DatasetLabels()
     data_model: Type[Any] | None = None
 
     @field_serializer("data_model")
@@ -236,7 +233,7 @@ class AtriaDatasetMetadata(BaseModel, RepresentationMixin):
             file_path (str): The path to the JSON file.
 
         Returns:
-            AtriaDatasetMetadata: The loaded metadata.
+            DatasetMetadata: The loaded metadata.
 
         Raises:
             FileNotFoundError: If the file does not exist.
@@ -257,7 +254,7 @@ class AtriaDatasetMetadata(BaseModel, RepresentationMixin):
             info (DatasetInfo): The Hugging Face dataset info.
 
         Returns:
-            AtriaDatasetMetadata: The created metadata.
+            DatasetMetadata: The created metadata.
         """
         return cls(
             citation=info.citation,
@@ -292,11 +289,11 @@ class AtriaDatasetStorageInfo(BaseModel, RepresentationMixin):
     Represents storage information for a dataset, including metadata and split info.
 
     Attributes:
-        metadata (AtriaDatasetMetadata): The metadata for the dataset.
+        metadata (DatasetMetadata): The metadata for the dataset.
         split_info (SplitInfo): The split information for the dataset.
     """
 
-    metadata: AtriaDatasetMetadata
+    metadata: DatasetMetadata
     split_info: SplitInfo
 
     def to_file(self, file_path: Union[Path, str]):
