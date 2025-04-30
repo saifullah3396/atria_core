@@ -177,7 +177,7 @@ class DatasetMetadata(BaseModel, RepresentationMixin):
     model_config = ConfigDict(validate_assignment=True, extra="forbid")
     version: str = "0.0.0"
     citation: str | None = None
-    description: str | None = (None,)
+    description: str | None = None
     homepage: str | None = None
     license: str | None = None
     dataset_labels: DatasetLabels = DatasetLabels()

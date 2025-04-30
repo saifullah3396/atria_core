@@ -4,9 +4,8 @@ from atria_core.schemas.config import Config
 from pydantic import BaseModel, Field
 
 from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
-from atria_core.schemas.config import Config
 from atria_core.schemas.utils import NameStr, SerializableUUID
-from atria_core.types.datasets.metadata import DatasetMetadata
+from atria_core.types.datasets.metadata import DatasetLabels, DatasetMetadata  # noqa
 from atria_core.types.datasets.splits import DatasetSplit  # noqa
 
 
@@ -46,7 +45,7 @@ class Dataset(DatasetBase, BaseDatabaseSchema):
 
 
 class DatasetVersionBase(BaseModel):
-    tag: str = "default"
+    config_name: str = "default"
     total_shard_count: int | None = None
     uploaded_shard_count: int | None = None
     upload_status: UploadStatus = UploadStatus.UNINITIATED
@@ -71,16 +70,15 @@ class DatasetVersion(DatasetVersionBase, BaseDatabaseSchema):
 
 
 class DatasetUploadRequest(BaseModel):
-    shard_index: int
-    total_shard_count: int
     dataset_name: str
     dataset_config_name: str
-    dataset_description: str
-    dataset_split: DatasetSplit
     is_public: bool = False
+    data_instance_type: DataInstanceType | None = None
     config: dict | None = None
     metadata: DatasetMetadata | None = None
-    data_instance_type: DataInstanceType | None = None
+    shard_index: int
+    total_shard_count: int
+    dataset_split: DatasetSplit
 
 
 class DatasetUploadResponse(BaseModel):
@@ -94,11 +92,11 @@ class DatasetDeleteRequest(BaseModel):
 
 class DatasetCreateRequest(BaseModel):
     dataset_name: str
-    dataset_description: str = ""
-    dataset_tag: str
+    dataset_config_name: str
     is_public: bool = False
-    metadata: DatasetMetadata | None = None
     data_instance_type: DataInstanceType | None = None
+    config: dict | None = None
+    metadata: DatasetMetadata | None = None
 
 
 class DatasetCreateResponse(BaseModel):
