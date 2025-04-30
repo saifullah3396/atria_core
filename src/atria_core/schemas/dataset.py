@@ -31,7 +31,7 @@ class DatasetBase(BaseModel):
 
 
 class DatasetCreate(DatasetBase):
-    config_name: str = "default"
+    config_name: NameStr = "default"
     user_id: SerializableUUID
 
 
@@ -45,7 +45,7 @@ class Dataset(DatasetBase, BaseDatabaseSchema):
 
 
 class DatasetVersionBase(BaseModel):
-    config_name: str = "default"
+    config_name: NameStr = "default"
     total_shard_count: int | None = None
     uploaded_shard_count: int | None = None
     upload_status: UploadStatus = UploadStatus.UNINITIATED
@@ -70,8 +70,8 @@ class DatasetVersion(DatasetVersionBase, BaseDatabaseSchema):
 
 
 class DatasetUploadRequest(BaseModel):
-    dataset_name: str
-    dataset_config_name: str
+    dataset_name: NameStr
+    dataset_config_name: NameStr
     is_public: bool = False
     data_instance_type: DataInstanceType | None = None
     config: dict | None = None
@@ -91,8 +91,8 @@ class DatasetDeleteRequest(BaseModel):
 
 
 class DatasetCreateRequest(BaseModel):
-    dataset_name: str
-    dataset_config_name: str
+    dataset_name: NameStr
+    dataset_config_name: NameStr
     is_public: bool = False
     data_instance_type: DataInstanceType | None = None
     config: dict | None = None
