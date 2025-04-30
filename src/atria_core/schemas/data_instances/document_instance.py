@@ -9,11 +9,11 @@ from atria_core.types.generic.ocr import OCRType
 from atria_core.types.generic.question_answer_pair import QuestionAnswerPairSequence
 
 
-class OCRProcessingStatus(str, Enum):
-    NOT_STARTED = "not_started"
+class OCRStatus(str, Enum):
+    UNINITIATED = "uninitiated"
     PENDING = "pending"
     FAILED = "failed"
-    SUCCESS = "success"
+    COMPLETED = "completed"
 
 
 class DocumentInstanceBase(BaseDataInstance):
@@ -21,7 +21,7 @@ class DocumentInstanceBase(BaseDataInstance):
     image_file_path: str
     ocr_file_path: str | None = None
     ocr_type: OCRType | None = OCRType.other
-    ocr_processing_status: OCRProcessingStatus = OCRProcessingStatus.NOT_STARTED
+    ocr_processing_status: OCRStatus = OCRStatus.UNINITIATED
     label: Label | None = None
     question_answer_pairs: QuestionAnswerPairSequence | None = None
     annotated_objects: AnnotatedObjectSequence | None = None

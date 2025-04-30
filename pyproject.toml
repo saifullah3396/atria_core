@@ -110,3 +110,8 @@ addopts = "-rXs --strict-config --strict-markers --tb=short --import-mode=import
 xfail_strict = true         # Treat tests that are marked as xfail but pass as test failures
 # filterwarnings = ["error"]  # Treat all warnings as errors
 asyncio_default_fixture_loop_scope = "function"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

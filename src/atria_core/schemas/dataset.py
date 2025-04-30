@@ -9,17 +9,17 @@ from atria_core.types.datasets.splits import DatasetSplit  # noqa
 
 
 class UploadStatus(str, Enum):
-    NOT_STARTED = "not_started"
+    UNINITIATED = "uninitiated"
     PENDING = "pending"
     FAILED = "failed"
-    SUCCESS = "success"
+    COMPLETED = "completed"
 
 
 class ProcessingStatus(str, Enum):
-    NOT_STARTED = "not_started"
+    UNINITIATED = "uninitiated"
     PENDING = "pending"
     FAILED = "failed"
-    SUCCESS = "success"
+    COMPLETED = "completed"
 
 
 class DatasetMetadata(BaseModel):
@@ -54,8 +54,8 @@ class DatasetVersionBase(BaseModel):
     tag: str = "default"
     total_shard_count: int | None = None
     uploaded_shard_count: int | None = None
-    upload_status: UploadStatus = UploadStatus.NOT_STARTED
-    processing_status: ProcessingStatus = ProcessingStatus.NOT_STARTED
+    upload_status: UploadStatus = UploadStatus.UNINITIATED
+    processing_status: ProcessingStatus = ProcessingStatus.UNINITIATED
     metadata: DatasetMetadata | None = None
 
 
