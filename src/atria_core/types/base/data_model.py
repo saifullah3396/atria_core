@@ -57,7 +57,7 @@ class BaseDataModel(BaseModel):
         arbitrary_types_allowed=True, validate_assignment=False, extra="forbid"
     )
     _device = PrivateAttr(default=None)
-    _is_tensor = PrivateAttr(default=False)
+    _is_tensor = PrivateAttr(default=None)
 
     def model_post_init(self, context: ConfigDict) -> None:
         """
@@ -170,7 +170,7 @@ class BaseDataModel(BaseModel):
         Returns:
             T: The model instance with data converted to tensors.
         """
-        if not self._is_tensor:
+        if not self._is_tensor or self._is_tensor is None:
             logger.debug(f"Converting {self.__class__.__name__} to tensors.")
             for field_name, field_value in self.__dict__.items():
                 if isinstance(field_value, BaseDataModel):
@@ -197,7 +197,7 @@ class BaseDataModel(BaseModel):
         Returns:
             T: The model instance with data converted from tensors.
         """
-        if self._is_tensor:
+        if self._is_tensor or self._is_tensor is None:
             logger.debug(f"Converting {self.__class__.__name__} from tensors.")
             for field_name, field_value in self.__dict__.items():
                 if isinstance(field_value, BaseDataModel):
@@ -218,6 +218,10 @@ class BaseDataModel(BaseModel):
     def model_dump(self, *args, **kwargs):
         self.from_tensor()
         return super().model_dump(*args, round_trip=True, **kwargs)
+
+    def model_dump_json(self, *args, **kwargs):
+        self.from_tensor()
+        return super().model_dump_json(*args, round_trip=True, **kwargs)
 
     def to_device(self: T, device: "torch.device" = "cpu") -> T:
         """

@@ -213,14 +213,12 @@ class ImageFactory(ModelFactory[Image]):
 
 class ImageInstanceFactory(ModelFactory[ImageInstance]):
     __model__ = ImageInstance
-    index = Use(lambda: 0)
     image = Use(lambda: ImageFactory.build())
     label = Use(lambda: LabelFactory.build())
 
 
 class DocumentInstanceFactory(ModelFactory[DocumentInstance]):
     __model__ = DocumentInstance
-    index = Use(lambda: 0)
     image = Use(lambda: ImageFactory.build())
     ocr = Use(lambda: OCRFactory.build())
     label = Use(lambda: LabelFactory.build())
@@ -230,7 +228,6 @@ class DocumentInstanceFactory(ModelFactory[DocumentInstance]):
 
 class TokenizedObjectInstanceFactory(ModelFactory[TokenizedObjectInstance]):
     __model__ = TokenizedObjectInstance
-    index = Use(lambda: 0)
     token_ids = Use(lambda: torch.randn(16))
     word_ids = Use(lambda: torch.randn(16))
     token_labels = Use(lambda: torch.randn(16))

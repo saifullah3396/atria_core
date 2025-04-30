@@ -52,11 +52,11 @@ class Dataset(DatasetBase, BaseDatabaseSchema):
 
 class DatasetVersionBase(BaseModel):
     tag: str = "default"
-    total_shard_count: int = 0
-    uploaded_shard_count: int = 0
+    total_shard_count: int | None = None
+    uploaded_shard_count: int | None = None
     upload_status: UploadStatus = UploadStatus.NOT_STARTED
     processing_status: ProcessingStatus = ProcessingStatus.NOT_STARTED
-    metadata: DatasetMetadata
+    metadata: DatasetMetadata | None = None
 
 
 class DatasetVersionCreate(DatasetVersionBase):
