@@ -62,6 +62,7 @@ class OCRType(str, Enum):
     AWS_REKOGNITION = "aws_rekognition"
     AZURE_OCR = "azure_ocr"
     CUSTOM = "custom"
+    OTHER = "other"
 
 
 class OCRLevel(Enum):
