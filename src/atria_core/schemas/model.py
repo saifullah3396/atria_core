@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from atria_core.schemas.config import Config
 from codename import codename
 from pydantic import BaseModel, Field, field_validator
 
@@ -28,13 +29,13 @@ class Model(ModelBase, BaseDatabaseSchema):
 
 class ModelVersionBase(BaseModel):
     version: int = Field(default=0)
-    tag: str = Field(default_factory=lambda: codename(separator="-"))
+    config_name: str = "default"
     model_uri: str
 
 
 class ModelVersionCreate(ModelVersionBase):
     model_id: SerializableUUID
-    config_id: SerializableUUID | None = None
+    config_id: SerializableUUID
 
 
 class ModelVersionUpdate(ModelVersionBase):
@@ -43,13 +44,15 @@ class ModelVersionUpdate(ModelVersionBase):
 
 class ModelVersion(ModelVersionBase, BaseDatabaseSchema):
     model_id: SerializableUUID
-    config_id: SerializableUUID | None = None
+    config_id: SerializableUUID
+    model: Model
+    config: Config
 
 
 class ModelUploadRequest(BaseModel):
     model_name: str
     model_description: str
-    model_tag: str
+    model_config_name: str
     is_public: bool = False
     config: Optional[dict] = None
 
@@ -74,7 +77,7 @@ class ModelDeleteRequest(BaseModel):
 
 class ModelDownloadRequest(BaseModel):
     model_name: str
-    model_tag: str
+    model_config_name: str
 
 
 class ModelDownloadResponse(BaseModel):
