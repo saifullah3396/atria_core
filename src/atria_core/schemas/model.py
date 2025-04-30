@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 from atria_core.schemas.config import Config
-from codename import codename
 from pydantic import BaseModel, Field, field_validator
 
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel

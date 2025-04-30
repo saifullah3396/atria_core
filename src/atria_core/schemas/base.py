@@ -23,8 +23,8 @@ class OptionalModel(BaseModel):
 
 class DataInstanceType(str, enum.Enum):
     msgpack_object = "msgpack_object"
-    image = "image"
-    document = "document"
+    image = "image_instance"
+    document = "document_instance"
 
     @classmethod
     def from_data_model(
