@@ -45,7 +45,7 @@ class Dataset(DatasetBase, BaseDatabaseSchema):
 
 class DatasetVersionBase(BaseModel):
     tag: str = "default"
-    total_shard_count: int
+    total_shard_count: int = 0
     uploaded_shard_count: int = 0
     upload_status: UploadStatus = UploadStatus.NOT_STARTED
     processing_status: ProcessingStatus = ProcessingStatus.NOT_STARTED
@@ -86,5 +86,22 @@ class DatasetUploadResponse(BaseModel):
     token: str | None = None
 
 
-class DatasetRollbackUploadRequest(BaseModel):
+class DatasetDeleteRequest(BaseModel):
+    dataset_version: DatasetVersion
+
+
+class DatasetCreateRequest(BaseModel):
+    dataset_name: str
+    dataset_description: str = ""
+    dataset_tag: str
+    is_public: bool = False
+    metadata: DatasetMetadata | None = None
+    data_instance_type: DataInstanceType | None = None
+
+
+class DatasetCreateResponse(BaseModel):
+    dataset_version: DatasetVersion
+
+
+class DatasetDeleteRequest(BaseModel):
     dataset_version: DatasetVersion
