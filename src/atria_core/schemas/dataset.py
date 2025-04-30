@@ -1,5 +1,6 @@
 from enum import Enum
 
+from atria_core.schemas.config import Config
 from pydantic import BaseModel, Field
 
 from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
@@ -38,6 +39,7 @@ class DatasetBase(BaseModel):
 
 
 class DatasetCreate(DatasetBase):
+    config_name: str = "default"
     user_id: SerializableUUID
 
 
@@ -61,7 +63,7 @@ class DatasetVersionBase(BaseModel):
 
 class DatasetVersionCreate(DatasetVersionBase):
     dataset_id: SerializableUUID
-    config_id: SerializableUUID | None
+    config_id: SerializableUUID
 
 
 class DatasetVersionUpdate(DatasetVersionBase, OptionalModel):
@@ -70,15 +72,17 @@ class DatasetVersionUpdate(DatasetVersionBase, OptionalModel):
 
 class DatasetVersion(DatasetVersionBase, BaseDatabaseSchema):
     dataset_id: SerializableUUID
-    config_id: SerializableUUID | None
+    config_id: SerializableUUID
+    dataset: Dataset
+    config: Config
 
 
 class DatasetUploadRequest(BaseModel):
     shard_index: int
     total_shard_count: int
     dataset_name: str
+    dataset_config_name: str
     dataset_description: str
-    dataset_tag: str
     dataset_split: DatasetSplit
     is_public: bool = False
     config: dict | None = None
