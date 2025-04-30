@@ -3,8 +3,9 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
+from atria_core.schemas.config import Config
 from atria_core.schemas.utils import NameStr, SerializableUUID
-from atria_core.types.datasets.metadata import DatasetLabels  # noqa
+from atria_core.types.datasets.metadata import DatasetMetadata
 from atria_core.types.datasets.splits import DatasetSplit  # noqa
 
 
@@ -20,14 +21,6 @@ class ProcessingStatus(str, Enum):
     PENDING = "pending"
     FAILED = "failed"
     SUCCESS = "success"
-
-
-class DatasetMetadata(BaseModel):
-    citation: str | None = None
-    homepage: str | None = None
-    license: str | None = None
-    dataset_labels: DatasetLabels | None = None
-    data_model: str | None = None
 
 
 class DatasetBase(BaseModel):
@@ -61,7 +54,7 @@ class DatasetVersionBase(BaseModel):
 
 class DatasetVersionCreate(DatasetVersionBase):
     dataset_id: SerializableUUID
-    config_id: SerializableUUID | None
+    config_id: SerializableUUID
 
 
 class DatasetVersionUpdate(DatasetVersionBase, OptionalModel):
@@ -70,7 +63,9 @@ class DatasetVersionUpdate(DatasetVersionBase, OptionalModel):
 
 class DatasetVersion(DatasetVersionBase, BaseDatabaseSchema):
     dataset_id: SerializableUUID
-    config_id: SerializableUUID | None
+    config_id: SerializableUUID
+    dataset: Dataset
+    config: Config
 
 
 class DatasetUploadRequest(BaseModel):
