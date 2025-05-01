@@ -19,11 +19,10 @@ Version: 1.0.0
 License: MIT
 """
 
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
-from atria_core.constants import _DEFAULT_ATRIA_DATASETS_CACHE_DIR
 
 
 class AtriaDatasetConfig(BaseModel):
@@ -34,7 +33,10 @@ class AtriaDatasetConfig(BaseModel):
     including metadata such as name, description, version, and data URLs.
 
     Attributes:
+        dataset_name (str): The name of the dataset.
         config_name (str): The name of the dataset.
+        data_dir (str): The directory where the dataset is stored or will be downloaded.
+            Defaults to `_DEFAULT_ATRIA_DATASETS_CACHE_DIR`.
         data_urls (Union[str, List[str], Dict[str, str]] | None): The URLs for accessing
             the dataset. Can be a single URL, a list of URLs, or a dictionary mapping
             keys to URLs. Defaults to None.
@@ -42,7 +44,8 @@ class AtriaDatasetConfig(BaseModel):
     """
 
     __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
-    data_dir: str = _DEFAULT_ATRIA_DATASETS_CACHE_DIR
+    config_name: str
+    data_dir: Optional[str]
     data_urls: Union[str, List[str], Dict[str, str]] | None = None
     streaming_mode: bool = False
 
