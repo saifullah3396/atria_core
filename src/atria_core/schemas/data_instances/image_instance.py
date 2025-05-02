@@ -6,13 +6,12 @@ from atria_core.types.generic.label import Label
 
 
 class ImageInstanceBase(BaseDataInstance):
-    split: DatasetSplitType
     image_file_path: str
     label: Label | None = None
 
 
 class ImageInstanceCreate(ImageInstanceBase):
-    dataset_version_id: SerializableUUID
+    dataset_split_id: SerializableUUID
 
 
 class ImageInstanceUpdate(ImageInstanceBase, OptionalModel):
@@ -20,4 +19,4 @@ class ImageInstanceUpdate(ImageInstanceBase, OptionalModel):
 
 
 class ImageInstance(ImageInstanceBase, BaseDatabaseSchema):
-    dataset_version_id: SerializableUUID
+    dataset_split_id: SerializableUUID

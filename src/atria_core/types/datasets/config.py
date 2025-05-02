@@ -44,7 +44,7 @@ class AtriaDatasetConfig(BaseModel):
     """
 
     __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
-    config_name: str
+    config_name: str = "default"
     data_dir: Optional[str]
     data_urls: Union[str, List[str], Dict[str, str]] | None = None
     streaming_mode: bool = False

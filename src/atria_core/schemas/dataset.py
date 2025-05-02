@@ -1,4 +1,5 @@
 from enum import Enum
+from re import I
 
 from atria_core.schemas.config import Config
 from pydantic import BaseModel, Field
@@ -23,15 +24,35 @@ class ProcessingStatus(str, Enum):
     COMPLETED = "completed"
 
 
+class DatasetSplitBase(BaseModel):
+    name: DatasetSplitType
+    total_shard_count: int = 0
+    uploaded_shard_count: int = 0
+    upload_status: UploadStatus = UploadStatus.UNINITIATED
+    processing_status: ProcessingStatus = ProcessingStatus.UNINITIATED
+    storage_path: str | None = None
+
+
+class DatasetSplitCreate(DatasetSplitBase):
+    dataset_version_id: SerializableUUID
+
+
+class DatasetSplitUpdate(DatasetSplitBase, OptionalModel):
+    pass
+
+
+class DatasetSplit(DatasetSplitBase, BaseDatabaseSchema):
+    dataset_version_id: SerializableUUID
+    dataset_version: "DatasetVersion"
+
+
 class DatasetBase(BaseModel):
     name: NameStr
-    description: str | None
     is_public: bool = False
     data_instance_type: DataInstanceType
 
 
 class DatasetCreate(DatasetBase):
-    config_name: NameStr = "default"
     user_id: SerializableUUID
 
 
@@ -46,10 +67,6 @@ class Dataset(DatasetBase, BaseDatabaseSchema):
 
 class DatasetVersionBase(BaseModel):
     config_name: NameStr = "default"
-    total_shard_count: int | None = None
-    uploaded_shard_count: int | None = None
-    upload_status: UploadStatus = UploadStatus.UNINITIATED
-    processing_status: ProcessingStatus = ProcessingStatus.UNINITIATED
     metadata: DatasetMetadata | None = None
 
 
@@ -65,8 +82,8 @@ class DatasetVersionUpdate(DatasetVersionBase, OptionalModel):
 class DatasetVersion(DatasetVersionBase, BaseDatabaseSchema):
     dataset_id: SerializableUUID
     config_id: SerializableUUID
-    dataset: Dataset
-    config: Config
+    dataset: Dataset | None = None
+    config: Config | None = None
 
 
 class DatasetUploadRequest(BaseModel):
@@ -78,7 +95,7 @@ class DatasetUploadRequest(BaseModel):
     metadata: DatasetMetadata | None = None
     shard_index: int
     total_shard_count: int
-    dataset_split: DatasetSplitType
+    dataset_split_type: DatasetSplitType
 
 
 class DatasetUploadResponse(BaseModel):

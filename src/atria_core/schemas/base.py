@@ -51,6 +51,31 @@ class DataInstanceType(str, enum.Enum):
         else:
             raise ValueError(f"Unsupported data model: {data_model.__name__}")
 
+    @classmethod
+    def to_data_model(
+        cls, data_instance_type: "DataInstanceType"
+    ) -> Type["BaseDataInstance"]:
+        """
+        Convert a DataInstanceType to a data model.
+        Args:
+            data_instance_type (DataInstanceType): The DataInstanceType.
+        Returns:
+            Type[BaseDataInstance]: The corresponding data model class.
+        """
+        from atria_core.types.data_instance.document import (
+            DocumentInstance as AtriaDocumentInstance,
+        )
+        from atria_core.types.data_instance.image import (
+            ImageInstance as AtriaImageInstance,
+        )
+
+        if data_instance_type == DataInstanceType.document:
+            return AtriaDocumentInstance
+        elif data_instance_type == DataInstanceType.image:
+            return AtriaImageInstance
+        else:
+            raise ValueError(f"Unsupported data instance type: {data_instance_type}")
+
 
 class BaseDatabaseSchema(BaseModel):
     id: SerializableUUID

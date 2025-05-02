@@ -17,7 +17,6 @@ class OCRStatus(str, Enum):
 
 
 class DocumentInstanceBase(BaseDataInstance):
-    split: DatasetSplitType
     image_file_path: str
     ocr_file_path: str | None = None
     ocr_type: OCRType | None = OCRType.OTHER
@@ -28,7 +27,7 @@ class DocumentInstanceBase(BaseDataInstance):
 
 
 class DocumentInstanceCreate(DocumentInstanceBase):
-    dataset_version_id: SerializableUUID
+    dataset_split_id: SerializableUUID
 
 
 class DocumentInstanceUpdate(DocumentInstanceBase, OptionalModel):
@@ -36,4 +35,4 @@ class DocumentInstanceUpdate(DocumentInstanceBase, OptionalModel):
 
 
 class DocumentInstance(DocumentInstanceBase, BaseDatabaseSchema):
-    dataset_version_id: SerializableUUID
+    dataset_split_id: SerializableUUID

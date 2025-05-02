@@ -12,14 +12,11 @@ from atria_core.schemas.utils import (
 
 
 class ConfigBase(BaseModel):
-    name: NameStr
-    description: str | None = None
     type: NameStr  # e.g. "engine", "dataset", etc.
-    data: dict
-    package: str
-    package_version: str
+    name: NameStr
+    schema_hash: str
     hash: str
-    schema_hash: str | None
+    data: dict
 
     @model_validator(mode="before")
     @classmethod
@@ -28,12 +25,14 @@ class ConfigBase(BaseModel):
         if not isinstance(data, dict):
             raise ValueError("data must be a dictionary")
 
+        if len(data) == 0:
+            raise ValueError("data cannot be an empty dictionary")
+
         # Generate schema_hash
         values["schema_hash"] = _generate_hash_from_dict(_convert_dict_to_schema(data))
 
         # Generate version if not provided
-        if not values.get("version"):
-            values["hash"] = _generate_hash_from_dict(data)
+        values["hash"] = _generate_hash_from_dict(data)
         return values
 
 
