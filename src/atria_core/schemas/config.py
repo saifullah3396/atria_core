@@ -1,3 +1,4 @@
+import enum
 import uuid
 
 from pydantic import BaseModel, model_validator
@@ -11,8 +12,25 @@ from atria_core.schemas.utils import (
 )
 
 
+class ConfigTypes(str, enum.Enum):
+    batch_sampler = "batch_sampler"
+    data_pipeline = "data_pipeline"
+    dataset = "dataset"
+    data_transform = "data_transform"
+    dataset_splitter = "dataset_splitter"
+    dataset_storage_manager = "dataset_storage_manager"
+    engine = "engine"
+    engine_step = "engine_step"
+    lr_scheduler_factory = "lr_scheduler_factory"
+    metric_factory = "metric_factory"
+    model = "model"
+    model_pipeline = "model_pipeline"
+    optimizer_factory = "optimizer_factory"
+    task_pipeline = "task_pipeline"
+
+
 class ConfigBase(BaseModel):
-    type: NameStr  # e.g. "engine", "dataset", etc.
+    type: ConfigTypes
     name: NameStr
     schema_hash: str
     hash: str
@@ -48,18 +66,6 @@ class Config(ConfigBase, BaseDatabaseSchema):
     user_id: uuid.UUID
 
 
-class ConfigDependencyBase(BaseModel):
-    ref_type: str  # e.g. "engine_step"
-    ref_default_value: str | None = None
-
-
-class ConfigDependencyCreate(ConfigDependencyBase):
-    config_id: SerializableUUID
-
-
-class ConfigDependencyUpdate(ConfigDependencyBase, OptionalModel):
-    pass
-
-
-class ConfigDependency(ConfigDependencyBase, BaseDatabaseSchema):
-    config_id: SerializableUUID
+class ConfigFilter(BaseModel):
+    type: NameStr | None = None
+    name: NameStr | None = None
