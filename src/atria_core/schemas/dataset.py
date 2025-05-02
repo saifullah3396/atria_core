@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
 from atria_core.schemas.utils import NameStr, SerializableUUID
 from atria_core.types.datasets.metadata import DatasetLabels, DatasetMetadata  # noqa
-from atria_core.types.datasets.splits import DatasetSplit  # noqa
+from atria_core.types.datasets.splits import DatasetSplitType  # noqa
 
 
 class UploadStatus(str, Enum):
@@ -78,7 +78,7 @@ class DatasetUploadRequest(BaseModel):
     metadata: DatasetMetadata | None = None
     shard_index: int
     total_shard_count: int
-    dataset_split: DatasetSplit
+    dataset_split: DatasetSplitType
 
 
 class DatasetUploadResponse(BaseModel):

@@ -28,7 +28,7 @@ from typing import Any, Dict
 from pydantic import BaseModel
 
 
-class DatasetSplit(str, Enum):
+class DatasetSplitType(str, Enum):
     """
     An enumeration representing the dataset splits.
 
@@ -55,5 +55,5 @@ class SplitConfig(BaseModel):
         gen_kwargs (Dict[str, Any]): Additional keyword arguments for generating the split.
     """
 
-    split: DatasetSplit
+    split: DatasetSplitType
     gen_kwargs: Dict[str, Any] = field(default_factory=dict)

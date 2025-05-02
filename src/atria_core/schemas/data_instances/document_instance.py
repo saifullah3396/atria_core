@@ -1,6 +1,6 @@
 from enum import Enum
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
-from atria_core.schemas.dataset import DatasetSplit
+from atria_core.schemas.dataset import DatasetSplitType
 from atria_core.schemas.utils import SerializableUUID
 from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.annotated_object import AnnotatedObjectSequence
@@ -17,7 +17,7 @@ class OCRStatus(str, Enum):
 
 
 class DocumentInstanceBase(BaseDataInstance):
-    split: DatasetSplit
+    split: DatasetSplitType
     image_file_path: str
     ocr_file_path: str | None = None
     ocr_type: OCRType | None = OCRType.OTHER

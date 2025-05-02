@@ -24,7 +24,6 @@ from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
 
 
-
 class AtriaDatasetConfig(BaseModel):
     """
     Base configuration class for datasets.
@@ -41,6 +40,7 @@ class AtriaDatasetConfig(BaseModel):
             the dataset. Can be a single URL, a list of URLs, or a dictionary mapping
             keys to URLs. Defaults to None.
         streaming_mode (bool): Indicates whether the dataset should be loaded in
+        max_samples (Optional[int]): The maximum number of samples to load from the dataset.
     """
 
     __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
@@ -48,6 +48,7 @@ class AtriaDatasetConfig(BaseModel):
     data_dir: Optional[str]
     data_urls: Union[str, List[str], Dict[str, str]] | None = None
     streaming_mode: bool = False
+    max_samples: Optional[int] = None
 
 
 class AtriaHuggingfaceDatasetConfig(AtriaDatasetConfig):

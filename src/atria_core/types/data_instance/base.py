@@ -89,9 +89,7 @@ class BaseDataInstance(BaseDataModel):
         Returns:
             str: The unique key for the data instance.
         """
-        return (
-            str(self.id) + str(self.index) if self.index is not None else str(self.id)
-        )
+        return str(self.id)
 
     def visualize(self) -> None:
         """

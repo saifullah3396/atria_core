@@ -51,15 +51,15 @@ class DatasetShardInfo(BaseModel):
         url (str): The URL of the shard.
         shard (int): The shard number.
         total (int): The total number of shards.
-        count (int): The number of examples in the shard.
-        size (int): The size of the shard in bytes.
+        nsamples (int): The number of examples in the shard.
+        filesize (int): The size of the shard in bytes.
     """
 
     url: str = ""
     shard: int = 1
     total: int = 0
-    count: int = 0
-    size: int = 0
+    nsamples: int = 0
+    filesize: int = 0
 
     def __repr__(self):
         return pretty_repr(self)
@@ -80,7 +80,7 @@ class SplitInfo(BaseModel):
 
     num_bytes: int
     num_examples: int
-    shards: List[DatasetShardInfo]
+    shardlist: List[DatasetShardInfo]
 
     @classmethod
     def from_shard_info_list(cls, shard_list: List[DatasetShardInfo]) -> "SplitInfo":
@@ -93,9 +93,9 @@ class SplitInfo(BaseModel):
         Returns:
             SplitInfo: The created SplitInfo instance.
         """
-        num_bytes = sum(shard.size for shard in shard_list)
-        num_examples = sum(shard.count for shard in shard_list)
-        return cls(num_bytes=num_bytes, num_examples=num_examples, shards=shard_list)
+        num_bytes = sum(shard.filesize for shard in shard_list)
+        num_examples = sum(shard.nsamples for shard in shard_list)
+        return cls(num_bytes=num_bytes, num_examples=num_examples, shardlist=shard_list)
 
     def __repr__(self):
         return pretty_repr(self)

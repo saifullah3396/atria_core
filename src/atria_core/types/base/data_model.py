@@ -54,7 +54,7 @@ class BaseDataModel(BaseModel):
     """
 
     model_config = ConfigDict(
-        arbitrary_types_allowed=True, validate_assignment=False, extra="forbid"
+        arbitrary_types_allowed=True, validate_assignment=False, extra="ignore"
     )
     _device = PrivateAttr(default=None)
     _is_tensor = PrivateAttr(default=None)
