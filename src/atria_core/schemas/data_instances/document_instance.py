@@ -1,6 +1,6 @@
 from enum import Enum
+
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
-from atria_core.schemas.dataset import DatasetSplitType
 from atria_core.schemas.utils import SerializableUUID
 from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.annotated_object import AnnotatedObjectSequence
@@ -31,7 +31,9 @@ class DocumentInstanceCreate(DocumentInstanceBase):
 
 
 class DocumentInstanceUpdate(DocumentInstanceBase, OptionalModel):
-    pass
+    label: Label | None = None
+    question_answer_pairs: QuestionAnswerPairSequence | None = None
+    annotated_objects: AnnotatedObjectSequence | None = None
 
 
 class DocumentInstance(DocumentInstanceBase, BaseDatabaseSchema):

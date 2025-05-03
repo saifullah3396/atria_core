@@ -1,10 +1,10 @@
 from enum import Enum
-from re import I
+from typing import List, Optional
 
-from atria_core.schemas.config import Config
 from pydantic import BaseModel, Field
 
 from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
+from atria_core.schemas.config import Config
 from atria_core.schemas.utils import NameStr, SerializableUUID
 from atria_core.types.datasets.metadata import DatasetLabels, DatasetMetadata  # noqa
 from atria_core.types.datasets.splits import DatasetSplitType  # noqa
@@ -24,6 +24,25 @@ class ProcessingStatus(str, Enum):
     COMPLETED = "completed"
 
 
+# ShardFile
+class ShardFileBase(BaseModel):
+    index: int
+    url: str
+
+
+class ShardFileCreate(ShardFileBase):
+    dataset_split_id: SerializableUUID
+
+
+class ShardFileUpdate(ShardFileBase, OptionalModel):
+    pass
+
+
+class ShardFile(ShardFileBase, BaseDatabaseSchema):
+    dataset_split_id: SerializableUUID
+
+
+# DatasetSplit
 class DatasetSplitBase(BaseModel):
     name: DatasetSplitType
     total_shard_count: int = 0
@@ -37,8 +56,11 @@ class DatasetSplitCreate(DatasetSplitBase):
     dataset_version_id: SerializableUUID
 
 
-class DatasetSplitUpdate(DatasetSplitBase, OptionalModel):
-    pass
+class DatasetSplitUpdate(OptionalModel):
+    # allow updating uploaded shard count and upload status
+    uploaded_shard_count: int = 0
+    upload_status: UploadStatus = UploadStatus.UNINITIATED
+    processing_status: ProcessingStatus = ProcessingStatus.UNINITIATED
 
 
 class DatasetSplit(DatasetSplitBase, BaseDatabaseSchema):
@@ -46,27 +68,10 @@ class DatasetSplit(DatasetSplitBase, BaseDatabaseSchema):
     dataset_version: "DatasetVersion"
 
 
-class DatasetBase(BaseModel):
-    name: NameStr
-    is_public: bool = False
-    data_instance_type: DataInstanceType
-
-
-class DatasetCreate(DatasetBase):
-    user_id: SerializableUUID
-
-
-class DatasetUpdate(DatasetBase, OptionalModel):
-    pass
-
-
-class Dataset(DatasetBase, BaseDatabaseSchema):
-    user_id: SerializableUUID
-    versions: list["DatasetVersion"] = Field(default_factory=list)
-
-
+# DatasetVersion
 class DatasetVersionBase(BaseModel):
-    config_name: NameStr = "default"
+    version: int = Field(default=0)
+    version_tag: NameStr = "default"
     metadata: DatasetMetadata | None = None
 
 
@@ -75,24 +80,59 @@ class DatasetVersionCreate(DatasetVersionBase):
     config_id: SerializableUUID
 
 
-class DatasetVersionUpdate(DatasetVersionBase, OptionalModel):
-    pass
+class DatasetVersionUpdate(OptionalModel):
+    # allow updating version tag and version metadata
+    version_tag: NameStr | None = None
+    metadata: DatasetMetadata | None = None
 
 
 class DatasetVersion(DatasetVersionBase, BaseDatabaseSchema):
     dataset_id: SerializableUUID
     config_id: SerializableUUID
-    dataset: Dataset | None = None
+    dataset: Optional["Dataset"] = None
     config: Config | None = None
 
 
-class DatasetUploadRequest(BaseModel):
-    dataset_name: NameStr
-    dataset_config_name: NameStr
+# Dataset
+class DatasetBase(BaseModel):
+    name: NameStr
     is_public: bool = False
-    data_instance_type: DataInstanceType | None = None
+    data_instance_type: DataInstanceType
+
+
+class DatasetCreate(DatasetBase):
+    # dataset_stuff
+    user_id: SerializableUUID
+
+    # dataset_version_stuff
+    version_tag: NameStr
     config: dict | None = None
     metadata: DatasetMetadata | None = None
+
+
+class DatasetUpdate(OptionalModel):
+    # allow updating name of dataset and to make it public/private
+    name: NameStr | None = None
+    is_public: bool | None = None
+
+
+class Dataset(DatasetBase, BaseDatabaseSchema):
+    user_id: SerializableUUID
+    versions: list["DatasetVersion"] = Field(default_factory=list)
+
+
+class DatasetUploadRequest(BaseModel):
+    # dataset stuff
+    name: NameStr
+    is_public: bool = False
+    data_instance_type: DataInstanceType | None = None
+
+    # dataset version stuff
+    version_tag: NameStr
+    config: dict | None = None
+    metadata: DatasetMetadata | None = None
+
+    # dataset split stuff
     shard_index: int
     total_shard_count: int
     dataset_split_type: DatasetSplitType
@@ -103,22 +143,12 @@ class DatasetUploadResponse(BaseModel):
     token: str | None = None
 
 
-class DatasetDeleteRequest(BaseModel):
-    dataset_version: DatasetVersion
+class DatasetDownloadRequest(BaseModel):
+    name: str
+    version_tag: str
+    split: DatasetSplitType
+    user_id: SerializableUUID
 
 
-class DatasetCreateRequest(BaseModel):
-    dataset_name: NameStr
-    dataset_config_name: NameStr
-    is_public: bool = False
-    data_instance_type: DataInstanceType | None = None
-    config: dict | None = None
-    metadata: DatasetMetadata | None = None
-
-
-class DatasetCreateResponse(BaseModel):
-    dataset_version: DatasetVersion
-
-
-class DatasetDeleteRequest(BaseModel):
-    dataset_version: DatasetVersion
+class DatasetDownloadResponse(BaseModel):
+    download_urls: List[str]

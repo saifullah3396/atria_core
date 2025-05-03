@@ -32,9 +32,9 @@ class ConfigTypes(str, enum.Enum):
 class ConfigBase(BaseModel):
     type: ConfigTypes
     name: NameStr
+    data: dict
     schema_hash: str
     hash: str
-    data: dict
 
     @model_validator(mode="before")
     @classmethod

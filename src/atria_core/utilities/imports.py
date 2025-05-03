@@ -57,6 +57,16 @@ def _get_atria_base_path() -> str | None:
     return _get_package_base_path("atria")
 
 
+def _get_atria_core_base_path() -> str | None:
+    """
+    Retrieves the base path of the Atria Core package.
+
+    Returns:
+        str | None: The base path of the Atria Core package as a string, or None if the package is not found.
+    """
+    return _get_package_base_path("atria_core")
+
+
 def _resolve_module_from_path(module_path: str) -> object:
     """
     Resolves a class or function from a module path string.

@@ -22,9 +22,8 @@ class OptionalModel(BaseModel):
 
 
 class DataInstanceType(str, enum.Enum):
-    msgpack_object = "msgpack_object"
-    image = "image_instance"
-    document = "document_instance"
+    image_instance = "image_instance"
+    document_instance = "document_instance"
 
     @classmethod
     def from_data_model(
@@ -45,9 +44,9 @@ class DataInstanceType(str, enum.Enum):
         )
 
         if issubclass(data_model, AtriaDocumentInstance):
-            return DataInstanceType.document
+            return DataInstanceType.document_instance
         elif issubclass(data_model, AtriaImageInstance):
-            return DataInstanceType.image
+            return DataInstanceType.image_instance
         else:
             raise ValueError(f"Unsupported data model: {data_model.__name__}")
 
@@ -69,9 +68,9 @@ class DataInstanceType(str, enum.Enum):
             ImageInstance as AtriaImageInstance,
         )
 
-        if data_instance_type == DataInstanceType.document:
+        if data_instance_type == DataInstanceType.document_instance:
             return AtriaDocumentInstance
-        elif data_instance_type == DataInstanceType.image:
+        elif data_instance_type == DataInstanceType.image_instance:
             return AtriaImageInstance
         else:
             raise ValueError(f"Unsupported data instance type: {data_instance_type}")

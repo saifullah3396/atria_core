@@ -1,10 +1,33 @@
 from typing import List, Optional
 
-from atria_core.schemas.config import Config
+from codename import codename
 from pydantic import BaseModel, Field, field_validator
 
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
+from atria_core.schemas.config import Config
 from atria_core.schemas.utils import NameStr, SerializableUUID
+
+
+class ModelVersionBase(BaseModel):
+    version: int = Field(default=0)
+    version_tag: str = Field(default_factory=codename)
+    model_uri: str
+
+
+class ModelVersionCreate(ModelVersionBase):
+    model_id: SerializableUUID
+    config_id: SerializableUUID
+
+
+class ModelVersionUpdate(ModelVersionBase):
+    pass
+
+
+class ModelVersion(ModelVersionBase, BaseDatabaseSchema):
+    model_id: SerializableUUID
+    config_id: SerializableUUID
+    model: "Model"
+    config: Config
 
 
 class ModelBase(BaseModel):
@@ -26,32 +49,10 @@ class Model(ModelBase, BaseDatabaseSchema):
     versions: List["ModelVersion"] = []
 
 
-class ModelVersionBase(BaseModel):
-    version: int = Field(default=0)
-    config_name: str = "default"
-    model_uri: str
-
-
-class ModelVersionCreate(ModelVersionBase):
-    model_id: SerializableUUID
-    config_id: SerializableUUID
-
-
-class ModelVersionUpdate(ModelVersionBase):
-    pass
-
-
-class ModelVersion(ModelVersionBase, BaseDatabaseSchema):
-    model_id: SerializableUUID
-    config_id: SerializableUUID
-    model: Model
-    config: Config
-
-
 class ModelUploadRequest(BaseModel):
-    model_name: str
-    model_description: str
-    model_config_name: str
+    name: str
+    description: str
+    version_tag: str
     is_public: bool = False
     config: Optional[dict] = None
 
@@ -70,13 +71,10 @@ class ModelUploadResponse(BaseModel):
     token: Optional[str] = None
 
 
-class ModelDeleteRequest(BaseModel):
-    model_version: ModelVersion
-
-
 class ModelDownloadRequest(BaseModel):
-    model_name: str
-    model_config_name: str
+    name: str
+    version_tag: str
+    user_id: SerializableUUID
 
 
 class ModelDownloadResponse(BaseModel):
