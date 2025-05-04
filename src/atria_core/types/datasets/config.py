@@ -34,21 +34,20 @@ class AtriaDatasetConfig(BaseModel):
     Attributes:
         dataset_name (str): The name of the dataset.
         config_name (str): The name of the dataset.
-        data_dir (str): The directory where the dataset is stored or will be downloaded.
-            Defaults to `_DEFAULT_ATRIA_DATASETS_CACHE_DIR`.
         data_urls (Union[str, List[str], Dict[str, str]] | None): The URLs for accessing
             the dataset. Can be a single URL, a list of URLs, or a dictionary mapping
             keys to URLs. Defaults to None.
-        streaming_mode (bool): Indicates whether the dataset should be loaded in
-        max_samples (Optional[int]): The maximum number of samples to load from the dataset.
+        max_train_samples (Optional[int]): The maximum number of training samples to load.
+        max_validation_samples (Optional[int]): The maximum number of validation samples to load.
+        max_test_samples (Optional[int]): The maximum number of test samples to load.
     """
 
     __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
     config_name: str = "default"
-    data_dir: Optional[str]
     data_urls: Union[str, List[str], Dict[str, str]] | None = None
-    streaming_mode: bool = False
-    max_samples: Optional[int] = None
+    max_train_samples: Optional[int] = None
+    max_validation_samples: Optional[int] = None
+    max_test_samples: Optional[int] = None
 
 
 class AtriaHuggingfaceDatasetConfig(AtriaDatasetConfig):

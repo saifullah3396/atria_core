@@ -24,6 +24,7 @@ dependencies = [
     "torch==2.2.2",
     "torchvision==0.17.2",
     "beautifulsoup4==4.12.2",
+    "supabase>=2.7.4",
 ]
 
 [tool.uv]

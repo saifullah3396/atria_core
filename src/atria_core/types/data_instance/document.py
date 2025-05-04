@@ -25,7 +25,9 @@ Version: 1.0.0
 License: MIT
 """
 
-from pydantic import field_serializer, model_validator
+from typing import Any
+
+from pydantic import field_serializer, field_validator, model_validator
 
 from atria_core.types.data_instance.base import (
     BaseDataInstance,
@@ -68,38 +70,68 @@ class DocumentInstance(BaseDataInstance):
     question_answer_pairs: QuestionAnswerPairSequence | None = None
     annotated_objects: AnnotatedObjectSequence | None = None
 
-    @field_serializer("question_answer_pairs")
+    @field_validator("question_answer_pairs")
     @classmethod
+    def validate_question_answer_pairs(cls, value: Any) -> list[dict]:
+        """
+        Validates the `question_answer_pairs` field.
+        If the value is a list, it converts it to a `QuestionAnswerPairSequence`.
+        Args:
+            cls: The class being validated.
+            value: The value to validate.
+        Returns:
+            QuestionAnswerPairSequence: The validated question-answer pairs.
+        """
+        if isinstance(value, list):
+            return QuestionAnswerPairSequence.from_list(value)
+        return value
+
+    @field_validator("annotated_objects")
+    @classmethod
+    def validate_annotated_objects(cls, value: Any) -> list[dict]:
+        """
+        Validates the `annotated_objects` field.
+        If the value is a list, it converts it to a `AnnotatedObjectSequence`.
+        Args:
+            cls: The class being validated.
+            value: The value to validate.
+        Returns:
+            AnnotatedObjectSequence: The validated annotated objects.
+        """
+        if isinstance(value, list):
+            return AnnotatedObjectSequence.from_list(value)
+        return value
+
+    @field_serializer("question_answer_pairs")
     def serialize_question_answer_pairs(
-        cls, value: QuestionAnswerPairSequence, _info
+        self, value: QuestionAnswerPairSequence
     ) -> list[dict]:
         """
         Serializes the `question_answer_pairs` field to a list of dictionaries.
 
         Args:
-            cls: The class of the instance.
             value (QuestionAnswerPairSequence): The question-answer pairs to serialize.
 
         Returns:
             list[dict]: A list of dictionaries representing the serialized question-answer pairs.
         """
+        if value is None:
+            return value
         return [v.model_dump() for v in value.to_list()]
 
     @field_serializer("annotated_objects")
-    @classmethod
-    def serialize_annotated_objects(
-        cls, value: AnnotatedObjectSequence, _info
-    ) -> list[dict]:
+    def serialize_annotated_objects(self, value: AnnotatedObjectSequence) -> list[dict]:
         """
         Serializes the `annotated_objects` field to a list of dictionaries.
 
         Args:
-            cls: The class of the instance.
             value (AnnotatedObjectSequence): The annotated objects to serialize.
 
         Returns:
             list[dict]: A list of dictionaries representing the serialized annotated objects.
         """
+        if value is None:
+            return value
         return [v.model_dump() for v in value.to_list()]
 
     @classmethod

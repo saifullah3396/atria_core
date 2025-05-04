@@ -65,7 +65,7 @@ class DatasetSplitUpdate(OptionalModel):
 
 class DatasetSplit(DatasetSplitBase, BaseDatabaseSchema):
     dataset_version_id: SerializableUUID
-    dataset_version: "DatasetVersion"
+    dataset_version: Optional["DatasetVersion"] = None
 
 
 # DatasetVersion
@@ -104,11 +104,6 @@ class DatasetCreate(DatasetBase):
     # dataset_stuff
     user_id: SerializableUUID
 
-    # dataset_version_stuff
-    version_tag: NameStr
-    config: dict | None = None
-    metadata: DatasetMetadata | None = None
-
 
 class DatasetUpdate(OptionalModel):
     # allow updating name of dataset and to make it public/private
@@ -139,7 +134,7 @@ class DatasetUploadRequest(BaseModel):
 
 
 class DatasetUploadResponse(BaseModel):
-    dataset_version: DatasetVersion
+    dataset_split: DatasetSplit
     token: str | None = None
 
 
@@ -152,3 +147,13 @@ class DatasetDownloadRequest(BaseModel):
 
 class DatasetDownloadResponse(BaseModel):
     download_urls: List[str]
+
+
+class DatasetCreateRequest(DatasetBase):
+    # dataset_stuff
+    user_id: SerializableUUID
+
+    # dataset_version_stuff
+    version_tag: NameStr
+    config: dict | None = None
+    metadata: DatasetMetadata | None = None

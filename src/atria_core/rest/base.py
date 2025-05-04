@@ -21,7 +21,7 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.resource_path = model.__name__.lower()
 
     def _url(self, suffix: str = "") -> str:
-        return f"/{self.resource_path}/{suffix}".rstrip("/")
+        return f"/rest/v1/{self.resource_path}/{suffix}".rstrip("/")
 
     def _serialize_filters(self, filters: Dict[str, Any]) -> Dict[str, str]:
         return {

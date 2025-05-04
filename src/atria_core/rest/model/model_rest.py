@@ -1,9 +1,13 @@
 from functools import partial
+import json
+import uuid
 
 from atria_core.rest.base import RESTBase
 from atria_core.schemas.model import (
     Model,
     ModelCreate,
+    ModelDownloadRequest,
+    ModelDownloadResponse,
     ModelUpdate,
     ModelVersion,
     ModelVersionCreate,
@@ -12,7 +16,55 @@ from atria_core.schemas.model import (
 
 
 class RESTModel(RESTBase[Model, ModelCreate, ModelUpdate]):
-    pass
+    def upload(
+        self,
+        model_buffer: bytes,
+        name: str,
+        version_tag: str,
+        description: str,
+        is_public: bool = False,
+        config: dict = None,
+    ) -> None:
+        response = self.client.post(
+            self._url("upload"),
+            data={
+                "name": name,
+                "is_public": is_public,
+                "description": description,
+                "version_tag": version_tag,
+                "config": json.dumps(config or {}),
+            },
+            model_file=(
+                "model.bin",
+                model_buffer,
+                "application/octet-stream",
+            ),
+        )
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Failed to upload model: {response.status_code} - {response.text}"
+            )
+
+    def download(self, name: str, version_tag: str, user_id: uuid.UUID) -> bytes:
+        response = self.client.post(
+            self._url("request_download"),
+            json=ModelDownloadRequest(
+                name=name, version_tag=version_tag, user_id=user_id
+            ).model_dump(),
+        )
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Failed to download model: {response.status_code} - {response.text}"
+            )
+        download_url = ModelDownloadResponse.model_validate(
+            response.json()
+        ).download_url
+        response = self.client.get(download_url)
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Failed to download model: {response.status_code} - {response.text}"
+            )
+        return response.content
 
 
 class RESTModelVersion(RESTBase[ModelVersion, ModelVersionCreate, ModelVersionUpdate]):

@@ -36,7 +36,7 @@ from pydantic import computed_field, field_serializer, field_validator, model_va
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import BaseDataModel, BatchedBaseDataModel
 from atria_core.types.typing.common import PydanticFilePath
-from atria_core.utilities.encoding import _base64_to_image, _image_to_base64
+from atria_core.utilities.encoding import _bytes_to_image, _image_to_bytes
 
 logger = get_logger(__name__)
 
@@ -104,7 +104,7 @@ class Image(BaseDataModel):
         if value is None:
             return value
         if isinstance(value, (bytes, str)):
-            value = _base64_to_image(value)
+            value = _bytes_to_image(value)
         elif isinstance(value, np.ndarray):
             try:
                 value = PIL.Image.fromarray(value)
@@ -115,7 +115,7 @@ class Image(BaseDataModel):
     @field_serializer("content")
     def serialize_content(
         self, content: Optional[Union[torch.Tensor, PILImage]], _info
-    ) -> str:
+    ) -> bytes:
         """
         Serializes the image tensor to a base64-encoded string.
 
@@ -128,7 +128,7 @@ class Image(BaseDataModel):
         """
         if content is None:
             return content
-        return _image_to_base64(content)
+        return _image_to_bytes(content)
 
     @field_validator("content", mode="after")
     @classmethod

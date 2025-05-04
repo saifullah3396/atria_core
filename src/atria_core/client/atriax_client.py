@@ -1,11 +1,7 @@
-from typing import Dict
+from typing import Dict, Optional
 
 import httpx
-from pydantic import BaseModel, EmailStr
-from supabase import Client, ClientOptions, create_client
-
 from atria_core import rest
-from atria_core.client.config import settings
 from atria_core.client.keyring import KeyringStorage
 from atria_core.logger.logger import get_logger
 from atria_core.rest.config_rest import RESTConfig
@@ -21,6 +17,8 @@ from atria_core.rest.tracking.metric_rest import RESTMetric
 from atria_core.rest.tracking.param_rest import RESTParam
 from atria_core.rest.tracking.run_rest import RESTRun
 from atria_core.schemas.auth import UserIn
+from pydantic import BaseModel, EmailStr
+from supabase import Client, ClientOptions, create_client
 
 logger = get_logger(__name__)
 
@@ -31,14 +29,25 @@ class AuthLoginModel(BaseModel):
 
 
 class AtriaXClient:
-    def __init__(self, auth_enabled: bool = True):
-        self._supabase: Client = self._init_supabase_client()
-        self._rest_client = httpx.Client(base_url=settings.ATRIAX_URL)
-        self._auth_enabled = auth_enabled
+    def __init__(
+        self,
+        base_url: str,
+        anon_api_key: str,
+        credentials: Optional[AuthLoginModel] = None,
+        initialize_auth: bool = True,
+        service_name: str = "atria",
+    ):
+        self._service_name = service_name
+        self._anon_api_key = anon_api_key
+        self._credentials = credentials
+        self._rest_client = httpx.Client(base_url=base_url)
+        self._supabase: Client = self._init_supabase_client(
+            base_url=base_url, anon_api_key=anon_api_key
+        )
 
         self._perform_health_check()
-        if self._auth_enabled:
-            self._perform_auth()
+        if initialize_auth:
+            self.initialize_auth()
 
     @property
     def rest_client(self) -> httpx.Client:
@@ -62,71 +71,71 @@ class AtriaXClient:
     @property
     def experiment(self) -> RESTExperiment:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.experiment(self._rest_client)
+        return rest.experiment(client=self._rest_client)
 
     @property
     def run(self) -> RESTRun:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.run(self._rest_client)
+        return rest.run(client=self._rest_client)
 
     @property
     def param(self) -> RESTParam:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.param(self._rest_client)
+        return rest.param(client=self._rest_client)
 
     @property
     def metric(self) -> RESTMetric:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.metric(self._rest_client)
+        return rest.metric(client=self._rest_client)
 
     # dataset
     @property
     def dataset(self) -> RESTDataset:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.dataset(self._rest_client)
+        return rest.dataset(client=self._rest_client)
 
     @property
     def dataset_version(self) -> RESTDatasetVersion:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.dataset_version(self._rest_client)
+        return rest.dataset_version(client=self._rest_client)
 
     @property
     def dataset_split(self) -> RESTDatasetSplit:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.dataset_split(self._rest_client)
+        return rest.dataset_split(client=self._rest_client)
 
     @property
     def shard_file(self) -> RESTShardFile:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.shard_file(self._rest_client)
+        return rest.shard_file(client=self._rest_client)
 
     # model
     @property
     def model(self) -> RESTModel:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.model(self._rest_client)
+        return rest.model(client=self._rest_client)
 
     @property
     def model_version(self) -> RESTModelVersion:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.model_version(self._rest_client)
+        return rest.model_version(client=self._rest_client)
 
     # config
     @property
     def config(self) -> RESTConfig:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.config(self._rest_client)
+        return rest.config(client=self._rest_client)
 
     # data instance
     @property
     def document_instance(self) -> RESTDataset:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.document_instance(self._rest_client)
+        return rest.document_instance(client=self._rest_client)
 
     @property
     def image_instance(self) -> RESTDataset:
         self._rest_client.headers.update(self._get_auth_headers())
-        return rest.image_instance(self._rest_client)
+        return rest.image_instance(client=self._rest_client)
 
     def get_session(self):
         try:
@@ -134,12 +143,12 @@ class AtriaXClient:
         except Exception as e:
             return None
 
-    def _init_supabase_client(self) -> Client:
+    def _init_supabase_client(self, base_url: str, anon_api_key: str) -> Client:
         """Initialize the Supabase client (sync version)."""
         return create_client(
-            settings.ATRIAX_URL,
-            settings.ATRIAX_API_KEY,
-            options=ClientOptions(storage=KeyringStorage()),
+            supabase_url=base_url,
+            supabase_key=anon_api_key,
+            options=ClientOptions(storage=KeyringStorage(self._service_name)),
         )
 
     def _get_auth_headers(self) -> Dict[str, str]:
@@ -148,7 +157,7 @@ class AtriaXClient:
         if not session:
             raise RuntimeError("No active session. Please authenticate.")
         return {
-            "apiKey": settings.ATRIAX_API_KEY,
+            "apiKey": self._anon_api_key,
             "Authorization": f"Bearer {session.access_token}",
         }
 
@@ -158,7 +167,7 @@ class AtriaXClient:
             response = self._rest_client.get(
                 "/rest/v1/utils/health-check/",
                 headers={
-                    "apiKey": settings.ATRIAX_API_KEY,
+                    "apiKey": self._anon_api_key,
                 },
             )
             if response.status_code != 200:
@@ -168,18 +177,48 @@ class AtriaXClient:
         except Exception as e:
             raise RuntimeError(f"Failed to connect to atriax server")
 
-    def _perform_auth(self):
+    def initialize_auth(self):
         """Authenticate user and store the session."""
         session = self.get_session()
         if not session:
-            email = input("Enter your email: ")
-            password = input("Enter your password: ")
-            login_data = AuthLoginModel(email=email, password=password)
+            if self._credentials is None:
+                email = input("Enter your email: ")
+                password = input("Enter your password: ")
+                self._credentials = AuthLoginModel(email=email, password=password)
 
+            self.sign_in()
+
+    def sign_in(self):
+        """Sign in the user."""
+        try:
             result = self._supabase.auth.sign_in_with_password(
-                {"email": login_data.email, "password": login_data.password}
+                self._credentials.model_dump()
             )
             if not result.session or not result.user:
-                raise RuntimeError(
-                    "Authentication failed. Please check your credentials."
+                raise RuntimeError("Sign-in failed. Please check your credentials.")
+            logger.info(f"Sign-in successful for {self._credentials.email}")
+        except Exception as e:
+            logger.error(f"Failed to sign in: {e}")
+
+    def sign_up(self, email: str, password: str):
+        """Sign up a new user."""
+        try:
+            result = self._supabase.auth.sign_up(
+                dict(
+                    email=email,
+                    password=password,
                 )
+            )
+            if not result.session or not result.user:
+                raise RuntimeError("Sign-up failed. Please check your credentials.")
+            logger.info(f"Sign-up successful for {email}")
+        except Exception as e:
+            logger.error(f"Failed to sign up: {e}")
+
+    def sign_out(self):
+        """Sign out the user by removing the session."""
+        try:
+            self._supabase.auth.sign_out()
+            logger.info("Signed out successfully")
+        except Exception as e:
+            logger.error(f"Failed to sign out: {e}")

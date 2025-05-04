@@ -1,12 +1,10 @@
-import uuid
 from typing import Optional
 
 import bs4
 import networkx
-from networkx.readwrite import json_graph
-
 from atria_core.types.generic.bounding_box import BoundingBox
 from atria_core.types.generic.ocr import OCRGraphNode, OCRLevel
+from networkx.readwrite import json_graph
 
 
 class HOCRGraphParser:
@@ -25,11 +23,11 @@ class HOCRGraphParser:
     def _add_node(
         self,
         graph: networkx.DiGraph,
+        node_id: int,
         tag: bs4.Tag,
         level: str,
         parent_id: Optional[str] = None,
     ):
-        node_id = str(uuid.uuid4())
         title = tag.get("title", "")
         bbox = None
         conf = None
@@ -48,7 +46,7 @@ class HOCRGraphParser:
 
         # Parse angle if available
         if "textangle" in title:
-            angle = float(title.split("textangle")[1].split()[0])
+            angle = float(title.split("textangle")[1].split(";")[0])
 
         # Build node
         text = tag.get_text(strip=True)
@@ -76,26 +74,35 @@ class HOCRGraphParser:
             networkx.DiGraph: A directed graph representing the HOCR content.
         """
         graph = networkx.DiGraph()
+        node_id = 0
         page_tags = self._soup.find_all("div", {"class": "ocr_page"})
         for page_tag in page_tags:
-            page_id = self._add_node(graph, page_tag, "page")
-
+            page_id = self._add_node(graph, node_id, page_tag, "page")
+            node_id += 1
             blocks = page_tag.find_all("div", {"class": "ocr_carea"}, recursive=True)
             for block in blocks:
-                block_id = self._add_node(graph, block, "block", parent_id=page_id)
-
+                block_id = self._add_node(
+                    graph, node_id, block, "block", parent_id=page_id
+                )
+                node_id += 1
                 paragraphs = block.find_all("p", {"class": "ocr_par"}, recursive=True)
                 for par in paragraphs:
-                    par_id = self._add_node(graph, par, "paragraph", parent_id=block_id)
-
+                    par_id = self._add_node(
+                        graph, node_id, par, "paragraph", parent_id=block_id
+                    )
+                    node_id += 1
                     lines = par.find_all("span", {"class": "ocr_line"}, recursive=True)
                     for line in lines:
-                        line_id = self._add_node(graph, line, "line", parent_id=par_id)
-
+                        line_id = self._add_node(
+                            graph, node_id, line, "line", parent_id=par_id
+                        )
+                        node_id += 1
                         words = line.find_all(
                             "span", {"class": "ocrx_word"}, recursive=True
                         )
                         for word in words:
-                            title = word.get("title", "")
-                            self._add_node(graph, word, "word", parent_id=line_id)
+                            self._add_node(
+                                graph, node_id, word, "word", parent_id=line_id
+                            )
+                            node_id += 1
         return json_graph.node_link_data(graph)

@@ -33,7 +33,7 @@ License: MIT
 import ast
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from pydantic import BaseModel, model_validator
 
@@ -65,7 +65,7 @@ class OCRType(str, Enum):
     OTHER = "other"
 
 
-class OCRLevel(Enum):
+class OCRLevel(str, Enum):
     PAGE = "page"
     BLOCK = "block"
     PARAGRAPH = "paragraph"
@@ -74,7 +74,7 @@ class OCRLevel(Enum):
 
 
 class OCRGraphNode(BaseModel):
-    id: Union[int, str]
+    id: int
     word: Optional[str] = None
     level: Optional[OCRLevel] = None
     bbox: Optional[BoundingBox] = None
@@ -85,8 +85,8 @@ class OCRGraphNode(BaseModel):
 
 
 class OCRGraphLink(BaseModel):
-    source: Union[int, str]
-    target: Union[int, str]
+    source: int
+    target: int
     relation: Optional[str] = None
 
 

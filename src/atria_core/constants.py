@@ -23,8 +23,8 @@ License: MIT
 import os
 from pathlib import Path
 
-_DEFAULT_ATRIA_CACHE_DIR = os.environ.get(
-    "ATRIA_CACHE_DIR", Path.home() / ".cache/atria/"
+DEFAULT_ATRIA_CACHE_DIR = os.environ.get(
+    "DEFAULT_ATRIA_CACHE_DIR", Path.home() / ".cache/atria/"
 )
 """
 str: The default directory for caching Atria resources. This value can be overridden
@@ -32,20 +32,20 @@ by setting the `ATRIA_CACHE_DIR` environment variable. If not set, it defaults t
 `~/.cache/atria/`.
 """
 
-_DEFAULT_ATRIA_DATASETS_CACHE_DIR = Path(_DEFAULT_ATRIA_CACHE_DIR) / "datasets/"
+_DEFAULT_ATRIA_DATASETS_CACHE_DIR = Path(DEFAULT_ATRIA_CACHE_DIR) / "datasets/"
 """
 str: The default directory for caching Atria resources. This value can be overridden
 by setting the `ATRIA_CACHE_DIR` environment variable. If not set, it defaults to
 `~/.cache/atria/`.
 """
 
-_DEFAULT_ATRIA_MODELS_CACHE_DIR = Path(_DEFAULT_ATRIA_CACHE_DIR) / "models/"
+_DEFAULT_ATRIA_MODELS_CACHE_DIR = Path(DEFAULT_ATRIA_CACHE_DIR) / "models/"
 """
 Path: The default directory for caching Atria models. This is a subdirectory of
 `_DEFAULT_ATRIA_CACHE_DIR` and is used to store model-related resources.
 """
 
-_DEFAULT_ATRIA_FILE_STORAGE_DIR = Path(_DEFAULT_ATRIA_CACHE_DIR) / "fs/"
+_DEFAULT_ATRIA_FILE_STORAGE_DIR = Path(DEFAULT_ATRIA_CACHE_DIR) / "fs/"
 """
 Path: The default directory for Atria file storage. This is a subdirectory of
 `_DEFAULT_ATRIA_CACHE_DIR` and is used to store file system-related resources.

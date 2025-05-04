@@ -36,19 +36,18 @@ class RESTDataset(RESTBase[Dataset, DatasetCreate, DatasetUpdate]):
     ) -> None:
         """Upload a file to the dataset."""
         response = self.client.post(
-            "/rest/v1/dataset/upload",
+            self._url("upload_shard"),
             data={
                 "name": name,
                 "is_public": is_public,
                 "data_instance_type": data_instance_type.value,
                 "version_tag": version_tag,
                 "config": json.dumps(config),
-                "metadata": json.dumps(metadata),
+                "metadata": metadata.model_dump_json(),
                 "dataset_split_type": dataset_split_type.value,
                 "shard_index": shard_index,
                 "total_shard_count": total_shard_count,
                 "shard_index": shard_index,
-                "total_shard_count": total_shard_count,
             },
             files=files,
         )
