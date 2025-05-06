@@ -4,7 +4,6 @@ from codename import codename
 from pydantic import BaseModel, Field, field_validator
 
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
-from atria_core.schemas.config import Config
 from atria_core.schemas.utils import NameStr, SerializableUUID
 
 
@@ -17,6 +16,7 @@ class ModelVersionBase(BaseModel):
 class ModelVersionCreate(ModelVersionBase):
     model_id: SerializableUUID
     config_id: SerializableUUID
+    inference_config_id: SerializableUUID
 
 
 class ModelVersionUpdate(ModelVersionBase):
@@ -26,8 +26,7 @@ class ModelVersionUpdate(ModelVersionBase):
 class ModelVersion(ModelVersionBase, BaseDatabaseSchema):
     model_id: SerializableUUID
     config_id: SerializableUUID
-    model: "Model"
-    config: Config
+    inference_config_id: SerializableUUID
 
 
 class ModelBase(BaseModel):
@@ -50,20 +49,9 @@ class Model(ModelBase, BaseDatabaseSchema):
 
 
 class ModelUploadRequest(BaseModel):
-    name: str
-    description: str
     version_tag: str
+    description: str
     is_public: bool = False
-    config: Optional[dict] = None
-
-    @field_validator("config", mode="before")
-    @classmethod
-    def parse_config(cls, value):
-        if isinstance(value, str):
-            import json
-
-            return json.loads(value)
-        return value
 
 
 class ModelUploadResponse(BaseModel):
@@ -79,3 +67,19 @@ class ModelDownloadRequest(BaseModel):
 
 class ModelDownloadResponse(BaseModel):
     download_url: str
+
+
+class ModelCreateRequest(BaseModel):
+    inference_config: dict
+    version_tag: str
+    description: str
+    is_public: bool = False
+
+    @field_validator("inference_config", mode="before")
+    @classmethod
+    def parse_config(cls, value):
+        if isinstance(value, str):
+            import json
+
+            return json.loads(value)
+        return value
