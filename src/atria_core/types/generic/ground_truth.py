@@ -50,7 +50,7 @@ class NERGroundTruth(BaseDataModel):
 
     words: List[str] | None = None
     word_bboxes: List[BoundingBox] | None = None
-    word_labels: List[str] | None = None
+    word_labels: List[Label] | None = None
 
 
 class QuestionAnswerGT(BaseDataModel):

@@ -1,14 +1,14 @@
 """
 Document Instance Module
 
-This module defines the `DocumentInstance` and `BatchedDocumentInstance` classes, which extend the `BaseDataInstance` class
+This module defines the `DocumentInstance` and `DocumentInstance` classes, which extend the `BaseDataInstance` class
 to represent documents with associated metadata and annotations. These classes support fields such as images, OCR data,
 labels, question-answer pairs, and annotated objects. Validation logic ensures that at least one of the required fields
 (image or OCR) is provided.
 
 Classes:
     - DocumentInstance: A class for representing a single document with associated metadata and annotations.
-    - BatchedDocumentInstance: A class for representing a batch of document instances.
+    - DocumentInstance: A class for representing a batch of document instances.
 
 Dependencies:
     - pydantic: For data validation and serialization.
