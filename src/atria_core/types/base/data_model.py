@@ -22,7 +22,7 @@ License: MIT
 
 from typing import TYPE_CHECKING, List, TypeVar
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 from rich.pretty import pretty_repr
 
 from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
@@ -87,16 +87,12 @@ class BaseDataModel(BaseModel):
         """
         import torch
 
-        assert all(
-            instance._is_tensor for instance in model_instances
-        ), "All models must be loaded into tensor before batching."
-
         batched_fields = {}
         for field_name, _ in cls.model_fields.items():
             # Gather all the values for this field from the list of models.
             values = [getattr(item, field_name) for item in model_instances]
 
-            # Check if all values are None, if so replace with empty list
+            # Check if all values are None, if so set None
             if all(value is None for value in values):
                 batched_fields[field_name] = None
                 continue
@@ -108,10 +104,11 @@ class BaseDataModel(BaseModel):
                 and isinstance(values[0][0], BaseDataModel)
             ):
                 nested_cls = values[0][0].__class__
-                values = [nested_cls.batched(v) for v in values]
-
-            # If it's a direct list of BaseDataModel, batch them
-            if isinstance(values[0], BaseDataModel):
+                batched_list_of_objects = []
+                for list_of_objects in values:
+                    batched_list_of_objects.append(nested_cls.batched(list_of_objects))
+                batched_fields[field_name] = nested_cls.batched(batched_list_of_objects)
+            elif isinstance(values[0], BaseDataModel):
                 nested_cls = values[0].__class__
                 batched_fields[field_name] = nested_cls.batched(values)
             elif isinstance(values[0], torch.Tensor):
@@ -120,29 +117,9 @@ class BaseDataModel(BaseModel):
                 batched_fields[field_name] = values
 
         # Create a new instance of the model with the batched fields and with no validation
-        batched_instance = cls.batched_construct(**batched_fields)
-        assert isinstance(
-            batched_instance, BatchedBaseDataModel
-        ), f"{batched_instance} must be a subclass of {BatchedBaseDataModel}"
+        batched_instance = cls.model_construct(**batched_fields)
         batched_instance._is_tensor = True
         return batched_instance
-
-    @classmethod
-    def batched_construct(cls, **kwargs) -> T:
-        """
-        Constructs a batched instance of the model with the provided keyword arguments. By default the batched
-        instance is created using model_construct method which bypasses validation. This method is intended to be
-        used for creating batched instances of the model.
-
-        Args:
-            **kwargs: Keyword arguments for constructing the model.
-
-        Returns:
-            T: A new instance of the model.
-        """
-        raise NotImplementedError(
-            f"{cls.__name__}.batched_construct() must be implemented in subclasses."
-        )
 
     @property
     def device(self) -> "torch.device":
@@ -283,55 +260,6 @@ class BaseDataModel(BaseModel):
 
         self.to_device(torch.device("cpu"))
         return self
-
-    def __repr__(self) -> str:
-        """
-        Returns a pretty-printed string representation of the model.
-
-        Returns:
-            str: The string representation of the model.
-        """
-        return pretty_repr(self, max_length=_MAX_REPR_PRINT_ELEMENTS)
-
-    def __str__(self) -> str:
-        """
-        Returns a string representation of the model.
-
-        Returns:
-            str: The string representation of the model.
-        """
-        return pretty_repr(self, max_length=_MAX_REPR_PRINT_ELEMENTS)
-
-
-class BatchedBaseDataModel(BaseDataModel):
-    batch_size: int | None = None
-
-    def model_dump(self, *args, **kwargs):
-        raise RuntimeError(f"Serialization is disabled for {self.__class__.__name__}")
-
-    def model_dump_json(self, *args, **kwargs):
-        raise RuntimeError(f"Serialization is disabled for {self.__class__.__name__}")
-
-    @model_validator(mode="after")
-    def validate_fields(self) -> "BatchedBaseDataModel":
-        for field_name, field_value in self.__dict__.items():
-            if field_name in ["batch_size"] or field_value is None:
-                continue
-            if self.batch_size is None:
-                self.batch_size = len(field_value)
-            assert (
-                len(field_value) == self.batch_size
-            ), f"This batch is not valid. {field_name} has {len(field_value)} elements, but size is {self.batch_size}"
-        return self
-
-    def __len__(self) -> int:
-        """
-        Returns the batch size of the model.
-
-        Returns:
-            int: The batch size of the model.
-        """
-        return self.batch_size if self.batch_size else 0
 
     def __repr__(self) -> str:
         """
