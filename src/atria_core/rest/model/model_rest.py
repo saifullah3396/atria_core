@@ -1,6 +1,7 @@
 from functools import partial
-import json
 import uuid
+
+from dacite import Optional
 
 from atria_core.rest.base import RESTBase
 from atria_core.schemas.model import (
@@ -18,27 +19,25 @@ from atria_core.schemas.model import (
 class RESTModel(RESTBase[Model, ModelCreate, ModelUpdate]):
     def upload(
         self,
-        model_buffer: bytes,
-        name: str,
         version_tag: str,
-        description: str,
+        checkpoint_buffer: bytes,
+        description: Optional[str] = None,
         is_public: bool = False,
-        config: dict = None,
     ) -> None:
         response = self.client.post(
             self._url("upload"),
             data={
-                "name": name,
-                "is_public": is_public,
-                "description": description,
                 "version_tag": version_tag,
-                "config": json.dumps(config or {}),
+                "is_public": is_public,
+                "description": description or "",
             },
-            model_file=(
-                "model.bin",
-                model_buffer,
-                "application/octet-stream",
-            ),
+            files={
+                "model_file": (
+                    "model.bin",
+                    checkpoint_buffer,
+                    "application/octet-stream",
+                ),
+            },
         )
         if response.status_code != 200:
             raise RuntimeError(

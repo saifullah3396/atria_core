@@ -33,15 +33,21 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response = self.client.get(self._url("get"), params={"id": str(id)})
         if response.status_code == 200:
             return self.model.model_validate(response.json())
-        return None
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+            )
 
     def filter(self, **filters: Any) -> Optional[ModelType]:
         response = self.client.get(
             self._url("filter"), params=self._serialize_filters(filters)
         )
         if response.status_code == 200 and response.json():
-            return self.model.model_validate(response.json()[0])
-        return None
+            return self.model.model_validate(response.json())
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+            )
 
     def count(self, **filters: Any) -> int:
         response = self.client.get(
@@ -49,7 +55,10 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         )
         if response.status_code == 200:
             return response.json().get("count", 0)
-        return 0
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+            )
 
     def list(
         self,
@@ -70,7 +79,10 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response = self.client.get(self._url("list"), params=params)
         if response.status_code == 200:
             return [self.model.model_validate(item) for item in response.json()]
-        return []
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+            )
 
     def create(self, *, obj_in: CreateSchemaType, **kwargs: Any) -> Optional[ModelType]:
         payload = obj_in.model_dump()
@@ -78,7 +90,10 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response = self.client.post(self._url("create"), json=payload)
         if response.status_code in (200, 201):
             return self.model.model_validate(response.json())
-        return None
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+            )
 
     def upsert(self, *, obj_in: CreateSchemaType, **kwargs: Any) -> Optional[ModelType]:
         payload = obj_in.model_dump()
@@ -86,7 +101,10 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response = self.client.put(self._url("upsert"), json=payload)
         if response.status_code in (200, 201):
             return self.model.model_validate(response.json())
-        return None
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+            )
 
     def update(self, *, id: uuid.UUID, obj_in: UpdateSchemaType) -> Optional[ModelType]:
         update_data = obj_in.model_dump(exclude_unset=True)
@@ -95,10 +113,16 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         )
         if response.status_code == 200:
             return self.model.model_validate(response.json())
-        return None
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+            )
 
     def delete(self, *, id: uuid.UUID) -> Optional[ModelType]:
         response = self.client.delete(self._url("delete"), params={"id": str(id)})
         if response.status_code == 200:
             return self.model.model_validate(response.json())
-        return None
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+            )
