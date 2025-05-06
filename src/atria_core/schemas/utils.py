@@ -48,17 +48,22 @@ def _generate_hash_from_dict(schema: dict) -> str:
 
 def validate_name(input: str):
     """
-    Validate name whether it is a valid string (allows alphanumeric, underscore, and slash).
+    Validate name whether it is a valid string (allows alphanumeric, underscore, slash, hyphen, and dot).
     """
     if not isinstance(input, str):
         raise ValueError("Name must be a string")
+
+    input = input.strip()
+
     if len(input) < 3 or len(input) > 100:
         raise ValueError(
             "Name must be at least 3 characters long and at most 100 characters"
         )
-    if not re.match(r"^[a-zA-Z0-9_/]+$", input):
+
+    pattern = r"^[a-zA-Z0-9_.\-/]+$"
+    if not re.match(pattern, input):
         raise ValueError(
-            "Name can only contain alphanumeric characters, underscores, and slashes"
+            "Name can only contain alphanumeric characters, underscores, slashes, hyphens, and dots"
         )
     return input
 
