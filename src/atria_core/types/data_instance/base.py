@@ -22,12 +22,12 @@ Version: 1.0.0
 License: MIT
 """
 
-from typing import List, TypeVar
+from typing import TypeVar
 from uuid import UUID, uuid4
 
 from pydantic import Field, field_serializer, field_validator
 
-from atria_core.types.base.data_model import BaseDataModel, BatchedBaseDataModel
+from atria_core.types.base.data_model import BaseDataModel
 
 T = TypeVar("T", bound="BaseDataModel")
 
@@ -90,29 +90,6 @@ class BaseDataInstance(BaseDataModel):
             str: The unique key for the data instance.
         """
         return str(self.id)
-
-    def visualize(self) -> None:
-        """
-        Visualizes the data instance.
-
-        This method is a placeholder and should be implemented by subclasses
-        to provide specific visualization logic.
-        """
-
-
-class BatchedBaseDataInstance(BatchedBaseDataModel):
-    """
-    A base class for managing batches of data instances.
-
-    This class extends the `BaseDataModel` class to provide additional functionality
-    for managing batches of data instances. It includes support for unique identifiers (UUIDs),
-    serialization, validation, and utility methods for pretty-printing and visualization.
-
-    Attributes:
-        id (List[UUID]): A list of unique identifiers for the data instances in the batch.
-    """
-
-    id: List[UUID]
 
     def visualize(self) -> None:
         """

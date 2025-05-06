@@ -37,7 +37,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, model_validator
 
-from atria_core.types.base.data_model import BaseDataModel, BatchedBaseDataModel
+from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.generic.bounding_box import BoundingBox
 from atria_core.types.generic.label import Label
 from atria_core.types.typing.common import PydanticFilePath
@@ -178,12 +178,12 @@ class OCR(BaseDataModel):
     Attributes:
         file_path (PydanticFilePath): The file path to the OCR data. Defaults to None.
         ocr_type (Optional[OCRType]): The type of OCR system used. Defaults to None.
-        graph (Optional[OCRGraph]): The parsed OCR content. Defaults to None.
+        raw_content (Optional[str]): The raw OCR content. Defaults to None.
     """
 
     file_path: PydanticFilePath = None
     ocr_type: Optional[OCRType] = None
-    graph: Optional[OCRGraph] = None
+    raw_content: Optional[str] = None
 
     @model_validator(mode="after")
     def validate(self):
@@ -198,59 +198,12 @@ class OCR(BaseDataModel):
         Raises:
             ValueError: If none of the required fields are provided.
         """
-        if self.graph is None:
+        if self.raw_content is None:
             if not Path(self.file_path).exists():
                 raise FileNotFoundError("Either file_path or graph must be provided.")
             with open(self.file_path, "r", encoding="utf-8") as f:
-                raw_content = f.read()
-                if raw_content.startswith("b'"):
-                    raw_content = ast.literal_eval(raw_content)
-                assert len(raw_content) > 0, "OCR content is empty."
-                assert (
-                    self.ocr_type is not None
-                ), "OCR type must be set when content is to be parsed."
-                if self.ocr_type == OCRType.TESSERACT:
-                    from atria_core.types.ocr_parsers.hocr_graph_parser import (
-                        HOCRGraphParser,
-                    )
-
-                    self.graph = OCRGraph(
-                        **HOCRGraphParser(
-                            raw_content,
-                        ).parse()
-                    )
-                else:
-                    raise NotImplementedError(
-                        f"OCR file format {self.ocr_type} is not supported."
-                    )
+                self.raw_content = f.read()
+                if self.raw_content.startswith("b'"):
+                    self.raw_content = ast.literal_eval(self.raw_content)
+                assert len(self.raw_content) > 0, "OCR content is empty."
         return self
-
-    @classmethod
-    def batched_construct(cls, **kwargs) -> "BatchedOCR":
-        """
-        Constructs a new instance of BatchedOCR.
-
-        Args:
-            **kwargs: Arbitrary keyword arguments used to initialize the BatchedOCR.
-
-        Returns:
-            BatchedOCR: A new instance of BatchedOCR configured with the provided arguments.
-        """
-        return BatchedOCR(**kwargs)
-
-
-class BatchedOCR(BatchedBaseDataModel):
-    """
-    A class for managing batched OCR data.
-
-    This class provides functionality for loading and parsing batched OCR data.
-
-    Attributes:
-        file_path (List[PydanticFilePath] | None): The file paths to the OCR data.
-        ocr_type (List[OCRType] | None): The types of OCR systems used.
-        content (list[OCRGraph] | None): The parsed OCR content for each batch.
-    """
-
-    file_path: List[PydanticFilePath] | None
-    ocr_type: List[OCRType] | None
-    graph: list[OCRGraph] | None

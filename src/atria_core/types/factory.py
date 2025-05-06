@@ -12,15 +12,13 @@ from atria_core.types.data_instance.image import ImageInstance
 from atria_core.types.data_instance.tokenized_object import TokenizedObjectInstance
 from atria_core.types.generic.annotated_object import (
     AnnotatedObject,
-    AnnotatedObjectSequence,
 )
 from atria_core.types.generic.bounding_box import (
     BoundingBox,
     BoundingBoxMode,
-    BoundingBoxSequence,
 )
 from atria_core.types.generic.image import Image
-from atria_core.types.generic.label import Label, LabelSequence
+from atria_core.types.generic.label import Label
 from atria_core.types.generic.ocr import (
     OCR,
     OCRGraph,
@@ -30,7 +28,6 @@ from atria_core.types.generic.ocr import (
 )
 from atria_core.types.generic.question_answer_pair import (
     QuestionAnswerPair,
-    QuestionAnswerPairSequence,
 )
 from atria_core.types.ocr_parsers.hocr_graph_parser import HOCRGraphParser
 
@@ -74,41 +71,13 @@ class LabelFactory(ModelFactory[Label]):
     value = Use(lambda: torch.randint(0, 10, (1,)).item())
 
 
-class LabelSequenceFactory(ModelFactory[LabelSequence]):
-    __model__ = LabelSequence
-    values = Use(lambda: torch.randint(0, 10, (16,)).tolist())
-    names = Use(lambda: [f"label_{i}" for i in range(16)])
-
-
 class BoundingBoxFactory(ModelFactory[BoundingBox]):
     __model__ = BoundingBox
     value = Use(lambda: torch.randint(0, 256, (4,)).tolist())
 
 
-class SequenceBoundingBoxesFactory(ModelFactory[BoundingBoxSequence]):
-    __model__ = BoundingBoxSequence
-    value = Use(lambda: [torch.randint(0, 256, (4,)) for _ in range(16)])
-    backend: str = "torch"
-
-    @classmethod
-    def value(cls) -> object:
-        backend = cls.backend
-        if backend == "np":
-            return np.random.randint(0, 256, (16, 4))
-        elif backend == "list":
-            return [torch.randint(0, 256, (4,)) for _ in range(16)]
-        elif backend == "torch":
-            return torch.randint(0, 256, (16, 4))
-        else:
-            raise ValueError(f"Unsupported backend: {backend}")
-
-
 class QuestionAnswerPairsFactory(ModelFactory[QuestionAnswerPair]):
     __model__ = QuestionAnswerPair
-
-
-class QuestionAnswerPairSequenceFactory(ModelFactory[QuestionAnswerPairSequence]):
-    __model__ = QuestionAnswerPairSequence
 
 
 class AnnotatedObjectFactory(ModelFactory[AnnotatedObject]):
@@ -117,14 +86,6 @@ class AnnotatedObjectFactory(ModelFactory[AnnotatedObject]):
     bbox = Use(lambda: BoundingBoxFactory.build(mode=BoundingBoxMode.XYXY))
     segmentation = Use(lambda: torch.randint(0, 256, (10, 10)).tolist())
     iscrowd = Use(lambda: False)
-
-
-class AnnotatedObjectSequenceFactory(ModelFactory[AnnotatedObjectSequence]):
-    __model__ = AnnotatedObjectSequence
-    label = Use(lambda: LabelSequenceFactory.build())
-    bbox = Use(lambda: SequenceBoundingBoxesFactory.build(mode=BoundingBoxMode.XYXY))
-    segmentation = Use(lambda: torch.randint(0, 256, (16, 10, 10)))
-    iscrowd = Use(lambda: torch.ones(16, dtype=torch.bool).tolist())
 
 
 class OCRGraphNodeFactory(ModelFactory[OCRGraphNode]):
@@ -221,9 +182,6 @@ class DocumentInstanceFactory(ModelFactory[DocumentInstance]):
     __model__ = DocumentInstance
     image = Use(lambda: ImageFactory.build())
     ocr = Use(lambda: OCRFactory.build())
-    label = Use(lambda: LabelFactory.build())
-    question_answer_pairs = Use(lambda: QuestionAnswerPairSequenceFactory.build())
-    annotated_objects = Use(lambda: AnnotatedObjectSequenceFactory.build())
 
 
 class TokenizedObjectInstanceFactory(ModelFactory[TokenizedObjectInstance]):

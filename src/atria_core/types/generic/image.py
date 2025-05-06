@@ -26,15 +26,15 @@ License: MIT
 """
 
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 import torch
 from PIL.Image import Image as PILImage
-from pydantic import computed_field, field_serializer, field_validator, model_validator
+from pydantic import field_serializer, field_validator, model_validator
 
 from atria_core.logger.logger import get_logger
-from atria_core.types.base.data_model import BaseDataModel, BatchedBaseDataModel
+from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import PydanticFilePath
 from atria_core.utilities.encoding import _bytes_to_image, _image_to_bytes
 
@@ -182,7 +182,6 @@ class Image(BaseDataModel):
             self._is_tensor = False
         return self
 
-    @computed_field
     @property
     def shape(self) -> torch.Size:
         """
@@ -198,7 +197,6 @@ class Image(BaseDataModel):
             return (len(self.content.getbands()), *self.content.size)
         return self.content.size
 
-    @computed_field
     @property
     def dtype(self) -> torch.dtype:
         """
@@ -209,20 +207,6 @@ class Image(BaseDataModel):
         """
         if isinstance(self.content, torch.Tensor):
             return self.content.dtype
-
-    @field_serializer("dtype")
-    def serialize_dtype(self, dtype: torch.dtype, _info) -> str:
-        """
-        Serializes the data type of the image tensor to a string.
-
-        Args:
-            dtype (torch.dtype): The data type of the image tensor.
-            _info: Additional information (unused).
-
-        Returns:
-            str: The serialized data type as a string.
-        """
-        return str(dtype)
 
     @property
     def size(self) -> torch.Size:
@@ -256,133 +240,3 @@ class Image(BaseDataModel):
             int: The height of the image.
         """
         return self.size[1]
-
-    @classmethod
-    def batched_construct(cls, **kwargs) -> "BatchedImage":
-        """
-        Constructs a new BatchedImage instance using the provided keyword arguments.
-
-        Args:
-            **kwargs: Arbitrary keyword arguments used to initialize the BatchedImage.
-
-        Returns:
-            BatchedImage: A new instance of BatchedImage.
-        """
-        return BatchedImage(**kwargs)
-
-
-class BatchedImage(BatchedBaseDataModel):
-    """
-    A class for handling batched image data.
-
-    This class accommodates both a list of individual image tensors and a single tensor
-    representing a batch of images.
-
-    Attributes:
-        file_path (List[PydanticFilePath]): A list of file paths associated with the images.
-        content (Union[torch.Tensor, List[Image], List[torch.Tensor]]): The image data, which must be either:
-            - A list of tensors with shape (C, H, W), or
-            - A single tensor with shape (N, C, H, W), where N represents the batch size.
-        source_size (List[Tuple[int,int]]): A list representing the source dimensions of the images.
-    """
-
-    file_path: List[PydanticFilePath] | None
-    content: Union[torch.Tensor, List[PILImage], List[torch.Tensor]]
-    source_size: List[Optional[Tuple[int, int]]] | None
-
-    @field_validator("content", mode="after")
-    @classmethod
-    def validate_content_shapes(cls, value: Any) -> torch.Tensor:
-        """
-        Validates the "content" field after processing.
-
-        Args:
-            value (Any): The input value for the "content" field.
-
-        Returns:
-            torch.Tensor: The validated tensor.
-
-        Raises:
-            AssertionError: If the tensor dimensions are invalid.
-        """
-        if isinstance(value, list):
-            if isinstance(value[0], torch.Tensor):
-                assert all(
-                    x.ndim == 3 for x in value
-                ), "content must either be a list of tensors of shape (C, H, W) or a single tensor of shape (N, C, H, W)"
-        else:
-            if isinstance(value, torch.Tensor):
-                assert (
-                    value.ndim == 4
-                ), "content must either be a list of tensors of shape (C, H, W) or a single tensor of shape (N, C, H, W)"
-        return value
-
-    @computed_field
-    @property
-    def shape(self) -> torch.Size:
-        """
-        Returns the shape of the image tensor.
-
-        Returns:
-            torch.Size: The shape of the image tensor.
-        """
-        self._validate_is_tensor()
-        if isinstance(self.content, list):
-            return [x.shape for x in self.content]
-        return self.content.shape
-
-    @property
-    def size(self) -> torch.Size:
-        """
-        Returns the size of the image as (width, height).
-
-        Returns:
-            torch.Size: The size of the image.
-        """
-        self._validate_is_tensor()
-        shape = self.content.shape
-        if isinstance(shape, list):
-            return [(s[3], s[2]) for s in shape]
-        return (shape[3], shape[2])
-
-    @property
-    def width(self) -> int:
-        """
-        Returns the width of the image.
-
-        Returns:
-            int: The width of the image.
-        """
-        self._validate_is_tensor()
-        size = self.size
-        if isinstance(size, list):
-            return [s[0] for s in size]
-        return size[0]
-
-    @property
-    def height(self) -> int:
-        """
-        Returns the height of the image.
-
-        Returns:
-            int: The height of the image.
-        """
-        self._validate_is_tensor()
-        size = self.size
-        if isinstance(size, list):
-            return [s[1] for s in size]
-        return size[1]
-
-    @computed_field
-    @property
-    def dtype(self) -> torch.dtype:
-        """
-        Returns the data type of the image tensor.
-
-        Returns:
-            torch.dtype: The data type of the image tensor.
-        """
-        self._validate_is_tensor()
-        if isinstance(self.content, list):
-            return [x.dtype for x in self.content]
-        return self.content.dtype

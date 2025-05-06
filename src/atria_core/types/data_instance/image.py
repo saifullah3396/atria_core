@@ -22,10 +22,9 @@ License: MIT
 
 from atria_core.types.data_instance.base import (
     BaseDataInstance,
-    BatchedBaseDataInstance,
 )
-from atria_core.types.generic.image import BatchedImage, Image
-from atria_core.types.generic.label import BatchedLabel, Label
+from atria_core.types.generic.ground_truth import GroundTruth
+from atria_core.types.generic.image import Image
 
 
 class ImageInstance(BaseDataInstance):
@@ -37,37 +36,8 @@ class ImageInstance(BaseDataInstance):
 
     Attributes:
         image (Image): The image data associated with the instance.
-        label (Label): The label associated with the image.
+        ground_truth (GroundTruth): The ground truth associated with the image.
     """
 
     image: Image
-    label: Label
-
-    @classmethod
-    def batched_construct(cls, **kwargs) -> "BatchedImageInstance":
-        """
-        Constructs a batch of ImageInstance objects from the provided keyword arguments.
-
-        Args:
-            **kwargs: Keyword arguments containing lists of attributes.
-
-        Returns:
-            BatchedImageInstance: A BatchedImageInstance object containing lists of attributes.
-        """
-        return BatchedImageInstance(**kwargs)
-
-
-class BatchedImageInstance(BatchedBaseDataInstance):
-    """
-    A class for representing a batch of image instances.
-
-    This class extends the `BaseDataInstance` class to include fields for a batch of
-    images and their corresponding labels.
-
-    Attributes:
-        image (BatchedImage): A batch of image data associated with the instances.
-        label (BatchedLabel): A batch of labels associated with the images.
-    """
-
-    image: BatchedImage
-    label: BatchedLabel
+    ground_truth: GroundTruth = GroundTruth()
