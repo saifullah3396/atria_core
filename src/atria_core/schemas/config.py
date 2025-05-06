@@ -1,7 +1,7 @@
 import enum
 import uuid
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, computed_field
 
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
 from atria_core.schemas.utils import (
@@ -33,25 +33,16 @@ class ConfigBase(BaseModel):
     type: ConfigTypes
     name: NameStr
     data: dict
-    schema_hash: str
-    hash: str
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_and_generate(cls, values):
-        data = values.get("data")
-        if not isinstance(data, dict):
-            raise ValueError("data must be a dictionary")
+    @computed_field
+    @property
+    def schema_hash(self) -> str:
+        return _generate_hash_from_dict(_convert_dict_to_schema(self.data))
 
-        if len(data) == 0:
-            raise ValueError("data cannot be an empty dictionary")
-
-        # Generate schema_hash
-        values["schema_hash"] = _generate_hash_from_dict(_convert_dict_to_schema(data))
-
-        # Generate version if not provided
-        values["hash"] = _generate_hash_from_dict(data)
-        return values
+    @computed_field
+    @property
+    def hash(self) -> str:
+        return _generate_hash_from_dict(self.data)
 
 
 class ConfigCreate(ConfigBase):
