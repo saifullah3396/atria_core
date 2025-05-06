@@ -32,7 +32,7 @@ class AtriaDatasetConfig(BaseModel):
     including metadata such as name, description, version, and data URLs.
 
     Attributes:
-        dataset_name (str): The name of the dataset.
+        name (str): The name of the dataset.
         config_name (str): The name of the dataset.
         data_urls (Union[str, List[str], Dict[str, str]] | None): The URLs for accessing
             the dataset. Can be a single URL, a list of URLs, or a dictionary mapping
@@ -43,6 +43,7 @@ class AtriaDatasetConfig(BaseModel):
     """
 
     __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
+    name: Optional[str] = None
     config_name: str = "default"
     data_urls: Union[str, List[str], Dict[str, str]] | None = None
     max_train_samples: Optional[int] = None
