@@ -62,6 +62,16 @@ class BoundingBox(BaseDataModel):
     value: Union[List[float], torch.Tensor]
     mode: BoundingBoxMode = BoundingBoxMode.XYXY
 
+    def switch_mode(self):
+        assert not self._is_batched, "Cannot switch mode for batched bounding boxes."
+        self._validate_is_tensor()
+        if self.mode == BoundingBoxMode.XYXY:
+            self.value = torch.tensor([self.x1, self.y1, self.width, self.height])
+            self.mode = BoundingBoxMode.XYWH
+        else:
+            self.value = torch.tensor([self.x1, self.y1, self.x2, self.y2])
+            self.mode = BoundingBoxMode.XYXY
+
     @field_validator("value", mode="after")
     @classmethod
     def validate_value(cls, value: Any) -> torch.Tensor:
@@ -165,7 +175,10 @@ class BoundingBox(BaseDataModel):
             float: The x2 coordinate.
         """
         self._validate_is_tensor()
-        return self.value[..., 2]
+        if self.mode == BoundingBoxMode.XYWH:
+            return self.x1 + self.width
+        else:
+            return self.value[..., 2]
 
     @x2.setter
     def x2(self, value: float):
@@ -176,7 +189,10 @@ class BoundingBox(BaseDataModel):
             value (float): The new x2 coordinate.
         """
         self._validate_is_tensor()
-        self.value[..., 2] = value
+        if self.mode == BoundingBoxMode.XYWH:
+            raise ValueError("Cannot set x2 directly in XYWH mode. Use width instead.")
+        else:
+            self.value[..., 2] = value
 
     @property
     def y2(self) -> float:
@@ -187,7 +203,10 @@ class BoundingBox(BaseDataModel):
             float: The y2 coordinate.
         """
         self._validate_is_tensor()
-        return self.value[..., 3]
+        if self.mode == BoundingBoxMode.XYWH:
+            return self.y1 + self.height
+        else:
+            return self.value[..., 3]
 
     @y2.setter
     def y2(self, value: float):
@@ -198,7 +217,10 @@ class BoundingBox(BaseDataModel):
             value (float): The new y2 coordinate.
         """
         self._validate_is_tensor()
-        self.value[..., 3] = value
+        if self.mode == BoundingBoxMode.XYWH:
+            raise ValueError("Cannot set x2 directly in XYWH mode. Use width instead.")
+        else:
+            self.value[..., 3] = value
 
     @property
     def width(self) -> float:
@@ -208,7 +230,10 @@ class BoundingBox(BaseDataModel):
         Returns:
             float: The width of the bounding box.
         """
-        return self.x2 - self.x1
+        if self.mode == BoundingBoxMode.XYWH:
+            return self.value[..., 2]
+        else:
+            return self.x2 - self.x1
 
     @property
     def height(self) -> float:
@@ -218,7 +243,10 @@ class BoundingBox(BaseDataModel):
         Returns:
             float: The height of the bounding box.
         """
-        return self.y2 - self.y1
+        if self.mode == BoundingBoxMode.XYWH:
+            return self.value[..., 3]
+        else:
+            return self.y2 - self.y1
 
     def normalize(self, width: float, height: float) -> "BoundingBox":
         """
