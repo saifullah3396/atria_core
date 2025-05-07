@@ -64,6 +64,7 @@ class BaseDataModel(BaseModel):
     )
     _device = PrivateAttr(default=None)
     _is_tensor = PrivateAttr(default=None)
+    _is_batched = PrivateAttr(default=False)
 
     def model_post_init(self, context: ConfigDict) -> None:
         """
@@ -143,7 +144,7 @@ class BaseDataModel(BaseModel):
 
         # Create a new instance of the model with the batched fields and with no validation
         batched_instance = cls.model_construct(**batched_fields)
-        batched_instance._is_tensor = True
+        batched_instance._is_batched = True
         return batched_instance
 
     @property
