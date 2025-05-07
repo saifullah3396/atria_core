@@ -22,9 +22,6 @@ License: MIT
 
 from typing import TYPE_CHECKING, List, TypeVar
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr
-from rich.pretty import pretty_repr
-
 from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
 from atria_core.logger.logger import get_logger
 from atria_core.utilities.tensors import (
@@ -32,6 +29,8 @@ from atria_core.utilities.tensors import (
     _convert_to_tensor,
     _stack_tensors_if_possible,
 )
+from pydantic import BaseModel, ConfigDict, PrivateAttr
+from rich.pretty import pretty_repr
 
 if TYPE_CHECKING:
     import torch
@@ -39,6 +38,11 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 T = TypeVar("T", bound="BaseDataModel")
+
+
+class BaseDataModelConfigDict(ConfigDict):
+    batch_skip_fields: List[str] = []
+    batch_merge_fields: List[str] = []
 
 
 class BaseDataModel(BaseModel):
@@ -53,8 +57,10 @@ class BaseDataModel(BaseModel):
         _device (torch.device): The device where the model's tensors are stored.
     """
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True, validate_assignment=False, extra="forbid"
+    model_config = BaseDataModelConfigDict(
+        arbitrary_types_allowed=True,
+        validate_assignment=False,
+        extra="forbid",
     )
     _device = PrivateAttr(default=None)
     _is_tensor = PrivateAttr(default=None)
@@ -95,6 +101,25 @@ class BaseDataModel(BaseModel):
             # Check if all values are None, if so set None
             if all(value is None for value in values):
                 batched_fields[field_name] = None
+                continue
+
+            # if this field name is in batch_ignored_fields, skip it
+            if (
+                "batch_skip_fields" in cls.model_config
+                and field_name in cls.model_config["batch_skip_fields"]
+            ):
+                batched_fields[field_name] = None
+                continue
+
+            # if this field name is in batch_merge_fields, skip it
+            if (
+                "batch_merge_fields" in cls.model_config
+                and field_name in cls.model_config["batch_merge_fields"]
+            ):
+                assert all(
+                    v == values[0] for v in values
+                ), f"Field {field_name} is not the same across all instances."
+                batched_fields[field_name] = values[0]
                 continue
 
             # If this is a list of lists of BaseDataModel, process inner lists first
