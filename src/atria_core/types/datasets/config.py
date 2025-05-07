@@ -21,7 +21,7 @@ License: MIT
 
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class AtriaDatasetConfig(BaseModel):
@@ -41,6 +41,8 @@ class AtriaDatasetConfig(BaseModel):
         max_validation_samples (Optional[int]): The maximum number of validation samples to load.
         max_test_samples (Optional[int]): The maximum number of test samples to load.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
     name: Optional[str] = None

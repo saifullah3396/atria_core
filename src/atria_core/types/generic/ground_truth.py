@@ -11,7 +11,7 @@ class ClassificationGT(BaseDataModel):
     label: Label
 
 
-class OCRGroundTruth(BaseDataModel):
+class OCRGT(BaseDataModel):
     """
     A class for representing processed OCR data.
 
@@ -31,7 +31,7 @@ class OCRGroundTruth(BaseDataModel):
     word_angles: List[float] | None = None
 
 
-class SERGroundTruth(BaseDataModel):
+class SERGT(BaseDataModel):
     """
     A class for representing processed bounding box and label data.
 
@@ -51,16 +51,26 @@ class SERGroundTruth(BaseDataModel):
 
 
 class QuestionAnswerGT(BaseDataModel):
-    pairs: List[QuestionAnswerPair]
+    qa_pairs: List[QuestionAnswerPair]
+
+
+class VisualQuestionAnswerGT(BaseDataModel):
+    qa_pairs: List[QuestionAnswerPair]
+    words: list[str]
+    word_bboxes: list[BoundingBox]
+    segment_level_bboxes: list[BoundingBox]
 
 
 class LayoutAnalysisGT(BaseDataModel):
-    objects: List[AnnotatedObject] | None = None
+    annotated_objects: List[AnnotatedObject] | None = None
+    words: List[str] | None = None
+    word_bboxes: List[BoundingBox] | None = None
 
 
 class GroundTruth(BaseDataModel):
     classification: Optional[ClassificationGT] = None
-    ser: Optional[SERGroundTruth] = None
-    ocr: Optional[OCRGroundTruth] = None
+    ser: Optional[SERGT] = None
+    ocr: Optional[OCRGT] = None
     qa: Optional[QuestionAnswerGT] = None
+    vqa: Optional[VisualQuestionAnswerGT] = None
     layout: Optional[LayoutAnalysisGT] = None

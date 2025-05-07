@@ -19,8 +19,6 @@ Version: 1.0.0
 License: MIT
 """
 
-
-
 from atria_core.types.base.data_model import BaseDataModel
 
 

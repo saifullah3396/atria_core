@@ -64,13 +64,15 @@ class BoundingBox(BaseDataModel):
 
     def switch_mode(self):
         assert not self._is_batched, "Cannot switch mode for batched bounding boxes."
-        self._validate_is_tensor()
         if self.mode == BoundingBoxMode.XYXY:
-            self.value = torch.tensor([self.x1, self.y1, self.width, self.height])
+            self.value = [self.x1, self.y1, self.width, self.height]
             self.mode = BoundingBoxMode.XYWH
         else:
-            self.value = torch.tensor([self.x1, self.y1, self.x2, self.y2])
+            self.value = [self.x1, self.y1, self.x2, self.y2]
             self.mode = BoundingBoxMode.XYXY
+        if self._is_tensor:
+            self.value = torch.tensor(self.value)
+        return self
 
     @field_validator("value", mode="after")
     @classmethod
@@ -101,6 +103,23 @@ class BoundingBox(BaseDataModel):
         return value
 
     @property
+    def is_valid(self) -> bool:
+        """
+        Checks if the bounding box is valid.
+
+        Returns:
+            bool: True if the bounding box is valid, False otherwise.
+        """
+        return (
+            self.x1 >= 0
+            and self.y1 >= 0
+            and self.x2 > self.x1
+            and self.y2 > self.y1
+            and self.width > 0
+            and self.height > 0
+        )
+
+    @property
     def shape(self) -> torch.Size:
         """
         Returns the shape of the bounding box tensor.
@@ -108,7 +127,6 @@ class BoundingBox(BaseDataModel):
         Returns:
             torch.Size: The shape of the bounding box tensor.
         """
-        self._validate_is_tensor()
         return self.value.shape
 
     @property
@@ -129,9 +147,8 @@ class BoundingBox(BaseDataModel):
         Returns:
             float: The x1 coordinate.
         """
-
-        self._validate_is_tensor()
-        return self.value[..., 0]
+        idx = (..., 0) if self._is_tensor else 0
+        return self.value[idx]
 
     @x1.setter
     def x1(self, value: float):
@@ -141,8 +158,8 @@ class BoundingBox(BaseDataModel):
         Args:
             value (float): The new x1 coordinate.
         """
-        self._validate_is_tensor()
-        self.value[..., 0] = value
+        idx = (..., 0) if self._is_tensor else 0
+        self.value[idx] = value
 
     @property
     def y1(self) -> float:
@@ -152,8 +169,8 @@ class BoundingBox(BaseDataModel):
         Returns:
             float: The y1 coordinate.
         """
-        self._validate_is_tensor()
-        return self.value[..., 1]
+        idx = (..., 1) if self._is_tensor else 1
+        return self.value[idx]
 
     @y1.setter
     def y1(self, value: float):
@@ -163,8 +180,8 @@ class BoundingBox(BaseDataModel):
         Args:
             value (float): The new y1 coordinate.
         """
-        self._validate_is_tensor()
-        self.value[..., 1] = value
+        idx = (..., 1) if self._is_tensor else 1
+        self.value[idx] = value
 
     @property
     def x2(self) -> float:
@@ -174,11 +191,11 @@ class BoundingBox(BaseDataModel):
         Returns:
             float: The x2 coordinate.
         """
-        self._validate_is_tensor()
         if self.mode == BoundingBoxMode.XYWH:
             return self.x1 + self.width
         else:
-            return self.value[..., 2]
+            idx = (..., 2) if self._is_tensor else 2
+            return self.value[idx]
 
     @x2.setter
     def x2(self, value: float):
@@ -188,11 +205,11 @@ class BoundingBox(BaseDataModel):
         Args:
             value (float): The new x2 coordinate.
         """
-        self._validate_is_tensor()
         if self.mode == BoundingBoxMode.XYWH:
             raise ValueError("Cannot set x2 directly in XYWH mode. Use width instead.")
         else:
-            self.value[..., 2] = value
+            idx = (..., 2) if self._is_tensor else 2
+            self.value[idx] = value
 
     @property
     def y2(self) -> float:
@@ -202,11 +219,11 @@ class BoundingBox(BaseDataModel):
         Returns:
             float: The y2 coordinate.
         """
-        self._validate_is_tensor()
         if self.mode == BoundingBoxMode.XYWH:
             return self.y1 + self.height
         else:
-            return self.value[..., 3]
+            idx = (..., 3) if self._is_tensor else 3
+            return self.value[idx]
 
     @y2.setter
     def y2(self, value: float):
@@ -216,11 +233,11 @@ class BoundingBox(BaseDataModel):
         Args:
             value (float): The new y2 coordinate.
         """
-        self._validate_is_tensor()
         if self.mode == BoundingBoxMode.XYWH:
             raise ValueError("Cannot set x2 directly in XYWH mode. Use width instead.")
         else:
-            self.value[..., 3] = value
+            idx = (..., 3) if self._is_tensor else 3
+            self.value[idx] = value
 
     @property
     def width(self) -> float:
@@ -231,9 +248,24 @@ class BoundingBox(BaseDataModel):
             float: The width of the bounding box.
         """
         if self.mode == BoundingBoxMode.XYWH:
-            return self.value[..., 2]
+            idx = (..., 2) if self._is_tensor else 2
+            return self.value[idx]
         else:
             return self.x2 - self.x1
+
+    @width.setter
+    def width(self, value: float):
+        """
+        Sets the width of the bounding box.
+
+        Args:
+            value (float): The new width of the bounding box.
+        """
+        if self.mode == BoundingBoxMode.XYWH:
+            idx = (..., 2) if self._is_tensor else 2
+            self.value[idx] = value
+        else:
+            raise ValueError("Cannot set width directly in XYXY mode. Use x2 instead.")
 
     @property
     def height(self) -> float:
@@ -244,9 +276,24 @@ class BoundingBox(BaseDataModel):
             float: The height of the bounding box.
         """
         if self.mode == BoundingBoxMode.XYWH:
-            return self.value[..., 3]
+            idx = (..., 3) if self._is_tensor else 3
+            return self.value[idx]
         else:
             return self.y2 - self.y1
+
+    @height.setter
+    def height(self, value: float):
+        """
+        Sets the height of the bounding box.
+
+        Args:
+            value (float): The new height of the bounding box.
+        """
+        if self.mode == BoundingBoxMode.XYWH:
+            idx = (..., 3) if self._is_tensor else 3
+            self.value[idx] = value
+        else:
+            raise ValueError("Cannot set height directly in XYXY mode. Use y2 instead.")
 
     def normalize(self, width: float, height: float) -> "BoundingBox":
         """
@@ -262,21 +309,20 @@ class BoundingBox(BaseDataModel):
         Raises:
             AssertionError: If the bounding box coordinates are invalid.
         """
-        if self._is_tensor:
-            assert width > 0, "Width must be greater than 0."
-            assert height > 0, "Height must be greater than 0."
-            assert self.x1 <= width, "x1 must be less than or equal to width."
-            assert self.y1 <= height, "y1 must be less than or equal to height."
-            assert self.x2 <= width, "x2 must be less than or equal to width."
-            assert self.y2 <= height, "y2 must be less than or equal to height."
+        assert width > 0, "Width must be greater than 0."
+        assert height > 0, "Height must be greater than 0."
+        assert self.x1 <= width, "x1 must be less than or equal to width."
+        assert self.y1 <= height, "y1 must be less than or equal to height."
+        assert self.x2 <= width, "x2 must be less than or equal to width."
+        assert self.y2 <= height, "y2 must be less than or equal to height."
+        if self.mode == BoundingBoxMode.XYWH:
+            self.x1 /= width
+            self.y1 /= height
+            self.width /= width
+            self.height /= height
+        else:
             self.x1 /= width
             self.y1 /= height
             self.x2 /= width
             self.y2 /= height
-            return self
-        else:
-            self.value[0] /= width
-            self.value[1] /= height
-            self.value[2] /= width
-            self.value[3] /= height
-            return self
+        return self

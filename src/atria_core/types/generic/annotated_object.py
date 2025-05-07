@@ -22,14 +22,13 @@ Version: 1.0.0
 License: MIT
 """
 
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 import torch
-from pydantic import field_serializer, field_validator
-
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.generic.bounding_box import BoundingBox
 from atria_core.types.generic.label import Label
+from pydantic import field_serializer, field_validator
 
 
 class AnnotatedObject(BaseDataModel):
@@ -49,7 +48,7 @@ class AnnotatedObject(BaseDataModel):
 
     label: Label
     bbox: BoundingBox
-    segmentation: Union[List[List[float]], torch.Tensor] = None
+    segmentation: Optional[Union[List[List[float]], torch.Tensor]] = None
     iscrowd: bool = False
 
     @field_validator("segmentation", mode="before")
@@ -71,6 +70,8 @@ class AnnotatedObject(BaseDataModel):
         Raises:
             ValueError: If the segmentation data is not in a valid format.
         """
+        if value is None:
+            return None
         if isinstance(value, dict) and "counts" in value and "size" in value:
             return value["counts"]
         elif isinstance(value, list) and all(isinstance(poly, list) for poly in value):
