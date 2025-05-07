@@ -1,14 +1,10 @@
-from atria_core.types.base.data_model import BaseDataModel
-from atria_core.types.generic.annotated_object import (
-    AnnotatedObject,
-)
 from typing import List, Optional
 
+from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.generic.annotated_object import AnnotatedObject
 from atria_core.types.generic.bounding_box import BoundingBox
 from atria_core.types.generic.label import Label
-from atria_core.types.generic.question_answer_pair import (
-    QuestionAnswerPair,
-)
+from atria_core.types.generic.question_answer_pair import QuestionAnswerPair
 
 
 class ClassificationGT(BaseDataModel):
@@ -35,7 +31,7 @@ class OCRGroundTruth(BaseDataModel):
     word_angles: List[float] | None = None
 
 
-class NERGroundTruth(BaseDataModel):
+class SERGroundTruth(BaseDataModel):
     """
     A class for representing processed bounding box and label data.
 
@@ -51,6 +47,7 @@ class NERGroundTruth(BaseDataModel):
     words: List[str] | None = None
     word_bboxes: List[BoundingBox] | None = None
     word_labels: List[Label] | None = None
+    segment_level_bboxes: List[BoundingBox] | None = None
 
 
 class QuestionAnswerGT(BaseDataModel):
@@ -63,7 +60,7 @@ class LayoutAnalysisGT(BaseDataModel):
 
 class GroundTruth(BaseDataModel):
     classification: Optional[ClassificationGT] = None
-    ner: Optional[NERGroundTruth] = None
+    ser: Optional[SERGroundTruth] = None
     ocr: Optional[OCRGroundTruth] = None
     qa: Optional[QuestionAnswerGT] = None
     layout: Optional[LayoutAnalysisGT] = None

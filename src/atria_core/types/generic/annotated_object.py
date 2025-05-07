@@ -28,12 +28,8 @@ import torch
 from pydantic import field_serializer, field_validator
 
 from atria_core.types.base.data_model import BaseDataModel
-from atria_core.types.generic.bounding_box import (
-    BoundingBox,
-)
-from atria_core.types.generic.label import (
-    Label,
-)
+from atria_core.types.generic.bounding_box import BoundingBox
+from atria_core.types.generic.label import Label
 
 
 class AnnotatedObject(BaseDataModel):

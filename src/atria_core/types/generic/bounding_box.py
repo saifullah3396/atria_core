@@ -28,9 +28,8 @@ import enum
 from typing import Any, List, Union
 
 import torch
+from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
 from pydantic import field_validator
-
-from atria_core.types.base.data_model import BaseDataModel
 
 
 class BoundingBoxMode(str, enum.Enum):
@@ -57,6 +56,8 @@ class BoundingBox(BaseDataModel):
         value (Union[List[float],torch.Tensor]): The bounding box coordinates.
         mode (BoundingBoxMode): The format of the bounding box coordinates. Defaults to XYXY.
     """
+
+    model_config = BaseDataModelConfigDict(batch_merge_fields=["mode"])
 
     value: Union[List[float], torch.Tensor]
     mode: BoundingBoxMode = BoundingBoxMode.XYXY

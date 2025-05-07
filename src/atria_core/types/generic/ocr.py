@@ -37,7 +37,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, model_validator
 
-from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
 from atria_core.types.generic.bounding_box import BoundingBox
 from atria_core.types.generic.label import Label
 from atria_core.types.typing.common import PydanticFilePath
@@ -181,6 +181,11 @@ class OCR(BaseDataModel):
         raw_content (Optional[str]): The raw OCR content. Defaults to None.
     """
 
+    model_config = BaseDataModelConfigDict(
+        batch_skip_fields=["file_path"],
+        batch_merge_fields=["ocr_type"],
+    )
+
     file_path: PydanticFilePath = None
     ocr_type: Optional[OCRType] = None
     raw_content: Optional[str] = None
@@ -204,6 +209,8 @@ class OCR(BaseDataModel):
             with open(self.file_path, "r", encoding="utf-8") as f:
                 self.raw_content = f.read()
                 if self.raw_content.startswith("b'"):
-                    self.raw_content = ast.literal_eval(self.raw_content)
+                    self.raw_content = ast.literal_eval(self.raw_content).decode(
+                        "utf-8"
+                    )
                 assert len(self.raw_content) > 0, "OCR content is empty."
         return self

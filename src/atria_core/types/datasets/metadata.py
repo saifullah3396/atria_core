@@ -30,14 +30,14 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Type, Union
 
+from atria_core.logger import get_logger
+from atria_core.utilities.repr import RepresentationMixin
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 from rich.pretty import pretty_repr
 
-from atria_core.logger import get_logger
-from atria_core.utilities.repr import RepresentationMixin
-
 if TYPE_CHECKING:
     from atria_types.data_instance.base import BaseDataInstance
+
     from datasets import DatasetInfo
 
 logger = get_logger(__name__)
@@ -109,14 +109,14 @@ class DatasetLabels(BaseModel):
     Represents classification and token labels for a dataset.
 
     Attributes:
-        instance_classification (Optional[List[str]]): Labels for instance-level classification.
-        object_classification (Optional[List[str]]): Labels for object-level classification.
-        token_classification (Optional[List[str]]): Labels for token-level classification.
+        classification (List[str] | None): The classification labels.
+        layout (List[str] | None): The layout labels.
+        ner (List[str] | None): The named entity recognition labels.
     """
 
-    instance_classification: Optional[List[str]] = None
-    object_classification: Optional[List[str]] = None
-    token_classification: Optional[List[str]] = None
+    classification: Optional[List[str]] = None
+    ser: Optional[List[str]] = None
+    layout: Optional[List[str]] = None
 
     @classmethod
     def _infer_from_huggingface_features(cls, features) -> "DatasetLabels":
@@ -150,9 +150,9 @@ class DatasetLabels(BaseModel):
                 "No labels found in the dataset features. Please check the dataset structure."
             )
         return cls(
-            instance_classification=instance_labels,
-            object_classification=object_labels,
-            token_classification=token_labels,
+            classification=instance_labels,
+            layout=object_labels,
+            ner=token_labels,
         )
 
     def __repr__(self):

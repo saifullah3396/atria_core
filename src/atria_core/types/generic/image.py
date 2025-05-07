@@ -30,13 +30,12 @@ from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from PIL.Image import Image as PILImage
-from pydantic import field_serializer, field_validator, model_validator
-
 from atria_core.logger.logger import get_logger
-from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
 from atria_core.types.typing.common import PydanticFilePath
 from atria_core.utilities.encoding import _bytes_to_image, _image_to_bytes
+from PIL.Image import Image as PILImage
+from pydantic import field_serializer, field_validator, model_validator
 
 logger = get_logger(__name__)
 
@@ -54,6 +53,10 @@ class Image(BaseDataModel):
         content (Optional[Union[torch.Tensor, PILImage]]): The image data as a tensor. Defaults to None.
         source_size (Tuple[int, int] | None): The original shape of the image. Defaults to None.
     """
+
+    model_config = BaseDataModelConfigDict(
+        batch_skip_fields=["file_path", "source_size"],
+    )
 
     file_path: PydanticFilePath | None = None
     content: Optional[Union[torch.Tensor, PILImage]] = None
