@@ -144,6 +144,9 @@ class BaseDataModel(BaseModel):
 
         # Create a new instance of the model with the batched fields and with no validation
         batched_instance = cls.model_construct(**batched_fields)
+        batched_instance._is_tensor = all(
+            instance._is_tensor for instance in model_instances
+        )
         batched_instance._is_batched = True
         return batched_instance
 
