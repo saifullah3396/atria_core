@@ -25,14 +25,11 @@ Version: 1.0.0
 License: MIT
 """
 
-from pydantic import model_validator
-
-from atria_core.types.data_instance.base import (
-    BaseDataInstance,
-)
+from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.ground_truth import GroundTruth
 from atria_core.types.generic.image import Image
 from atria_core.types.generic.ocr import OCR
+from pydantic import model_validator
 
 
 class DocumentInstance(BaseDataInstance):
@@ -48,6 +45,9 @@ class DocumentInstance(BaseDataInstance):
         ocr (OCR | None): The OCR data associated with the document instance. Defaults to None.
     """
 
+    doc_id: str
+    page_id: int = 0
+    total_num_pages: int = 1
     image: Image | None = None
     ocr: OCR | None = None
     ground_truth: GroundTruth = GroundTruth()
