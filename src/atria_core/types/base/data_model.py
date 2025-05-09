@@ -40,6 +40,15 @@ logger = get_logger(__name__)
 T = TypeVar("T", bound="BaseDataModel")
 
 
+def ungroup_by_repeats(flat_list, counts):
+    grouped = []
+    idx = 0
+    for count in counts:
+        grouped.append(flat_list[idx : idx + count])
+        idx += count
+    return grouped
+
+
 class BaseDataModelConfigDict(ConfigDict):
     batch_skip_fields: List[str] = []
     batch_merge_fields: List[str] = []
@@ -98,6 +107,7 @@ class BaseDataModel(BaseModel):
         for field_name, _ in cls.model_fields.items():
             # Gather all the values for this field from the list of models.
             values = [getattr(item, field_name) for item in model_instances]
+            # print(field_name, values)
 
             # Check if all values are None, if so set None
             if all(value is None for value in values):
@@ -117,10 +127,13 @@ class BaseDataModel(BaseModel):
                 "batch_merge_fields" in cls.model_config
                 and field_name in cls.model_config["batch_merge_fields"]
             ):
-                assert all(
-                    v == values[0] for v in values
-                ), f"Field {field_name} is not the same across all instances."
-                batched_fields[field_name] = values[0]
+                if all(v == values[0] for v in values):
+                    batched_fields[field_name] = values[0]
+                else:
+                    logger.debug(
+                        f"Field {field_name} has different values in the batch. Skipping merge for this field."
+                    )
+                    batched_fields[field_name] = values
                 continue
 
             # If this is a list of lists of BaseDataModel, process inner lists first
@@ -138,11 +151,19 @@ class BaseDataModel(BaseModel):
                 nested_cls = values[0].__class__
                 batched_fields[field_name] = nested_cls.batched(values)
             elif isinstance(values[0], torch.Tensor):
-                batched_fields[field_name] = _stack_tensors_if_possible(values)
+                try:
+                    if all(v.shape == values[0].shape for v in values):
+                        batched_fields[field_name] = _stack_tensors_if_possible(values)
+                    else:
+                        batched_fields[field_name] = values
+                except Exception as e:
+                    logger.debug(f"Failed to stack tensors for field {field_name}: {e}")
+                    batched_fields[field_name] = values
             else:
                 batched_fields[field_name] = values
 
         # Create a new instance of the model with the batched fields and with no validation
+        # if list of instances is empty, we reach here directly
         batched_instance = cls.model_construct(**batched_fields)
         batched_instance._is_tensor = all(
             instance._is_tensor for instance in model_instances
@@ -288,6 +309,99 @@ class BaseDataModel(BaseModel):
         import torch
 
         self.to_device(torch.device("cpu"))
+        return self
+
+    def repeat_with_indices(
+        self: T, repeat_indices: List[int], ignored_fields: List[str]
+    ) -> T:
+        import torch
+
+        assert (
+            self._is_tensor
+        ), f"This function only supports tensorized inputs. Call to_tensor() first."
+        assert (
+            self._is_batched
+        ), "This function only supports batched inputs. Call batched() on a list of instances first."
+        if not hasattr(self, "_is_repeated"):
+            for field_name, field_value in self.__dict__.items():
+                if field_name in ["_repeat_indices"]:
+                    continue
+                if field_name in ignored_fields:
+                    continue
+                if isinstance(field_value, BaseDataModel):
+                    setattr(
+                        self,
+                        field_name,
+                        field_value.repeat_with_indices(repeat_indices, ignored_fields),
+                    )
+                elif isinstance(field_value, list):
+                    if len(field_value) == 0:
+                        continue
+                    setattr(
+                        self,
+                        field_name,
+                        [
+                            item
+                            for item, count in zip(field_value, repeat_indices)
+                            for _ in range(count)
+                        ],
+                    )
+                elif isinstance(field_value, torch.Tensor):
+                    setattr(
+                        self,
+                        field_name,
+                        field_value.repeat_interleave(
+                            torch.tensor(repeat_indices, device=self.device), dim=0
+                        ),
+                    )
+                else:
+                    setattr(self, field_name, field_value)
+            setattr(self, "_is_repeated", True)
+        return self
+
+    def gather_with_indices(
+        self: T, gather_indices: List[int], ignored_fields: List[str]
+    ) -> T:
+        import torch
+
+        assert self._is_tensor, "Only supports tensorized inputs"
+        assert self._is_batched, "Only supports batched inputs"
+        assert hasattr(self, "_is_repeated"), "Input does not appear to be repeated"
+        for field_name, field_value in self.__dict__.items():
+            if field_name in [
+                "_is_repeated",
+            ]:
+                continue
+
+            if isinstance(field_value, BaseDataModel):
+                setattr(
+                    self,
+                    field_name,
+                    field_value.gather_with_indices(gather_indices, ignored_fields),
+                )
+
+            elif isinstance(field_value, list):
+                if len(field_value) == 0:
+                    continue
+                if field_name not in ignored_fields:
+                    # Just pick first item from each group
+                    grouped = ungroup_by_repeats(field_value, gather_indices)
+                    values = [group[0] for group in grouped]
+                else:
+                    values = ungroup_by_repeats(field_value, gather_indices)
+                setattr(self, field_name, values)
+
+            elif isinstance(field_value, torch.Tensor):
+                split_tensors = torch.split(field_value, gather_indices, dim=0)
+                if field_name not in ignored_fields:
+                    values = torch.stack([tensor[0] for tensor in split_tensors])
+                else:
+                    values = list(split_tensors)
+                setattr(self, field_name, values)
+            else:
+                setattr(self, field_name, field_value)
+
+        delattr(self, "_is_repeated")
         return self
 
     def __repr__(self) -> str:

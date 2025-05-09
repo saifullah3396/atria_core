@@ -44,6 +44,7 @@ class BaseDataInstance(BaseDataModel):
         id (UUID): A unique identifier for the data instance. Defaults to a randomly generated UUID.
     """
 
+    index: int | None = None
     id: UUID = Field(default_factory=uuid4)
 
     @field_serializer("id")

@@ -6,6 +6,7 @@ class TaskType(str, enum.Enum):
     sequence_classification = "sequence_classification"
     sermantic_entity_recognition = "sermantic_entity_recognition"
     question_answering = "question_answering"
+    visual_question_answering = "visual_question_answering"
     layout_analysis = "layout_analysis"
 
 

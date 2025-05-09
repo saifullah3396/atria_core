@@ -55,7 +55,7 @@ class Image(BaseDataModel):
     """
 
     model_config = BaseDataModelConfigDict(
-        batch_skip_fields=["file_path", "source_size"],
+        batch_skip_fields=["file_path"],
     )
 
     file_path: PydanticFilePath | None = None
@@ -185,6 +185,22 @@ class Image(BaseDataModel):
             self._is_tensor = False
         return self
 
+    def convert_to_rgb(self) -> "Image":
+        """
+        Converts the image content to RGB format.
+
+        Raises:
+            ValueError: If the image content is not loaded.
+        """
+        if self.content is None:
+            raise ValueError("Image content is not loaded.")
+        if self.channels == 1:
+            if isinstance(self.content, PILImage):
+                self.content = self.content.convert("RGB")
+            elif isinstance(self.content, torch.Tensor):
+                self.content = self.content.repeat(3, 1, 1)
+        return self
+
     @property
     def shape(self) -> torch.Size:
         """
@@ -243,3 +259,16 @@ class Image(BaseDataModel):
             int: The height of the image.
         """
         return self.size[1]
+
+    @property
+    def channels(self) -> int:
+        """
+        Returns the number of channels in the image.
+
+        Returns:
+            int: The number of channels in the image.
+        """
+        if isinstance(self.content, torch.Tensor):
+            return self.content.shape[0]
+        elif isinstance(self.content, PILImage):
+            return len(self.content.getbands())

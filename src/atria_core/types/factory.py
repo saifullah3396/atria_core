@@ -9,7 +9,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 
 from atria_core.types.data_instance.document import DocumentInstance
 from atria_core.types.data_instance.image import ImageInstance
-from atria_core.types.data_instance.tokenized_object import TokenizedObjectInstance
+from atria_core.types.data_instance.tokenized_object import TokenizedDocumentInstance
 from atria_core.types.generic.annotated_object import (
     AnnotatedObject,
 )
@@ -184,8 +184,8 @@ class DocumentInstanceFactory(ModelFactory[DocumentInstance]):
     ocr = Use(lambda: OCRFactory.build())
 
 
-class TokenizedObjectInstanceFactory(ModelFactory[TokenizedObjectInstance]):
-    __model__ = TokenizedObjectInstance
+class TokenizedObjectInstanceFactory(ModelFactory[TokenizedDocumentInstance]):
+    __model__ = TokenizedDocumentInstance
     token_ids = Use(lambda: torch.randn(16))
     word_ids = Use(lambda: torch.randn(16))
     token_labels = Use(lambda: torch.randn(16))

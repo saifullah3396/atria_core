@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
 from atria_core.types.generic.annotated_object import AnnotatedObject
 from atria_core.types.generic.bounding_box import BoundingBox
 from atria_core.types.generic.label import Label
@@ -24,6 +24,10 @@ class OCRGT(BaseDataModel):
         word_confs (List[float]): A list of confidence scores for each word.
         word_angles (List[float]): A list of angles for each word.
     """
+
+    model_config = BaseDataModelConfigDict(
+        batch_skip_fields=["word_confs", "word_angles"],
+    )
 
     words: List[str] | None = None
     word_bboxes: List[BoundingBox] | None = None
@@ -51,11 +55,12 @@ class SERGT(BaseDataModel):
 
 
 class QuestionAnswerGT(BaseDataModel):
-    qa_pairs: List[QuestionAnswerPair]
+    qa_pair: QuestionAnswerPair
+    words: list[str]
 
 
 class VisualQuestionAnswerGT(BaseDataModel):
-    qa_pairs: List[QuestionAnswerPair]
+    qa_pair: QuestionAnswerPair
     words: list[str]
     word_bboxes: list[BoundingBox]
     segment_level_bboxes: list[BoundingBox]

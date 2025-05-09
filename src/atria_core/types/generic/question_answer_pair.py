@@ -19,6 +19,7 @@ Version: 1.0.0
 License: MIT
 """
 
+import torch
 from atria_core.types.base.data_model import BaseDataModel
 
 
@@ -32,7 +33,6 @@ class QuestionAnswerPair(BaseDataModel):
         answer_start (int): The start position of the answer in the text.
         answer_end (int): The end position of the answer in the text.
         answer_text (str): The text of the answer.
-        answer_is_correct (bool): Indicates whether the answer is correct.
     """
 
     id: int
@@ -40,4 +40,12 @@ class QuestionAnswerPair(BaseDataModel):
     answer_start: int
     answer_end: int
     answer_text: str
-    answer_is_correct: bool
+
+
+class TokenizedQuestionAnswerPair(QuestionAnswerPair):
+    """
+    A class for representing a tokenized question and its corresponding answer.
+    """
+
+    tokenized_answer_starts: torch.Tensor
+    tokenized_answer_ends: torch.Tensor

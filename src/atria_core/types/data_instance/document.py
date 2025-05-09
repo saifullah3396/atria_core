@@ -25,10 +25,12 @@ Version: 1.0.0
 License: MIT
 """
 
+from atria_core.types.base.data_model import BaseDataModelConfigDict
 from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.ground_truth import GroundTruth
 from atria_core.types.generic.image import Image
-from atria_core.types.generic.ocr import OCR
+from atria_core.types.generic.ocr import OCR, OCRType
+from atria_core.types.ocr_parsers.hocr_parser import OCRProcessor
 from pydantic import model_validator
 
 
@@ -44,6 +46,10 @@ class DocumentInstance(BaseDataInstance):
         image (Image | None): The image data associated with the document instance. Defaults to None.
         ocr (OCR | None): The OCR data associated with the document instance. Defaults to None.
     """
+
+    model_config = BaseDataModelConfigDict(
+        batch_skip_fields=["ocr", "page_id", "total_num_pages"],
+    )
 
     doc_id: str
     page_id: int = 0
@@ -67,4 +73,12 @@ class DocumentInstance(BaseDataInstance):
         """
         if self.image is None and self.ocr is None:
             raise ValueError("At least one of image or ocr must be provided")
+
+        if self.ocr is not None and self.ground_truth.ocr is None:
+            if self.ocr.ocr_type == OCRType.TESSERACT:
+                self.ground_truth.ocr = OCRProcessor.parse(
+                    raw_ocr=self.ocr.raw_content,
+                    ocr_type=self.ocr.ocr_type,
+                )
+
         return self

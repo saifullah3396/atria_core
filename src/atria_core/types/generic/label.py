@@ -31,7 +31,7 @@ import torch
 from pydantic import field_validator
 
 from atria_core.logger import get_logger
-from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
 
 logger = get_logger(__name__)
 
@@ -44,6 +44,10 @@ class Label(BaseDataModel):
         value (Union[int, torch.Tensor]): The value of the label.
         name (str): The name of the label.
     """
+
+    model_config = BaseDataModelConfigDict(
+        batch_skip_fields=["name"],
+    )
 
     value: Union[int, torch.Tensor]
     name: str
