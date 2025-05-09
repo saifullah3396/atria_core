@@ -45,10 +45,7 @@ def _stack_tensors_if_possible(
     Returns:
         torch.Tensor | list[torch.Tensor]: A stacked tensor if possible, otherwise the original list of tensors.
     """
-    try:
-        return torch.stack(tensors)
-    except RuntimeError as e:
-        return tensors
+    return torch.stack(tensors)
 
 
 def _convert_to_tensor(value: Any) -> torch.Tensor | list | str:
@@ -64,24 +61,30 @@ def _convert_to_tensor(value: Any) -> torch.Tensor | list | str:
     Raises:
         TypeError: If the input is an empty list.
     """
-    if isinstance(value, list):
-        if len(value) == 0:
+    try:
+        if isinstance(value, list):
+            if len(value) == 0:
+                return torch.tensor(value)
+            if isinstance(value[0], list):
+                value = [_convert_to_tensor(item) for item in value]
+            if isinstance(value[0], numbers.Number):
+                return torch.tensor(value)
+            elif isinstance(value[0], torch.Tensor):
+                return _stack_tensors_if_possible(value)
+            elif isinstance(value[0], np.ndarray):
+                return torch.from_numpy(np.array(value))
+            elif isinstance(value[0], str):
+                return value
+        elif isinstance(value, numbers.Number):
             return torch.tensor(value)
-        if isinstance(value[0], list):
-            value = [_convert_to_tensor(item) for item in value]
-        if isinstance(value[0], numbers.Number):
-            return torch.tensor(value)
-        elif isinstance(value[0], torch.Tensor):
-            return _stack_tensors_if_possible(value)
-        elif isinstance(value[0], np.ndarray):
-            return torch.from_numpy(np.array(value))
-        elif isinstance(value[0], str):
-            return value
-    elif isinstance(value, numbers.Number):
-        return torch.tensor(value)
-    elif isinstance(value, np.ndarray):
-        return torch.from_numpy(value)
-    return value
+        elif isinstance(value, np.ndarray):
+            return torch.from_numpy(value)
+        return value
+    except Exception as e:
+        logger.warning(
+            f"Failed to convert value {value} of type {type(value)} to tensor: {e}"
+        )
+        return value
 
 
 def _convert_from_tensor(
