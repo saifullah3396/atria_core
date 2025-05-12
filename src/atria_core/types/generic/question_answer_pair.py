@@ -19,8 +19,9 @@ Version: 1.0.0
 License: MIT
 """
 
+from typing import List
 import torch
-from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
 
 
 class QuestionAnswerPair(BaseDataModel):
@@ -37,15 +38,22 @@ class QuestionAnswerPair(BaseDataModel):
 
     id: int
     question_text: str
-    answer_start: int
-    answer_end: int
-    answer_text: str
+    answer_start: List[int]
+    answer_end: List[int]
+    answer_text: List[str]
 
 
 class TokenizedQuestionAnswerPair(QuestionAnswerPair):
     """
     A class for representing a tokenized question and its corresponding answer.
     """
+
+    model_config = BaseDataModelConfigDict(
+        batch_tensor_stack_skip_fields=[
+            "tokenized_answer_starts",
+            "tokenized_answer_ends",
+        ],
+    )
 
     tokenized_answer_starts: torch.Tensor
     tokenized_answer_ends: torch.Tensor

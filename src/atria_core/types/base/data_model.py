@@ -152,10 +152,19 @@ class BaseDataModel(BaseModel):
                 batched_fields[field_name] = nested_cls.batched(values)
             elif isinstance(values[0], torch.Tensor):
                 try:
-                    if all(v.shape == values[0].shape for v in values):
-                        batched_fields[field_name] = _stack_tensors_if_possible(values)
-                    else:
+                    if (
+                        "batch_tensor_stack_skip_fields" in cls.model_config
+                        and field_name
+                        in cls.model_config["batch_tensor_stack_skip_fields"]
+                    ):
                         batched_fields[field_name] = values
+                    else:
+                        if all(v.shape == values[0].shape for v in values):
+                            batched_fields[field_name] = _stack_tensors_if_possible(
+                                values
+                            )
+                        else:
+                            batched_fields[field_name] = values
                 except Exception as e:
                     logger.debug(f"Failed to stack tensors for field {field_name}: {e}")
                     batched_fields[field_name] = values
@@ -324,38 +333,46 @@ class BaseDataModel(BaseModel):
         ), "This function only supports batched inputs. Call batched() on a list of instances first."
         if not hasattr(self, "_is_repeated"):
             for field_name, field_value in self.__dict__.items():
-                if field_name in ["_repeat_indices"]:
-                    continue
-                if field_name in ignored_fields:
-                    continue
-                if isinstance(field_value, BaseDataModel):
-                    setattr(
-                        self,
-                        field_name,
-                        field_value.repeat_with_indices(repeat_indices, ignored_fields),
-                    )
-                elif isinstance(field_value, list):
-                    if len(field_value) == 0:
+                try:
+                    if field_name in ["_repeat_indices"]:
                         continue
-                    setattr(
-                        self,
-                        field_name,
-                        [
-                            item
-                            for item, count in zip(field_value, repeat_indices)
-                            for _ in range(count)
-                        ],
+                    if field_name in ignored_fields:
+                        continue
+                    if isinstance(field_value, BaseDataModel):
+                        setattr(
+                            self,
+                            field_name,
+                            field_value.repeat_with_indices(
+                                repeat_indices, ignored_fields
+                            ),
+                        )
+                    elif isinstance(field_value, list):
+                        if len(field_value) == 0:
+                            continue
+                        setattr(
+                            self,
+                            field_name,
+                            [
+                                item
+                                for item, count in zip(field_value, repeat_indices)
+                                for _ in range(count)
+                            ],
+                        )
+                    elif isinstance(field_value, torch.Tensor):
+                        setattr(
+                            self,
+                            field_name,
+                            field_value.repeat_interleave(
+                                torch.tensor(repeat_indices, device=self.device), dim=0
+                            ),
+                        )
+                    else:
+                        setattr(self, field_name, field_value)
+                except Exception as e:
+                    logger.error(
+                        f"Failed to repeat field {field_name} with indices {repeat_indices}: {e}"
                     )
-                elif isinstance(field_value, torch.Tensor):
-                    setattr(
-                        self,
-                        field_name,
-                        field_value.repeat_interleave(
-                            torch.tensor(repeat_indices, device=self.device), dim=0
-                        ),
-                    )
-                else:
-                    setattr(self, field_name, field_value)
+                    raise e
             setattr(self, "_is_repeated", True)
         return self
 

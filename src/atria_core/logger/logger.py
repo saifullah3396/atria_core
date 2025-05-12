@@ -27,11 +27,16 @@ License: MIT
 
 import logging
 import os
+import sys
 from typing import Optional
 
 from atria_core.logger.constants import _DEFAULT_COLOR_STYLES, _ROOT_LOGGER_NAME
 from atria_core.logger.filters import DistributedFilter
-from atria_core.logger.utilities import attach_file_handler, enable_colored_logging
+from atria_core.logger.utilities import (
+    attach_file_handler,
+    attach_stream_handler,
+    enable_colored_logging,
+)
 
 
 class LoggerBase:
@@ -183,7 +188,7 @@ class LoggerBase:
         """
         for logger_name, logger in logging.root.manager.loggerDict.items():
             if isinstance(logger, logging.Logger) and logger_name.startswith(
-                (_ROOT_LOGGER_NAME, "__main__")
+                ("atria", "atria_core", "__main__")
             ):
                 logger.handlers.clear()
                 self.create_logger(name=logger_name, reset_logger=True)
@@ -203,6 +208,12 @@ class LoggerBase:
             attach_file_handler(
                 logger, self._log_file_path, self._log_level, self._format
             )
+        attach_stream_handler(
+            logger,
+            log_stream=sys.stdout,
+            log_level=self._log_level,
+            log_format=self._format,
+        )
         enable_colored_logging(logger, self._log_level, self._styles, self._format)
 
 

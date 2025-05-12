@@ -201,6 +201,56 @@ class Image(BaseDataModel):
                 self.content = self.content.repeat(3, 1, 1)
         return self
 
+    def resize(self, width: int, height: int) -> "Image":
+        """
+        Resizes the image to the specified size.
+
+        Args:
+            width (int): The desired width of the image.
+            height (int): The desired height of the image.
+
+        Returns:
+            Image: The resized image.
+        """
+        if self.content is None:
+            raise ValueError("Image content is not loaded.")
+        if isinstance(self.content, PILImage):
+            from PIL.Image import Resampling
+
+            self.content = self.content.resize(
+                (width, height), resample=Resampling.BICUBIC
+            )
+        elif isinstance(self.content, torch.Tensor):
+            from torchvision.transforms.functional import resize, InterpolationMode
+
+            self.content = resize(
+                self.content, (height, width), interpolation=InterpolationMode.BILINEAR
+            )
+        return self
+
+    def normalize(
+        self,
+        mean: Union[float, Tuple[float, ...]],
+        std: Union[float, Tuple[float, ...]],
+    ) -> "Image":
+        """
+        Normalizes the image tensor using the specified mean and standard deviation.
+
+        Args:
+            mean (Union[float, Tuple[float, ...]]): The mean value(s) for normalization.
+            std (Union[float, Tuple[float, ...]]): The standard deviation value(s) for normalization.
+
+        Returns:
+            Image: The normalized image.
+        """
+        if self.content is None:
+            raise ValueError("Image content is not loaded.")
+        if isinstance(self.content, torch.Tensor):
+            from torchvision.transforms.functional import normalize
+
+            self.content = normalize(self.content, mean=mean, std=std)
+        return self
+
     @property
     def shape(self) -> torch.Size:
         """
