@@ -19,7 +19,7 @@ Version: 1.0.0
 License: MIT
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, ConfigDict
 
@@ -47,7 +47,7 @@ class AtriaDatasetConfig(BaseModel):
     __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
     name: Optional[str] = None
     config_name: str = "default"
-    data_urls: Union[str, List[str], Dict[str, str]] | None = None
+    data_urls: Union[str, List[str], Dict[str, str], Dict[str, Tuple]] | None = None
     max_train_samples: Optional[int] = None
     max_validation_samples: Optional[int] = None
     max_test_samples: Optional[int] = None
