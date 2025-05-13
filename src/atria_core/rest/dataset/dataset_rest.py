@@ -1,6 +1,8 @@
 import json
 from functools import partial
 
+from omegaconf import OmegaConf
+
 from atria_core.rest.base import RESTBase
 from atria_core.schemas.base import DataInstanceType
 from atria_core.schemas.dataset import (
@@ -42,7 +44,7 @@ class RESTDataset(RESTBase[Dataset, DatasetCreate, DatasetUpdate]):
                 "is_public": is_public,
                 "data_instance_type": data_instance_type.value,
                 "version_tag": version_tag,
-                "config": json.dumps(config),
+                "config": json.dumps(OmegaConf.to_container(config)),
                 "metadata": metadata.model_dump_json(),
                 "dataset_split_type": dataset_split_type.value,
                 "shard_index": shard_index,

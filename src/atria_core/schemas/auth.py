@@ -1,7 +1,8 @@
 from gotrue import User, UserAttributes  # type: ignore
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
-from atria_core.schemas.utils import SerializableUUID
+from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
+from atria_core.schemas.utils import NameStr, SerializableUUID
 
 
 # Shared properties
@@ -53,3 +54,19 @@ class SignUpRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class UserProfileBase(BaseModel):
+    username: NameStr = Field(..., min_length=1, max_length=50)
+
+
+class UserProfileCreate(UserProfileBase):
+    user_id: SerializableUUID
+
+
+class UserProfileUpdate(UserProfileBase, OptionalModel):
+    pass
+
+
+class UserProfile(UserProfileBase, BaseDatabaseSchema):
+    user_id: SerializableUUID

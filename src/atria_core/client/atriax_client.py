@@ -200,14 +200,19 @@ class AtriaXClient:
         except Exception as e:
             logger.error(f"Failed to sign in: {e}")
 
-    def sign_up(self, email: str, password: str):
+    def sign_up(self, email: str, password: str, username: str):
         """Sign up a new user."""
         try:
             result = self._supabase.auth.sign_up(
                 dict(
                     email=email,
                     password=password,
-                )
+                    options=dict(
+                        data=dict(
+                            username=username,
+                        )
+                    ),
+                ),
             )
             if not result.session or not result.user:
                 raise RuntimeError("Sign-up failed. Please check your credentials.")
