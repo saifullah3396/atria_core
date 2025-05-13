@@ -1,12 +1,12 @@
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
 from atria_core.schemas.utils import SerializableUUID
 from atria_core.types.data_instance.base import BaseDataInstance
+from atria_core.types.generic.ground_truth import GroundTruth
 from atria_core.types.generic.label import Label
 
 
 class ImageInstanceBase(BaseDataInstance):
-    image_file_path: str
-    label: Label | None = None
+    sample_path: str | None = None
 
 
 class ImageInstanceCreate(ImageInstanceBase):
@@ -14,7 +14,7 @@ class ImageInstanceCreate(ImageInstanceBase):
 
 
 class ImageInstanceUpdate(OptionalModel):
-    label: Label | None = None
+    ground_truth: GroundTruth
 
 
 class ImageInstance(ImageInstanceBase, BaseDatabaseSchema):

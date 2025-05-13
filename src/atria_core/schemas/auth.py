@@ -18,7 +18,7 @@ class UserIn(Token, User):  # type: ignore
 # Properties to receive via API on creation
 # in
 class UserCreate(BaseModel):
-    pass
+    username: str
 
 
 # Properties to receive via API on update

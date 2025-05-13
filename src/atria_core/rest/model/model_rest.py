@@ -1,7 +1,6 @@
 from functools import partial
+from typing import Optional
 import uuid
-
-from dacite import Optional
 
 from atria_core.rest.base import RESTBase
 from atria_core.schemas.model import (
