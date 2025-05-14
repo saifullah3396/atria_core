@@ -22,6 +22,7 @@ class DocumentInstanceBase(BaseDataInstance):
     sample_path: str | None = None
     ocr_type: OCRType | None = OCRType.OTHER
     ocr_processing_status: OCRStatus = OCRStatus.UNINITIATED
+    data: dict
 
 
 class DocumentInstanceCreate(DocumentInstanceBase):
