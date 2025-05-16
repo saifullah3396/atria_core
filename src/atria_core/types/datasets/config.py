@@ -70,7 +70,7 @@ class AtriaHuggingfaceDatasetConfig(AtriaDatasetConfig):
     hf_repo: str
 
 
-class AtriaHubDatasetConfig(AtriaDatasetConfig):
+class AtriaHubDatasetConfig(BaseModel):
     """
     Configuration class for Hub datasets.
 
@@ -79,3 +79,5 @@ class AtriaHubDatasetConfig(AtriaDatasetConfig):
     """
 
     __target__: str = "atria.hub.atria_hub_dataset.AtriaHubDataset"
+    name: Optional[str] = None
+    config_name: str = "default"

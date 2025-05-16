@@ -15,10 +15,14 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         *,
         client: httpx.Client,
         model: Type[ModelType],
+        resource_path: str = None,
     ):
         self.client = client
         self.model = model
-        self.resource_path = model.__name__.lower()
+        if resource_path is not None:
+            self.resource_path = resource_path
+        else:
+            self.resource_path = model.__name__.lower()
 
     def _url(self, suffix: str = "") -> str:
         return f"/rest/v1/{self.resource_path}/{suffix}".rstrip("/")
@@ -33,6 +37,27 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response = self.client.get(self._url("get"), params={"id": str(id)})
         if response.status_code == 200:
             return self.model.model_validate(response.json())
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+            )
+
+    def fetch_batch(
+        self,
+        *,
+        ids: List[uuid.UUID],
+        **filters: Any,
+    ) -> Optional[ModelType]:
+        params = {
+            **self._serialize_filters(filters),
+        }
+        response = self.client.post(
+            self._url("fetch_batch"),
+            params=params,
+            json={"ids": [str(id) for id in ids]},
+        )
+        if response.status_code == 200:
+            return [self.model.model_validate(item) for item in response.json()]
         else:
             raise RuntimeError(
                 f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
@@ -79,6 +104,30 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response = self.client.get(self._url("list"), params=params)
         if response.status_code == 200:
             return [self.model.model_validate(item) for item in response.json()]
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+            )
+
+    def list_ids(
+        self,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        order_by: str = "created_at",
+        order: str = "desc",
+        **filters: Any,
+    ):
+        params = {
+            **self._serialize_filters(filters),
+            "skip": skip,
+            "limit": limit,
+            "order_by": order_by,
+            "order": order,
+        }
+        response = self.client.get(self._url("list_ids"), params=params)
+        if response.status_code == 200:
+            return [item["id"] for item in response.json()]
         else:
             raise RuntimeError(
                 f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"

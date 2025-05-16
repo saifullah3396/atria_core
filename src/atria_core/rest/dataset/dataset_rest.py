@@ -8,6 +8,8 @@ from atria_core.schemas.base import DataInstanceType
 from atria_core.schemas.dataset import (
     Dataset,
     DatasetCreate,
+    DatasetDownloadRequest,
+    DatasetDownloadResponse,
     DatasetSplit,
     DatasetSplitCreate,
     DatasetSplitUpdate,
@@ -25,10 +27,8 @@ from atria_core.types.datasets.splits import DatasetSplitType
 class RESTDataset(RESTBase[Dataset, DatasetCreate, DatasetUpdate]):
     def upload_shard(
         self,
-        name: str,
         is_public: bool,
         data_instance_type: DataInstanceType,
-        version_tag: str,
         config: dict,
         metadata: dict,
         dataset_split_type: DatasetSplitType,
@@ -40,10 +40,8 @@ class RESTDataset(RESTBase[Dataset, DatasetCreate, DatasetUpdate]):
         response = self.client.post(
             self._url("upload_shard"),
             data={
-                "name": name,
                 "is_public": is_public,
                 "data_instance_type": data_instance_type.value,
-                "version_tag": version_tag,
                 "config": json.dumps(OmegaConf.to_container(config)),
                 "metadata": metadata.model_dump_json(),
                 "dataset_split_type": dataset_split_type.value,
@@ -57,6 +55,21 @@ class RESTDataset(RESTBase[Dataset, DatasetCreate, DatasetUpdate]):
             raise RuntimeError(
                 f"Failed to upload shard {shard_index}: {response.status_code} - {response.text}"
             )
+
+    def request_download(
+        self,
+        download_request: DatasetDownloadRequest,
+    ) -> DatasetDownloadResponse:
+        """Request a download URL for the dataset."""
+        response = self.client.post(
+            self._url("request_download"),
+            json=download_request.model_dump(),
+        )
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Failed to request download: {response.status_code} - {response.text}"
+            )
+        return DatasetDownloadResponse(**response.json())
 
 
 class RESTDatasetVersion(

@@ -25,12 +25,16 @@ Version: 1.0.0
 License: MIT
 """
 
+import json
 from atria_core.types.base.data_model import BaseDataModelConfigDict
 from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.ground_truth import GroundTruth
 from atria_core.types.generic.image import Image
 from atria_core.types.generic.ocr import OCR, OCRType
 from atria_core.types.ocr_parsers.hocr_parser import OCRProcessor
+from atria_core.schemas.data_instances.document_instance import (
+    DocumentInstance as DocumentInstanceSchema,
+)
 from pydantic import model_validator
 
 
@@ -82,3 +86,28 @@ class DocumentInstance(BaseDataInstance):
                 )
 
         return self
+
+    @classmethod
+    def from_document_instance_schema(cls, schema: DocumentInstanceSchema):
+        ocr, image = None, None
+        if "image_file_path" in schema.data:
+            image = Image(file_path=schema.data["image_file_path"])
+        if "ocr_file_path" in schema.data:
+            ocr = OCR(file_path=schema.data["ocr_file_path"], ocr_type=schema.ocr_type)
+
+        ground_truth = GroundTruth()
+        for key in ground_truth.__dict__.keys():
+            if f"gt_{key}" in schema.data:
+                with open(schema.data[f"gt_{key}"], "r") as f:
+                    json.loads(f.read())
+                setattr(ground_truth, key, schema.data[key])
+        return DocumentInstance(
+            id=schema.id,
+            index=schema.index,
+            doc_id=schema.doc_id,
+            page_id=schema.page_id,
+            total_num_pages=schema.total_num_pages,
+            image=image,
+            ocr=ocr,
+            ground_truth=ground_truth,
+        )

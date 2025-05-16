@@ -14,4 +14,6 @@ class RESTDocumentInstance(
     pass
 
 
-document_instance = partial(RESTDocumentInstance, model=DocumentInstance)
+document_instance = partial(
+    RESTDocumentInstance, model=DocumentInstance, resource_path="document_instance"
+)
