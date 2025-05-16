@@ -49,9 +49,19 @@ class Model(ModelBase, BaseDatabaseSchema):
 
 
 class ModelUploadRequest(BaseModel):
+    inference_config: dict
     version_tag: str
     description: str
     is_public: bool = False
+
+    @field_validator("inference_config", mode="before")
+    @classmethod
+    def parse_config(cls, value):
+        if isinstance(value, str):
+            import json
+
+            return json.loads(value)
+        return value
 
 
 class ModelUploadResponse(BaseModel):

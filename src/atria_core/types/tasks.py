@@ -19,4 +19,3 @@ class ModelType(str, enum.Enum):
     transformers_question_answering = "transformers/question_answering"
     diffusers = "diffusers"
     mmdet = "mmdet"
-    custom = "custom"
