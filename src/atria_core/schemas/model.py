@@ -16,8 +16,6 @@ class ModelVersionBase(BaseModel):
 
 class ModelVersionCreate(ModelVersionBase):
     model_id: SerializableUUID
-    config_id: SerializableUUID
-    inference_config_id: SerializableUUID
 
 
 class ModelVersionUpdate(ModelVersionBase):
@@ -26,8 +24,6 @@ class ModelVersionUpdate(ModelVersionBase):
 
 class ModelVersion(ModelVersionBase, BaseDatabaseSchema):
     model_id: SerializableUUID
-    config_id: SerializableUUID
-    inference_config_id: SerializableUUID
     model: Optional["Model"] = None
 
 

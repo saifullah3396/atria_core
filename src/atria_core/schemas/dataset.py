@@ -79,7 +79,6 @@ class DatasetVersionBase(BaseModel):
 
 class DatasetVersionCreate(DatasetVersionBase):
     dataset_id: SerializableUUID
-    config_id: SerializableUUID
 
 
 class DatasetVersionUpdate(OptionalModel):
@@ -90,9 +89,8 @@ class DatasetVersionUpdate(OptionalModel):
 
 class DatasetVersion(DatasetVersionBase, BaseDatabaseSchema):
     dataset_id: SerializableUUID
-    config_id: SerializableUUID
     dataset: Optional["Dataset"] = None
-    config: Config | None = None
+    config: List[Config] | None = None
     dataset_split: List[DatasetSplit] = Field(default_factory=list)
 
 
