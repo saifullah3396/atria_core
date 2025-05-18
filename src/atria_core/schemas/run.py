@@ -21,6 +21,7 @@ class RunBase(BaseModel):
 
 
 class RunCreate(RunBase):
+    user_id: SerializableUUID
     experiment_id: SerializableUUID
 
 

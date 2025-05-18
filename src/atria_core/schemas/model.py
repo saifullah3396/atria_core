@@ -1,7 +1,8 @@
 from typing import List, Optional
+import uuid
 
 from codename import codename
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
 from atria_core.schemas.config import Config
@@ -58,9 +59,19 @@ class ModelUploadResponse(BaseModel):
 
 
 class ModelDownloadRequest(BaseModel):
-    name: str
-    version_tag: str
+    name: str | None = None
+    version_tag: str | None = None
     username: str | None = None
+    model_version_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    @classmethod
+    def validate_model_download_request(cls, values):
+        if not values.get("model_version_id") and not values.get("name"):
+            raise ValueError("Either model_version_id or name must be provided.")
+        if not values.get("version_tag") and not values.get("model_version_id"):
+            raise ValueError("Either version_tag or model_version_id must be provided.")
+        return values
 
 
 class ModelDownloadResponse(BaseModel):

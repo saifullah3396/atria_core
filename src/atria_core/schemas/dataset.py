@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
 from atria_core.schemas.config import Config
@@ -32,6 +32,7 @@ class ShardFileBase(BaseModel):
 
 
 class ShardFileCreate(ShardFileBase):
+    user_id: SerializableUUID
     dataset_split_id: SerializableUUID
 
 
@@ -54,6 +55,7 @@ class DatasetSplitBase(BaseModel):
 
 
 class DatasetSplitCreate(DatasetSplitBase):
+    user_id: SerializableUUID
     dataset_version_id: SerializableUUID
 
 
@@ -78,6 +80,7 @@ class DatasetVersionBase(BaseModel):
 
 
 class DatasetVersionCreate(DatasetVersionBase):
+    user_id: SerializableUUID
     dataset_id: SerializableUUID
 
 

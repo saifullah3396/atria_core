@@ -1,9 +1,11 @@
 import enum
 import uuid
+from typing import List
 
 from pydantic import BaseModel, Field
 
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
+from atria_core.schemas.config import Config
 from atria_core.schemas.utils import SerializableDateTime, SerializableUUID
 
 
@@ -20,6 +22,8 @@ class AgentTaskStatus(str, enum.Enum):
 
 
 class TrainerRequest(BaseModel):
+    dataset_version_id: uuid.UUID
+    model_version_id: uuid.UUID
     trainer_config: dict
 
 
@@ -27,9 +31,11 @@ class EvaluatorRequest(BaseModel):
     evaluator_config: dict
 
 
-class InferencerRequest(BaseModel):
-    instances: list[uuid.UUID]
-    inference_config: dict
+class InferenceRequest(BaseModel):
+    dataset_split_id: SerializableUUID
+    model_version_id: SerializableUUID
+    instance_ids: List[SerializableUUID]
+    inference_config: Config | None = None
 
 
 class AgentTaskBase(BaseModel):
@@ -37,7 +43,7 @@ class AgentTaskBase(BaseModel):
     status: AgentTaskStatus = Field(default=AgentTaskStatus.PENDING)
     error_message: str | None = None
     finished_at: SerializableDateTime | None = None
-    request: TrainerRequest | EvaluatorRequest | InferencerRequest
+    request: TrainerRequest | EvaluatorRequest | InferenceRequest
 
 
 class AgentTaskCreate(AgentTaskBase):

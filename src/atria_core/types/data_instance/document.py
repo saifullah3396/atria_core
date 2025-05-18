@@ -88,7 +88,7 @@ class DocumentInstance(BaseDataInstance):
         return self
 
     @classmethod
-    def from_document_instance_schema(cls, schema: DocumentInstanceSchema):
+    def from_schema(cls, schema: DocumentInstanceSchema):
         ocr, image = None, None
         if "image_file_path" in schema.data:
             image = Image(file_path=schema.data["image_file_path"])

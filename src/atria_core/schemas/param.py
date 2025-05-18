@@ -10,6 +10,7 @@ class ParamBase(BaseModel):
 
 
 class ParamCreate(ParamBase):
+    user_id: SerializableUUID
     run_id: SerializableUUID
 
 

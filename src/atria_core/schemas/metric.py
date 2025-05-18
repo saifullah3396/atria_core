@@ -11,6 +11,7 @@ class MetricBase(BaseModel):
 
 
 class MetricCreate(MetricBase):
+    user_id: SerializableUUID
     run_id: SerializableUUID
 
 

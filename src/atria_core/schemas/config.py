@@ -32,6 +32,23 @@ class ConfigTypes(str, enum.Enum):
 class ConfigBase(BaseModel):
     type: ConfigTypes
     name: NameStr
+    path: str
+
+    @computed_field
+    @property
+    def schema_hash(self) -> str:
+        return _generate_hash_from_dict(_convert_dict_to_schema(self.data))
+
+    @computed_field
+    @property
+    def hash(self) -> str:
+        return _generate_hash_from_dict(self.data)
+
+
+class ConfigCreate(BaseModel):
+    type: ConfigTypes
+    name: NameStr
+    user_id: SerializableUUID
     data: dict
 
     @computed_field
@@ -45,12 +62,8 @@ class ConfigBase(BaseModel):
         return _generate_hash_from_dict(self.data)
 
 
-class ConfigCreate(ConfigBase):
-    user_id: SerializableUUID
-
-
-class ConfigUpdate(ConfigBase, OptionalModel):
-    pass
+class ConfigUpdate(BaseModel, OptionalModel):
+    name: NameStr
 
 
 class Config(ConfigBase, BaseDatabaseSchema):
