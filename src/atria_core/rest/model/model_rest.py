@@ -1,12 +1,14 @@
 from functools import partial
 import io
 import json
+import os
 from typing import Optional
 import uuid
 
 import httpx
 import requests
 import torch
+import tqdm
 
 from atria.data.datasets.downloads.file_downloader import HTTPDownloader
 from atria_core.logger.logger import get_logger
@@ -60,12 +62,7 @@ class RESTModelVersion(RESTBase[ModelVersion, ModelVersionCreate, ModelVersionUp
                 f"Failed to upload model: {response.status_code} - {response.text}"
             )
 
-    def _download_url(self, url: str, destination_path: str) -> None:
-        import os
-
-        import requests
-        import tqdm
-
+    def _download_url(self, url: str, destination_path: str = None) -> bytes | None:
         try:
             response = requests.get(
                 url,
@@ -75,24 +72,31 @@ class RESTModelVersion(RESTBase[ModelVersion, ModelVersionCreate, ModelVersionUp
             if response.status_code == 200:
                 total_size = int(response.headers.get("Content-Length", 0))
                 block_size = 8192  # 8 KB
-
-                with (
-                    open(destination_path, "wb") as f,
-                    tqdm.tqdm(
-                        total=total_size,
-                        unit="B",
-                        unit_scale=True,
-                        unit_divisor=1024,
-                        desc=os.path.basename(destination_path),
-                    ) as progress_bar,
-                ):
+                if destination_path:
+                    with (
+                        open(destination_path, "wb") as f,
+                        tqdm.tqdm(
+                            total=total_size,
+                            unit="B",
+                            unit_scale=True,
+                            unit_divisor=1024,
+                            desc=os.path.basename(destination_path),
+                        ) as progress_bar,
+                    ):
+                        for chunk in response.iter_content(chunk_size=block_size):
+                            if chunk:
+                                f.write(chunk)
+                                progress_bar.update(len(chunk))
+                    logger.debug(f"Downloaded {url} to {destination_path}")
+                    return torch.load(destination_path)
+                else:
+                    buffer = io.BytesIO()
                     for chunk in response.iter_content(chunk_size=block_size):
                         if chunk:
-                            f.write(chunk)
-                            progress_bar.update(len(chunk))
-
-                logger.debug(f"Downloaded {url} to {destination_path}")
-                return destination_path
+                            buffer.write(chunk)
+                    buffer.seek(0)
+                    logger.debug(f"Downloaded {url} to memory buffer")
+                    return buffer.read()
             else:
                 raise Exception(
                     f"Failed to download file: {url} with status code {response.status_code}"
@@ -102,7 +106,9 @@ class RESTModelVersion(RESTBase[ModelVersion, ModelVersionCreate, ModelVersionUp
             raise
 
     def download(
-        self, download_request: ModelDownloadRequest, output_path: str
+        self,
+        download_request: ModelDownloadRequest,
+        destination_path: Optional[str] = None,
     ) -> bytes:
         response = self.client.post(
             self._url("request_download"),
@@ -115,7 +121,7 @@ class RESTModelVersion(RESTBase[ModelVersion, ModelVersionCreate, ModelVersionUp
         download_url = ModelDownloadResponse.model_validate(
             response.json()
         ).download_url
-        self._download_url(download_url, output_path)
+        return self._download_url(download_url, destination_path)
 
 
 model = partial(RESTModel, model=Model)
