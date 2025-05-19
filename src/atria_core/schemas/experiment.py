@@ -6,6 +6,7 @@ from atria_core.schemas.utils import NameStr, SerializableUUID
 
 class ExperimentBase(BaseModel):
     name: NameStr = Field(..., min_length=1, max_length=255)
+    is_public: bool = False
 
 
 class ExperimentCreate(ExperimentBase):

@@ -117,7 +117,7 @@ class DatasetUpdate(OptionalModel):
 
 class Dataset(DatasetBase, BaseDatabaseSchema):
     user_id: SerializableUUID
-    versions: list["DatasetVersion"] = Field(default_factory=list)
+    dataset_version: List[DatasetVersion] = Field(default_factory=list)
 
 
 class DatasetUploadRequest(BaseModel):
@@ -152,9 +152,6 @@ class DatasetDownloadResponse(BaseModel):
 
 
 class DatasetCreateRequest(DatasetBase):
-    # dataset_stuff
-    user_id: SerializableUUID
-
     # dataset_version_stuff
     config_name: NameStr
     config: dict | None

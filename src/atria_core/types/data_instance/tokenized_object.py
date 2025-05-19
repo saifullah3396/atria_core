@@ -25,21 +25,19 @@ License: MIT
 
 from types import NoneType
 from typing import Callable, List, Tuple, Union
+
 import torch
 from pydantic import PrivateAttr, model_validator
 
 from atria.models.utilities.nn_modules import _rgetattr, _rsetattr
-from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
-from atria_core.types.data_instance.base import (
-    BaseDataInstance,
-)
+from atria_core.types.base.data_model import BaseDataModelConfigDict
+from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.image import Image
 from atria_core.types.generic.label import Label
 from atria_core.types.generic.question_answer_pair import (
     QuestionAnswerPair,
     TokenizedQuestionAnswerPair,
 )
-from transformers import PreTrainedTokenizer
 
 NON_REPEATED_KEYS = [
     "token_ids",

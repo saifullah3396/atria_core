@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from atria_core.schemas.base import OptionalModel
+from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
 from atria_core.schemas.utils import SerializableUUID
 
 
@@ -10,7 +10,6 @@ class ParamBase(BaseModel):
 
 
 class ParamCreate(ParamBase):
-    user_id: SerializableUUID
     run_id: SerializableUUID
 
 
@@ -18,5 +17,5 @@ class ParamUpdate(ParamBase, OptionalModel):
     pass
 
 
-class Param(ParamBase):
+class Param(ParamBase, BaseDatabaseSchema):
     run_id: SerializableUUID
