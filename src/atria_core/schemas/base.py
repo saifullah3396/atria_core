@@ -1,9 +1,10 @@
+from datetime import datetime
 import enum
 from typing import TYPE_CHECKING, Any, Type
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
-from atria_core.schemas.utils import SerializableDateTime, SerializableUUID
+from atria_core.schemas.utils import SerializableUUID
 
 if TYPE_CHECKING:
     from atria_core.types.data_instance.base import BaseDataInstance
@@ -77,6 +78,7 @@ class DataInstanceType(str, enum.Enum):
 
 
 class BaseDatabaseSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
     id: SerializableUUID
-    created_at: SerializableDateTime
-    updated_at: SerializableDateTime
+    created_at: datetime
+    updated_at: datetime

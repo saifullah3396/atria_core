@@ -5,7 +5,6 @@ from codename import codename
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
-from atria_core.schemas.config import Config
 from atria_core.schemas.utils import NameStr, SerializableUUID
 
 
@@ -23,7 +22,7 @@ class ModelVersionUpdate(ModelVersionBase):
     pass
 
 
-class ModelVersion(ModelVersionBase, BaseDatabaseSchema):
+class Model(ModelVersionBase, BaseDatabaseSchema):
     model_id: SerializableUUID
     model: Optional["Model"] = None
 
@@ -44,7 +43,7 @@ class ModelUpdate(ModelBase, OptionalModel):
 
 class Model(ModelBase, BaseDatabaseSchema):
     user_id: SerializableUUID
-    versions: List["ModelVersion"] = []
+    versions: List["Model"] = []
 
 
 class ModelUploadRequest(BaseModel):
@@ -54,7 +53,7 @@ class ModelUploadRequest(BaseModel):
 
 
 class ModelUploadResponse(BaseModel):
-    model_version: ModelVersion
+    model_version: Model
     token: Optional[str] = None
 
 

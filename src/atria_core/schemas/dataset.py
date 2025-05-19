@@ -1,12 +1,10 @@
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
-from atria_core.schemas.config import Config
 from atria_core.schemas.utils import NameStr, SerializableUUID
-from atria_core.types.datasets.config import AtriaHubDatasetConfig
 from atria_core.types.datasets.metadata import DatasetLabels, DatasetMetadata  # noqa
 from atria_core.types.datasets.splits import DatasetSplitType
 
@@ -68,38 +66,15 @@ class DatasetSplitUpdate(OptionalModel):
 
 class DatasetSplit(DatasetSplitBase, BaseDatabaseSchema):
     dataset_version_id: SerializableUUID
-    dataset_version: Optional["DatasetVersion"] = None
+    dataset_version: Optional["Dataset"] = None
     shard_file: List[ShardFile] = Field(default_factory=list)
-
-
-# DatasetVersion
-class DatasetVersionBase(BaseModel):
-    version: int = Field(default=0)
-    config_name: NameStr = "default"
-    metadata: DatasetMetadata | None = None
-
-
-class DatasetVersionCreate(DatasetVersionBase):
-    user_id: SerializableUUID
-    dataset_id: SerializableUUID
-
-
-class DatasetVersionUpdate(OptionalModel):
-    # allow updating version tag and version metadata
-    config_name: NameStr | None = None
-    metadata: DatasetMetadata | None = None
-
-
-class DatasetVersion(DatasetVersionBase, BaseDatabaseSchema):
-    dataset_id: SerializableUUID
-    dataset: Optional["Dataset"] = None
-    config: List[Config] | None = None
-    dataset_split: List[DatasetSplit] = Field(default_factory=list)
 
 
 # Dataset
 class DatasetBase(BaseModel):
     name: NameStr
+    config_name: NameStr = "default"
+    dataset_metadata: DatasetMetadata | None = None
     is_public: bool = False
     data_instance_type: DataInstanceType
 
@@ -107,35 +82,28 @@ class DatasetBase(BaseModel):
 class DatasetCreate(DatasetBase):
     # dataset_stuff
     user_id: SerializableUUID
+    config: dict | None = None
 
 
 class DatasetUpdate(OptionalModel):
     # allow updating name of dataset and to make it public/private
     name: NameStr | None = None
+    config_name: NameStr | None = None
     is_public: bool | None = None
+    metadata: DatasetMetadata | None = None
 
 
 class Dataset(DatasetBase, BaseDatabaseSchema):
     user_id: SerializableUUID
-    dataset_version: List[DatasetVersion] = Field(default_factory=list)
+    dataset_splits: List[DatasetSplit] = Field(default_factory=list)
 
 
-class DatasetUploadRequest(BaseModel):
-    # dataset stuff
-    is_public: bool = False
-    data_instance_type: DataInstanceType | None = None
-
-    # dataset version stuff
-    config: dict | None = None
-    metadata: DatasetMetadata | None = None
-
-    # dataset split stuff
+class SplitUploadRequest(BaseModel):
     shard_index: int
     total_shard_count: int
-    dataset_split_type: DatasetSplitType
 
 
-class DatasetUploadResponse(BaseModel):
+class SplitUploadResponse(BaseModel):
     dataset_split: DatasetSplit
     token: str | None = None
 
@@ -147,20 +115,5 @@ class DatasetDownloadRequest(BaseModel):
 
 
 class DatasetDownloadResponse(BaseModel):
-    dataset_version: DatasetVersion
+    dataset: Dataset
     access_credentials: dict | None = None
-
-
-class DatasetCreateRequest(DatasetBase):
-    # dataset_version_stuff
-    config_name: NameStr
-    config: dict | None
-    metadata: DatasetMetadata | None = None
-
-    @model_validator(mode="after")
-    def validate_config(self):
-        if self.config is None or len(self.config) == 0:
-            self.config = AtriaHubDatasetConfig(
-                name=self.name, config_name=self.config_name
-            )
-        return self

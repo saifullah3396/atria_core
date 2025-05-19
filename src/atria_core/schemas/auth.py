@@ -1,5 +1,6 @@
+from typing import Any, Dict
 from gotrue import User, UserAttributes  # type: ignore
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
 from atria_core.schemas.utils import NameStr, SerializableUUID
@@ -12,8 +13,12 @@ class Token(BaseModel):
 
 
 # request
-class UserIn(Token, User):  # type: ignore
+class UserIn(Token):  # type: ignore
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
     id: SerializableUUID
+    app_metadata: Dict[str, Any] | None = None
+    user_metadata: Dict[str, Any] | None = None
+    aud: str | None = None
 
 
 # Properties to receive via API on creation

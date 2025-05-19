@@ -1,3 +1,4 @@
+from datetime import datetime
 import enum
 import uuid
 from typing import List
@@ -6,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
 from atria_core.schemas.config import Config
-from atria_core.schemas.utils import SerializableDateTime, SerializableUUID
+from atria_core.schemas.utils import SerializableUUID
 
 
 class AgentType(str, enum.Enum):
@@ -42,7 +43,7 @@ class AgentTaskBase(BaseModel):
     agent_type: AgentType
     status: AgentTaskStatus = Field(default=AgentTaskStatus.PENDING)
     error_message: str | None = None
-    finished_at: SerializableDateTime | None = None
+    finished_at: datetime | None = None
     request: TrainerRequest | EvaluatorRequest | InferenceRequest
 
 
@@ -53,7 +54,7 @@ class AgentTaskCreate(AgentTaskBase):
 class AgentTaskUpdate(OptionalModel):
     status: AgentTaskStatus = Field(default=AgentTaskStatus.PENDING)
     error_message: str | None = None
-    finished_at: SerializableDateTime | None = None
+    finished_at: datetime | None = None
 
 
 class AgentTask(AgentTaskBase, BaseDatabaseSchema):

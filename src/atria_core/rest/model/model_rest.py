@@ -19,7 +19,7 @@ from atria_core.schemas.model import (
     ModelDownloadRequest,
     ModelDownloadResponse,
     ModelUpdate,
-    ModelVersion,
+    Model,
     ModelVersionCreate,
     ModelVersionUpdate,
 )
@@ -31,7 +31,7 @@ class RESTModel(RESTBase[Model, ModelCreate, ModelUpdate]):
     pass
 
 
-class RESTModelVersion(RESTBase[ModelVersion, ModelVersionCreate, ModelVersionUpdate]):
+class RESTModelVersion(RESTBase[Model, ModelVersionCreate, ModelVersionUpdate]):
     def upload(
         self,
         version_tag: str,
@@ -125,6 +125,4 @@ class RESTModelVersion(RESTBase[ModelVersion, ModelVersionCreate, ModelVersionUp
 
 
 model = partial(RESTModel, model=Model)
-model_version = partial(
-    RESTModelVersion, model=ModelVersion, resource_path="model_version"
-)
+model_version = partial(RESTModelVersion, model=Model, resource_path="model_version")

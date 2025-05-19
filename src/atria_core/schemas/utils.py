@@ -69,10 +69,6 @@ def validate_name(input: str):
 
 
 NameStr = Annotated[str, AfterValidator(validate_name)]
-SerializableDateTime = Annotated[
-    str,
-    PlainSerializer(lambda x: x.isoformat() if hasattr(x, "isoformat") else x),
-]
 SerializableUUID = Annotated[
     uuid.UUID,
     BeforeValidator(lambda v: uuid.UUID(v) if not isinstance(v, uuid.UUID) else v),
