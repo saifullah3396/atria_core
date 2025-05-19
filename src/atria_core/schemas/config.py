@@ -1,15 +1,10 @@
 import enum
 import uuid
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel
 
-from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
-from atria_core.schemas.utils import (
-    NameStr,
-    SerializableUUID,
-    _convert_dict_to_schema,
-    _generate_hash_from_dict,
-)
+from atria_core.schemas.base import BaseDatabaseSchema
+from atria_core.schemas.utils import NameStr, SerializableUUID, _generate_hash_from_dict
 
 
 class ConfigTypes(str, enum.Enum):
@@ -33,13 +28,8 @@ class ConfigBase(BaseModel):
     type: ConfigTypes
     name: NameStr
     path: str
+    is_public: bool = False
 
-    @computed_field
-    @property
-    def schema_hash(self) -> str:
-        return _generate_hash_from_dict(_convert_dict_to_schema(self.data))
-
-    @computed_field
     @property
     def hash(self) -> str:
         return _generate_hash_from_dict(self.data)
@@ -48,22 +38,17 @@ class ConfigBase(BaseModel):
 class ConfigCreate(BaseModel):
     type: ConfigTypes
     name: NameStr
-    user_id: SerializableUUID
     data: dict
+    is_public: bool = False
+    user_id: SerializableUUID
 
-    @computed_field
-    @property
-    def schema_hash(self) -> str:
-        return _generate_hash_from_dict(_convert_dict_to_schema(self.data))
-
-    @computed_field
     @property
     def hash(self) -> str:
         return _generate_hash_from_dict(self.data)
 
 
-class ConfigUpdate(BaseModel, OptionalModel):
-    name: NameStr
+class ConfigUpdate(BaseModel):
+    name: NameStr = None
 
 
 class Config(ConfigBase, BaseDatabaseSchema):
