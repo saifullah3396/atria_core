@@ -1,7 +1,9 @@
 import io
 import os
 from functools import partial
+from pathlib import Path
 from typing import Optional
+import uuid
 
 import requests
 import torch
@@ -10,6 +12,7 @@ import tqdm
 from atria_core.logger.logger import get_logger
 from atria_core.rest.base import RESTBase
 from atria_core.schemas.model import Model, ModelCreate, ModelUpdate
+from atria_core.types.tasks import TaskType
 
 logger = get_logger(__name__)
 
@@ -17,29 +20,50 @@ logger = get_logger(__name__)
 class RESTModel(RESTBase[Model, ModelCreate, ModelUpdate]):
     def upload(
         self,
-        version_tag: str,
-        checkpoint: bytes,
+        registry_name: str,
+        task: Optional[TaskType] = None,
+        model_type: Optional[str] = None,
+        model_name: Optional[str] = None,
         description: Optional[str] = None,
         is_public: bool = False,
+        ckpt_path: Optional[str] = None,
+        ckpt_state_path: Optional[str] = "state_dict",
+        model_state_path: Optional[str] = "_model",
     ) -> None:
-        checkpoint_buffer = io.BytesIO()
-        torch.save(checkpoint, checkpoint_buffer)
-        checkpoint_buffer.seek(0)
-        response = self.client.post(
-            self._url("upload"),
-            data={
-                "version_tag": version_tag,
-                "is_public": is_public,
-                "description": description or "",
-            },
-            files={
-                "model_checkpoint": (
+        files = {}
+        model_file = open(ckpt_path, "rb") if ckpt_path else None
+        if ckpt_path is not None:
+            assert os.path.exists(
+                ckpt_path
+            ), f"Checkpoint path {ckpt_path} does not exist"
+            assert os.path.isfile(
+                ckpt_path
+            ), f"Checkpoint path {ckpt_path} is not a file"
+            files = {
+                "model_file": (
                     "model.bin",
-                    checkpoint_buffer,
+                    model_file,
                     "application/octet-stream",
                 ),
-            },
-        )
+            }
+        try:
+            response = self.client.post(
+                self._url("upload"),
+                data=dict(
+                    registry_name=registry_name,
+                    task=task,
+                    model_type=model_type,
+                    model_name=model_name,
+                    description=description,
+                    is_public=is_public,
+                    ckpt_state_path=ckpt_state_path,
+                    model_state_path=model_state_path,
+                ),
+                files=files,
+            )
+        finally:
+            if model_file is not None:
+                model_file.close()
         if response.status_code != 200:
             raise RuntimeError(
                 f"Failed to upload model: {response.status_code} - {response.text}"
@@ -88,23 +112,38 @@ class RESTModel(RESTBase[Model, ModelCreate, ModelUpdate]):
             logger.error(f"Error downloading {url}: {e}")
             raise
 
-    # def download(
-    #     self,
-    #     download_request: ModelDownloadRequest,
-    #     destination_path: Optional[str] = None,
-    # ) -> bytes:
-    #     response = self.client.post(
-    #         self._url("request_download"),
-    #         json=download_request.model_dump(),
-    #     )
-    #     if response.status_code != 200:
-    #         raise RuntimeError(
-    #             f"Failed to download model: {response.status_code} - {response.text}"
-    #         )
-    #     download_url = ModelDownloadResponse.model_validate(
-    #         response.json()
-    #     ).download_url
-    #     return self._download_url(download_url, destination_path)
+    def load(
+        self,
+        model_name: Optional[str] = None,
+        model_id: Optional[uuid.UUID] = None,
+        destination_path: Optional[str] = None,
+    ) -> bytes:
+        try:
+            assert (
+                model_id is not None or model_name is not None
+            ), "Either model_version_id or model_name must be provided."
+            if model_id is not None:
+                assert (
+                    model_name is None
+                ), "model_name and model_id are mutually exclusive"
+                model = self.get(id=model_id)
+            else:
+                assert (
+                    model_id is None
+                ), "model_name and model_id are mutually exclusive"
+                if "@" in model_name:
+                    username, model_name = model_name.split("@")
+                else:
+                    username = None
+
+                model = self.filter(
+                    name=model_name,
+                    username=username,
+                )
+            return self._download_url(model.model_uri, destination_path)
+        except Exception as e:
+            logger.error(f"Model {model_name} not found in the registry.")
+            raise e
 
 
 model = partial(RESTModel, model=Model)

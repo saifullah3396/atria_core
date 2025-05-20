@@ -2,7 +2,7 @@ import enum
 import uuid
 
 import requests
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from pydantic import BaseModel
 
 from atria_core.schemas.base import BaseDatabaseSchema
@@ -32,7 +32,7 @@ class ConfigBase(BaseModel):
     path: str
     is_public: bool = False
 
-    def load(self) -> dict:
+    def load(self) -> DictConfig | ListConfig:
         if self.path.startswith("http://") or self.path.startswith("https://"):
             response = requests.get(self.path)
             response.raise_for_status()
