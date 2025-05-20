@@ -71,7 +71,7 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             return self.model.model_validate(response.json())
         else:
             raise RuntimeError(
-                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
+                f"Config with filters {filters} not found {self.resource_path}: {response.status_code} - {response.text}"
             )
 
     def count(self, **filters: Any) -> int:

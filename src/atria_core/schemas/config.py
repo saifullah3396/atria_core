@@ -1,10 +1,12 @@
 import enum
 import uuid
 
+import requests
+from omegaconf import OmegaConf
 from pydantic import BaseModel
 
 from atria_core.schemas.base import BaseDatabaseSchema
-from atria_core.schemas.utils import NameStr, SerializableUUID, _generate_hash_from_dict
+from atria_core.schemas.utils import NameStr, _generate_hash_from_dict
 
 
 class ConfigTypes(str, enum.Enum):
@@ -30,6 +32,14 @@ class ConfigBase(BaseModel):
     path: str
     is_public: bool = False
 
+    def load(self) -> dict:
+        if self.path.startswith("http://") or self.path.startswith("https://"):
+            response = requests.get(self.path)
+            response.raise_for_status()
+            return OmegaConf.create(response.json())
+        else:
+            return OmegaConf.load(self.path)
+
     @property
     def hash(self) -> str:
         return _generate_hash_from_dict(self.data)
@@ -40,7 +50,6 @@ class ConfigCreate(BaseModel):
     name: NameStr
     data: dict
     is_public: bool = False
-    user_id: SerializableUUID
 
     @property
     def hash(self) -> str:

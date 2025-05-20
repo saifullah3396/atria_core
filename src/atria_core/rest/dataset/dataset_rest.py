@@ -14,9 +14,6 @@ from atria_core.schemas.dataset import (
     DatasetSplitCreate,
     DatasetSplitUpdate,
     DatasetUpdate,
-    DatasetVersion,
-    DatasetVersionCreate,
-    DatasetVersionUpdate,
     ShardFile,
     ShardFileCreate,
     ShardFileUpdate,
@@ -72,12 +69,6 @@ class RESTDataset(RESTBase[Dataset, DatasetCreate, DatasetUpdate]):
         return DatasetDownloadResponse(**response.json())
 
 
-class RESTDatasetVersion(
-    RESTBase[DatasetVersion, DatasetVersionCreate, DatasetVersionUpdate]
-):
-    pass
-
-
 class RESTDatasetSplit(RESTBase[DatasetSplit, DatasetSplitCreate, DatasetSplitUpdate]):
     pass
 
@@ -87,6 +78,5 @@ class RESTShardFile(RESTBase[ShardFile, ShardFileCreate, ShardFileUpdate]):
 
 
 dataset = partial(RESTDataset, model=Dataset)
-dataset_version = partial(RESTDatasetVersion, model=DatasetVersion)
 dataset_split = partial(RESTDatasetSplit, model=DatasetSplit)
 shard_file = partial(RESTShardFile, model=ShardFile)

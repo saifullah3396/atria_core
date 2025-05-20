@@ -30,7 +30,6 @@ class ShardFileBase(BaseModel):
 
 
 class ShardFileCreate(ShardFileBase):
-    user_id: SerializableUUID
     dataset_split_id: SerializableUUID
 
 
@@ -53,7 +52,6 @@ class DatasetSplitBase(BaseModel):
 
 
 class DatasetSplitCreate(DatasetSplitBase):
-    user_id: SerializableUUID
     dataset_version_id: SerializableUUID
 
 
@@ -81,7 +79,6 @@ class DatasetBase(BaseModel):
 
 class DatasetCreate(DatasetBase):
     # dataset_stuff
-    user_id: SerializableUUID
     config: dict | None = None
 
 

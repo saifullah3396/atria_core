@@ -1,6 +1,8 @@
 from typing import Dict, Optional
 
 import httpx
+from pydantic import BaseModel, EmailStr
+
 from atria_core import rest
 from atria_core.client.keyring import KeyringStorage
 from atria_core.logger.logger import get_logger
@@ -8,16 +10,14 @@ from atria_core.rest.config_rest import RESTConfig
 from atria_core.rest.dataset.dataset_rest import (
     RESTDataset,
     RESTDatasetSplit,
-    RESTDatasetVersion,
     RESTShardFile,
 )
-from atria_core.rest.model.model_rest import RESTModel, RESTModelVersion
+from atria_core.rest.model.model_rest import RESTModel
 from atria_core.rest.tracking.experiment_rest import RESTExperiment
 from atria_core.rest.tracking.metric_rest import RESTMetric
 from atria_core.rest.tracking.param_rest import RESTParam
 from atria_core.rest.tracking.run_rest import RESTRun
 from atria_core.schemas.auth import UserIn
-from pydantic import BaseModel, EmailStr
 from supabase import Client, ClientOptions, create_client
 
 logger = get_logger(__name__)
@@ -95,11 +95,6 @@ class AtriaXClient:
         return rest.dataset(client=self._rest_client)
 
     @property
-    def dataset_version(self) -> RESTDatasetVersion:
-        self._rest_client.headers.update(self._get_auth_headers())
-        return rest.dataset_version(client=self._rest_client)
-
-    @property
     def dataset_split(self) -> RESTDatasetSplit:
         self._rest_client.headers.update(self._get_auth_headers())
         return rest.dataset_split(client=self._rest_client)
@@ -114,11 +109,6 @@ class AtriaXClient:
     def model(self) -> RESTModel:
         self._rest_client.headers.update(self._get_auth_headers())
         return rest.model(client=self._rest_client)
-
-    @property
-    def model_version(self) -> RESTModelVersion:
-        self._rest_client.headers.update(self._get_auth_headers())
-        return rest.model_version(client=self._rest_client)
 
     # config
     @property

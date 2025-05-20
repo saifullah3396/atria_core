@@ -10,7 +10,7 @@ class ExperimentBase(BaseModel):
 
 
 class ExperimentCreate(ExperimentBase):
-    user_id: SerializableUUID
+    pass
 
 
 class ExperimentUpdate(ExperimentBase, OptionalModel):

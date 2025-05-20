@@ -1,4 +1,5 @@
 from typing import Any, Dict
+
 from gotrue import User, UserAttributes  # type: ignore
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -66,7 +67,7 @@ class UserProfileBase(BaseModel):
 
 
 class UserProfileCreate(UserProfileBase):
-    user_id: SerializableUUID
+    pass
 
 
 class UserProfileUpdate(UserProfileBase, OptionalModel):

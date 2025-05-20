@@ -1,6 +1,6 @@
-from datetime import datetime
 import enum
 import uuid
+from datetime import datetime
 from typing import List
 
 from pydantic import BaseModel, Field
@@ -48,7 +48,7 @@ class AgentTaskBase(BaseModel):
 
 
 class AgentTaskCreate(AgentTaskBase):
-    user_id: SerializableUUID
+    pass
 
 
 class AgentTaskUpdate(OptionalModel):

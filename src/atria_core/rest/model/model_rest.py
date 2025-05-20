@@ -1,37 +1,20 @@
-from functools import partial
 import io
-import json
 import os
+from functools import partial
 from typing import Optional
-import uuid
 
-import httpx
 import requests
 import torch
 import tqdm
 
-from atria.data.datasets.downloads.file_downloader import HTTPDownloader
 from atria_core.logger.logger import get_logger
 from atria_core.rest.base import RESTBase
-from atria_core.schemas.model import (
-    Model,
-    ModelCreate,
-    ModelDownloadRequest,
-    ModelDownloadResponse,
-    ModelUpdate,
-    Model,
-    ModelVersionCreate,
-    ModelVersionUpdate,
-)
+from atria_core.schemas.model import Model, ModelCreate, ModelUpdate
 
 logger = get_logger(__name__)
 
 
 class RESTModel(RESTBase[Model, ModelCreate, ModelUpdate]):
-    pass
-
-
-class RESTModelVersion(RESTBase[Model, ModelVersionCreate, ModelVersionUpdate]):
     def upload(
         self,
         version_tag: str,
@@ -105,24 +88,23 @@ class RESTModelVersion(RESTBase[Model, ModelVersionCreate, ModelVersionUpdate]):
             logger.error(f"Error downloading {url}: {e}")
             raise
 
-    def download(
-        self,
-        download_request: ModelDownloadRequest,
-        destination_path: Optional[str] = None,
-    ) -> bytes:
-        response = self.client.post(
-            self._url("request_download"),
-            json=download_request.model_dump(),
-        )
-        if response.status_code != 200:
-            raise RuntimeError(
-                f"Failed to download model: {response.status_code} - {response.text}"
-            )
-        download_url = ModelDownloadResponse.model_validate(
-            response.json()
-        ).download_url
-        return self._download_url(download_url, destination_path)
+    # def download(
+    #     self,
+    #     download_request: ModelDownloadRequest,
+    #     destination_path: Optional[str] = None,
+    # ) -> bytes:
+    #     response = self.client.post(
+    #         self._url("request_download"),
+    #         json=download_request.model_dump(),
+    #     )
+    #     if response.status_code != 200:
+    #         raise RuntimeError(
+    #             f"Failed to download model: {response.status_code} - {response.text}"
+    #         )
+    #     download_url = ModelDownloadResponse.model_validate(
+    #         response.json()
+    #     ).download_url
+    #     return self._download_url(download_url, destination_path)
 
 
 model = partial(RESTModel, model=Model)
-model_version = partial(RESTModelVersion, model=Model, resource_path="model_version")
