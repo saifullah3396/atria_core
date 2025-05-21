@@ -11,7 +11,7 @@ class ImageInstanceBase(BaseDataInstance):
 
 
 class ImageInstanceCreate(ImageInstanceBase):
-    dataset_split_id: SerializableUUID
+    split_id: SerializableUUID
 
 
 class ImageInstanceUpdate(OptionalModel):

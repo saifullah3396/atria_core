@@ -4,7 +4,6 @@ from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
 from atria_core.schemas.utils import SerializableUUID
 from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.ground_truth import GroundTruth
-from atria_core.types.generic.label import Label
 from atria_core.types.generic.ocr import OCRType
 
 
@@ -20,13 +19,13 @@ class DocumentInstanceBase(BaseDataInstance):
     page_id: int = 0
     total_num_pages: int = 1
     sample_path: str | None = None
-    ocr_type: OCRType | None = OCRType.OTHER
+    ocr_type: OCRType | None = None
     ocr_processing_status: OCRStatus = OCRStatus.UNINITIATED
     data: dict
 
 
 class DocumentInstanceCreate(DocumentInstanceBase):
-    dataset_split_id: SerializableUUID
+    split_id: SerializableUUID
 
 
 class DocumentInstanceUpdate(OptionalModel):
@@ -35,4 +34,4 @@ class DocumentInstanceUpdate(OptionalModel):
 
 
 class DocumentInstance(DocumentInstanceBase, BaseDatabaseSchema):
-    dataset_split_id: SerializableUUID
+    split_id: SerializableUUID
