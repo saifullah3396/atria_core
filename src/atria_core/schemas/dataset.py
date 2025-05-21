@@ -42,7 +42,6 @@ class ShardFileUpdate(ShardFileBase, OptionalModel):
 
 class ShardFile(ShardFileBase, BaseDatabaseSchema):
     split_id: SerializableUUID
-    split: "DatasetSplit"
 
 
 # DatasetSplit
@@ -64,7 +63,6 @@ class DatasetSplitUpdate(OptionalModel):
 
 class DatasetSplit(DatasetSplitBase, BaseDatabaseSchema):
     dataset_id: SerializableUUID
-    dataset: "Dataset"
     shard_files: List[ShardFile] = Field(default_factory=list)
 
 

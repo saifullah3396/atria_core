@@ -133,9 +133,8 @@ class RESTBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
             )
 
-    def create(self, *, obj_in: CreateSchemaType, **kwargs: Any) -> Optional[ModelType]:
+    def create(self, *, obj_in: CreateSchemaType) -> Optional[ModelType]:
         payload = obj_in.model_dump()
-        payload.update(self._serialize_filters(kwargs))
         response = self.client.post(self._url("create"), json=payload)
         if response.status_code in (200, 201):
             return self.model.model_validate(response.json())

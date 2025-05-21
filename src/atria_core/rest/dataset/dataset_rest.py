@@ -25,15 +25,21 @@ class RESTDataset(RESTBase[Dataset, DatasetCreate, DatasetUpdate]):
         self,
         *,
         obj_in: DatasetCreate,
-        **kwargs: Any,
     ) -> Optional[Dataset]:
-        try:
-            return self.filter(
-                name=obj_in.name,
-                config_name=obj_in.config_name,
+        response = self.client.get(
+            self._url("filter"),
+            params=self._serialize_filters(
+                dict(name=obj_in.name, config_name=obj_in.config_name)
+            ),
+        )
+        if response.status_code == 200 and response.json():
+            return self.model.model_validate(response.json())
+        elif response.status_code == 404:
+            return self.create(obj_in=obj_in)
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
             )
-        except RuntimeError:
-            return self.create(obj_in=obj_in, **kwargs)
 
     def request_download(
         self,
@@ -58,12 +64,18 @@ class RESTDatasetSplit(RESTBase[DatasetSplit, DatasetSplitCreate, DatasetSplitUp
         obj_in: DatasetSplitCreate,
         **kwargs: Any,
     ) -> Optional[Dataset]:
-        try:
-            return self.filter(
-                name=obj_in.name,
+        response = self.client.get(
+            self._url("filter"),
+            params=self._serialize_filters(dict(name=obj_in.name.value, **kwargs)),
+        )
+        if response.status_code == 200 and response.json():
+            return self.model.model_validate(response.json())
+        elif response.status_code == 404:
+            return self.create(obj_in=obj_in)
+        else:
+            raise RuntimeError(
+                f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
             )
-        except RuntimeError:
-            return self.create(obj_in=obj_in, **kwargs)
 
 
 class RESTShardFile(RESTBase[ShardFile, ShardFileCreate, ShardFileUpdate]):
@@ -71,13 +83,18 @@ class RESTShardFile(RESTBase[ShardFile, ShardFileCreate, ShardFileUpdate]):
         self,
         shard_info: DatasetShardInfo,
         dataset_split_id: uuid.UUID,
+        is_last: bool = False,
     ):
         """Helper function to upload a single shard with all files together."""
         with ShardFileBuffer(shard_info) as shard_file_buffer:
             response = self.client.post(
                 self._url("upload"),
                 data={
-                    "dataset_split_id": dataset_split_id,
+                    "index": shard_info.shard,
+                    "nsamples": shard_info.nsamples,
+                    "filesize": shard_info.filesize,
+                    "dataset_split_id": str(dataset_split_id),
+                    "is_last": str(is_last),
                 },
                 files=shard_file_buffer.files,
             )
@@ -92,5 +109,7 @@ class RESTShardFile(RESTBase[ShardFile, ShardFileCreate, ShardFileUpdate]):
 
 
 dataset = partial(RESTDataset, model=Dataset)
-dataset_split = partial(RESTDatasetSplit, model=DatasetSplit)
-shard_file = partial(RESTShardFile, model=ShardFile)
+dataset_split = partial(
+    RESTDatasetSplit, model=DatasetSplit, resource_path="dataset_split"
+)
+shard_file = partial(RESTShardFile, model=ShardFile, resource_path="shard_file")
