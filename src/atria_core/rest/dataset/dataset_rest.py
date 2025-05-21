@@ -1,10 +1,9 @@
-import json
+import uuid
 from functools import partial
+from typing import Any, Optional
 
-from omegaconf import OmegaConf
-
+from atria.hub.utilities import ShardFileBuffer
 from atria_core.rest.base import RESTBase
-from atria_core.schemas.base import DataInstanceType
 from atria_core.schemas.dataset import (
     Dataset,
     DatasetCreate,
@@ -18,40 +17,23 @@ from atria_core.schemas.dataset import (
     ShardFileCreate,
     ShardFileUpdate,
 )
-from atria_core.types.datasets.splits import DatasetSplitType
+from atria_core.types.datasets.metadata import DatasetShardInfo
 
 
 class RESTDataset(RESTBase[Dataset, DatasetCreate, DatasetUpdate]):
-    def upload_shard(
+    def get_or_create(
         self,
-        is_public: bool,
-        data_instance_type: DataInstanceType,
-        config: dict,
-        metadata: dict,
-        dataset_split_type: DatasetSplitType,
-        shard_index: int,
-        total_shard_count: int,
-        files: list,
-    ) -> None:
-        """Upload a file to the dataset."""
-        response = self.client.post(
-            self._url("upload_shard"),
-            data={
-                "is_public": is_public,
-                "data_instance_type": data_instance_type.value,
-                "config": json.dumps(OmegaConf.to_container(config)),
-                "metadata": metadata.model_dump_json(),
-                "dataset_split_type": dataset_split_type.value,
-                "shard_index": shard_index,
-                "total_shard_count": total_shard_count,
-                "shard_index": shard_index,
-            },
-            files=files,
-        )
-        if response.status_code != 200:
-            raise RuntimeError(
-                f"Failed to upload shard {shard_index}: {response.status_code} - {response.text}"
+        *,
+        obj_in: DatasetCreate,
+        **kwargs: Any,
+    ) -> Optional[Dataset]:
+        try:
+            return self.filter(
+                name=obj_in.name,
+                config_name=obj_in.config_name,
             )
+        except RuntimeError:
+            return self.create(obj_in=obj_in, **kwargs)
 
     def request_download(
         self,
@@ -70,11 +52,43 @@ class RESTDataset(RESTBase[Dataset, DatasetCreate, DatasetUpdate]):
 
 
 class RESTDatasetSplit(RESTBase[DatasetSplit, DatasetSplitCreate, DatasetSplitUpdate]):
-    pass
+    def get_or_create(
+        self,
+        *,
+        obj_in: DatasetSplitCreate,
+        **kwargs: Any,
+    ) -> Optional[Dataset]:
+        try:
+            return self.filter(
+                name=obj_in.name,
+            )
+        except RuntimeError:
+            return self.create(obj_in=obj_in, **kwargs)
 
 
 class RESTShardFile(RESTBase[ShardFile, ShardFileCreate, ShardFileUpdate]):
-    pass
+    def upload(
+        self,
+        shard_info: DatasetShardInfo,
+        dataset_split_id: uuid.UUID,
+    ):
+        """Helper function to upload a single shard with all files together."""
+        with ShardFileBuffer(shard_info) as shard_file_buffer:
+            response = self.client.post(
+                self._url("upload"),
+                data={
+                    "dataset_split_id": dataset_split_id,
+                },
+                files=shard_file_buffer.files,
+            )
+            if response.status_code != 200:
+                raise RuntimeError(
+                    f"Failed to upload shard {shard_info.shard}: {response.status_code} - {response.text}"
+                )
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Failed to upload shard {shard_info.shard}: {response.status_code} - {response.text}"
+            )
 
 
 dataset = partial(RESTDataset, model=Dataset)

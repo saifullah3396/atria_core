@@ -25,19 +25,17 @@ Version: 1.0.0
 License: MIT
 """
 
-import importlib
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Type, Union
+from typing import TYPE_CHECKING, List, Optional, Union
+
+from pydantic import BaseModel, ConfigDict
+from rich.pretty import pretty_repr
 
 from atria_core.logger import get_logger
 from atria_core.utilities.repr import RepresentationMixin
-from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
-from rich.pretty import pretty_repr
 
 if TYPE_CHECKING:
-    from atria_types.data_instance.base import BaseDataInstance
-
     from datasets import DatasetInfo
 
 logger = get_logger(__name__)
@@ -181,38 +179,6 @@ class DatasetMetadata(BaseModel, RepresentationMixin):
     homepage: str | None = None
     license: str | None = None
     dataset_labels: DatasetLabels = DatasetLabels()
-    data_model: Type[Any] | None = None
-
-    @field_serializer("data_model")
-    def serialize_data_model(self, data_model: Type["BaseDataInstance"], _info) -> str:
-        """
-        Serializes the data model to a string.
-
-        Args:
-            data_model (Type[BaseDataInstance]): The data model class.
-
-        Returns:
-            str: The serialized data model.
-        """
-        return f"{data_model.__module__}.{data_model.__name__}"
-
-    @field_validator("data_model", mode="before")
-    @classmethod
-    def validate_data_model(cls, value: str) -> Type["BaseDataInstance"]:
-        """
-        Validates and deserializes the data model from a string.
-
-        Args:
-            data_model (str): The serialized data model.
-
-        Returns:
-            Type[BaseDataInstance]: The deserialized data model class.
-        """
-        if isinstance(value, str):
-            module_name, class_name = value.rsplit(".", 1)
-            module = importlib.import_module(module_name)
-            value = getattr(module, class_name)
-        return value
 
     def to_file(self, file_path: str):
         """

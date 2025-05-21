@@ -1,9 +1,10 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel, Field
 
 from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
+from atria_core.schemas.config import Config
 from atria_core.schemas.utils import NameStr, SerializableUUID
 from atria_core.types.datasets.metadata import DatasetLabels, DatasetMetadata  # noqa
 from atria_core.types.datasets.splits import DatasetSplitType
@@ -27,10 +28,12 @@ class ProcessingStatus(str, Enum):
 class ShardFileBase(BaseModel):
     index: int
     url: str
+    nsamples: int = 0
+    filesize: int = 0
 
 
 class ShardFileCreate(ShardFileBase):
-    dataset_split_id: SerializableUUID
+    split_id: SerializableUUID
 
 
 class ShardFileUpdate(ShardFileBase, OptionalModel):
@@ -38,34 +41,31 @@ class ShardFileUpdate(ShardFileBase, OptionalModel):
 
 
 class ShardFile(ShardFileBase, BaseDatabaseSchema):
-    dataset_split_id: SerializableUUID
+    split_id: SerializableUUID
+    split: "DatasetSplit"
 
 
 # DatasetSplit
 class DatasetSplitBase(BaseModel):
     name: DatasetSplitType
-    total_shard_count: int = 0
-    uploaded_shard_count: int = 0
     upload_status: UploadStatus = UploadStatus.UNINITIATED
     processing_status: ProcessingStatus = ProcessingStatus.UNINITIATED
-    storage_path: str | None = None
 
 
 class DatasetSplitCreate(DatasetSplitBase):
-    dataset_version_id: SerializableUUID
+    dataset_id: SerializableUUID
 
 
 class DatasetSplitUpdate(OptionalModel):
     # allow updating uploaded shard count and upload status
-    uploaded_shard_count: int = 0
     upload_status: UploadStatus = UploadStatus.UNINITIATED
     processing_status: ProcessingStatus = ProcessingStatus.UNINITIATED
 
 
 class DatasetSplit(DatasetSplitBase, BaseDatabaseSchema):
-    dataset_version_id: SerializableUUID
-    dataset_version: Optional["Dataset"] = None
-    shard_file: List[ShardFile] = Field(default_factory=list)
+    dataset_id: SerializableUUID
+    dataset: "Dataset"
+    shard_files: List[ShardFile] = Field(default_factory=list)
 
 
 # Dataset
@@ -78,7 +78,9 @@ class DatasetBase(BaseModel):
 
 
 class DatasetCreate(DatasetBase):
-    # dataset_stuff
+    # on creation we also receive the config
+    # this config is received from cli but from UI
+    # it will be null
     config: dict | None = None
 
 
@@ -87,12 +89,13 @@ class DatasetUpdate(OptionalModel):
     name: NameStr | None = None
     config_name: NameStr | None = None
     is_public: bool | None = None
-    metadata: DatasetMetadata | None = None
+    dataset_metadata: DatasetMetadata | None = None
 
 
 class Dataset(DatasetBase, BaseDatabaseSchema):
     user_id: SerializableUUID
-    dataset_splits: List[DatasetSplit] = Field(default_factory=list)
+    config: Config
+    splits: List[DatasetSplit] = Field(default_factory=list)
 
 
 class SplitUploadRequest(BaseModel):
