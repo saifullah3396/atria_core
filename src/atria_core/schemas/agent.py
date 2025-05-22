@@ -33,9 +33,9 @@ class EvaluatorRequest(BaseModel):
 
 
 class InferenceRequest(BaseModel):
-    dataset_split_id: SerializableUUID
-    model_version_id: SerializableUUID
     instance_ids: List[SerializableUUID]
+    split_id: SerializableUUID
+    model_id: SerializableUUID
     inference_config: Config | None = None
 
 

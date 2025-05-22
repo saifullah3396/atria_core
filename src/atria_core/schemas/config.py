@@ -40,10 +40,6 @@ class ConfigBase(BaseModel):
         else:
             return OmegaConf.load(self.path)
 
-    @property
-    def hash(self) -> str:
-        return _generate_hash_from_dict(self.data)
-
 
 class ConfigCreate(BaseModel):
     type: ConfigTypes
