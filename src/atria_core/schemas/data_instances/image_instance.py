@@ -19,4 +19,4 @@ class ImageInstanceUpdate(OptionalModel):
 
 
 class ImageInstance(ImageInstanceBase, BaseDatabaseSchema):
-    dataset_split_id: SerializableUUID
+    split_id: SerializableUUID
