@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+
 from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
 from atria_core.types.generic.annotated_object import AnnotatedObject
 from atria_core.types.generic.bounding_box import BoundingBox
@@ -79,3 +80,21 @@ class GroundTruth(BaseDataModel):
     qa: Optional[QuestionAnswerGT] = None
     vqa: Optional[VisualQuestionAnswerGT] = None
     layout: Optional[LayoutAnalysisGT] = None
+
+    @classmethod
+    def from_url_dict(cls, url_dict: dict) -> "GroundTruth":
+        import json
+
+        values = {}
+        for key, file_path in url_dict.items():
+            if key.startswith("gt_"):
+                import requests
+
+                response = requests.get(file_path)
+                if response.status_code != 200:
+                    raise RuntimeError(
+                        f"Failed to read object from S3: {response.status_code}"
+                    )
+                gt_object = json.loads(response.content.decode("utf-8"))
+                values[key.replace("gt_", "")] = gt_object
+        return cls(**values)

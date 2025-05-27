@@ -204,13 +204,23 @@ class OCR(BaseDataModel):
             ValueError: If none of the required fields are provided.
         """
         if self.raw_content is None:
-            if not Path(self.file_path).exists():
-                raise FileNotFoundError("Either file_path or graph must be provided.")
-            with open(self.file_path, "r", encoding="utf-8") as f:
-                self.raw_content = f.read()
-                if self.raw_content.startswith("b'"):
-                    self.raw_content = ast.literal_eval(self.raw_content).decode(
-                        "utf-8"
-                    )
-                assert len(self.raw_content) > 0, "OCR content is empty."
+            if self.file_path is None:
+                raise ValueError("Either file_path or raw_content must be provided.")
+            if str(self.file_path).startswith(("http", "https")):
+                import requests
+
+                response = requests.get(self.file_path)
+                if response.status_code != 200:
+                    raise ValueError(f"Failed to load image from URL: {self.file_path}")
+                self.raw_content = response.content.decode("utf-8")
+            else:
+                if not Path(self.file_path).exists():
+                    raise FileNotFoundError(f"File not found: {self.file_path}")
+                with open(self.file_path, "r", encoding="utf-8") as f:
+                    self.raw_content = f.read()
+                    if self.raw_content.startswith("b'"):
+                        self.raw_content = ast.literal_eval(self.raw_content).decode(
+                            "utf-8"
+                        )
+                    assert len(self.raw_content) > 0, "OCR content is empty."
         return self

@@ -30,12 +30,14 @@ from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 import torch
+from PIL import Image as PILImageModule
+from PIL.Image import Image as PILImage
+from pydantic import field_serializer, field_validator, model_validator
+
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
 from atria_core.types.typing.common import PydanticFilePath
 from atria_core.utilities.encoding import _bytes_to_image, _image_to_bytes
-from PIL.Image import Image as PILImage
-from pydantic import field_serializer, field_validator, model_validator
 
 logger = get_logger(__name__)
 
@@ -74,16 +76,24 @@ class Image(BaseDataModel):
             ValueError: If neither `file_path` nor `content` is provided.
             FileNotFoundError: If the file specified by `file_path` does not exist.
         """
-        import PIL
 
         if self.file_path is None and self.content is None:
             raise ValueError("Either file_path or content must be provided.")
         if self.content is None:
             assert self.file_path is not None, "Image file path is not set."
-            if not Path(self.file_path).exists():
-                raise FileNotFoundError(f"Image file not found: {self.file_path}")
-            self.content = PIL.Image.open(self.file_path)
-            self.source_size = self.content.size
+            if str(self.file_path).startswith(("http", "https")):
+                import requests
+
+                response = requests.get(self.file_path)
+                if response.status_code != 200:
+                    raise ValueError(f"Failed to load image from URL: {self.file_path}")
+                self.content: PILImage = _bytes_to_image(response.content)
+                self.source_size = self.content.size
+            else:
+                if not Path(self.file_path).exists():
+                    raise FileNotFoundError(f"Image file not found: {self.file_path}")
+                self.content: PILImage = PILImageModule.open(self.file_path)
+                self.source_size = self.content.size
         return self
 
     @field_validator("content", mode="before")
@@ -221,7 +231,7 @@ class Image(BaseDataModel):
                 (width, height), resample=Resampling.BICUBIC
             )
         elif isinstance(self.content, torch.Tensor):
-            from torchvision.transforms.functional import resize, InterpolationMode
+            from torchvision.transforms.functional import InterpolationMode, resize
 
             self.content = resize(
                 self.content, (height, width), interpolation=InterpolationMode.BILINEAR

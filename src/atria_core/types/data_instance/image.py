@@ -20,15 +20,10 @@ Version: 1.0.0
 License: MIT
 """
 
-import json
-from atria_core.types.data_instance.base import (
-    BaseDataInstance,
-)
+
+from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.ground_truth import GroundTruth
 from atria_core.types.generic.image import Image
-from atria_core.schemas.data_instances.image_instance import (
-    ImageInstance as ImageInstanceSchema,
-)
 
 
 class ImageInstance(BaseDataInstance):
@@ -45,22 +40,3 @@ class ImageInstance(BaseDataInstance):
 
     image: Image
     ground_truth: GroundTruth = GroundTruth()
-
-    @classmethod
-    def from_schema(cls, schema: ImageInstanceSchema):
-        image = None, None
-        if "image_file_path" in schema.data:
-            image = Image(file_path=schema.data["image_file_path"])
-
-        ground_truth = GroundTruth()
-        for key in ground_truth.__dict__.keys():
-            if f"gt_{key}" in schema.data:
-                with open(schema.data[f"gt_{key}"], "r") as f:
-                    json.loads(f.read())
-                setattr(ground_truth, key, schema.data[key])
-        return ImageInstance(
-            id=schema.id,
-            index=schema.index,
-            image=image,
-            ground_truth=ground_truth,
-        )

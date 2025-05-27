@@ -77,6 +77,9 @@ def _path_validator(value: str, handler: ValidatorFunctionWrapHandler) -> Path:
         ValueError: If the path is not a file.
     """
     if isinstance(value, str):
+        if value.startswith(("s3://", "http://", "https://")):
+            # Handle S3 paths separately
+            return value
         value = Path(value)
     return value
 
