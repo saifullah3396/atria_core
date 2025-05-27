@@ -9,6 +9,7 @@ from atria_core.types.generic.ocr import OCRType
 
 class OCRStatus(str, Enum):
     UNINITIATED = "uninitiated"
+    REQUESTED = "requested"
     PENDING = "pending"
     FAILED = "failed"
     COMPLETED = "completed"

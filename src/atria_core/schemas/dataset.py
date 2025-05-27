@@ -19,6 +19,7 @@ class UploadStatus(str, Enum):
 
 class ProcessingStatus(str, Enum):
     UNINITIATED = "uninitiated"
+    REQUESTED = "requested"
     PENDING = "pending"
     FAILED = "failed"
     COMPLETED = "completed"

@@ -1,7 +1,7 @@
 import enum
 import uuid
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +33,7 @@ class EvaluatorRequest(BaseModel):
 
 
 class InferenceRequest(BaseModel):
-    instance_ids: List[SerializableUUID]
+    instance_ids: Optional[List[SerializableUUID]] = None
     split_id: SerializableUUID
     model_id: SerializableUUID
     inference_config: Config | None = None
