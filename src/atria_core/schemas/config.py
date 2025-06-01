@@ -1,9 +1,9 @@
 import enum
 import uuid
 
-import requests
+from httpx import AsyncClient
 from omegaconf import DictConfig, ListConfig, OmegaConf
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from atria_core.schemas.base import BaseDatabaseSchema
 from atria_core.schemas.utils import NameStr, _generate_hash_from_dict
@@ -32,16 +32,20 @@ class ConfigBase(BaseModel):
     path: str
     is_public: bool = False
 
-    def load(self) -> DictConfig | ListConfig:
+    async def load(self) -> DictConfig | ListConfig:
         if self.path.startswith("http://") or self.path.startswith("https://"):
-            response = requests.get(self.path)
-            response.raise_for_status()
-            return OmegaConf.create(response.json())
+            async with AsyncClient() as avatar_client:
+                response = await avatar_client.get(self.path)
+            assert response.status_code == 200
+            yaml_content = response.text
+            return OmegaConf.create(yaml_content)
         else:
             return OmegaConf.load(self.path)
 
 
 class ConfigCreate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     type: ConfigTypes
     name: NameStr
     data: dict
@@ -53,13 +57,12 @@ class ConfigCreate(BaseModel):
 
 
 class ConfigUpdate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     name: NameStr = None
+    data: dict = None
+    is_public: bool = None
 
 
 class Config(ConfigBase, BaseDatabaseSchema):
     user_id: uuid.UUID
-
-
-class ConfigFilter(BaseModel):
-    type: NameStr | None = None
-    name: NameStr | None = None
