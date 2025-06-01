@@ -78,7 +78,6 @@ class UserProfileBase(BaseModel):
     )
     avatar_url: str | None = Field(
         None,
-        max_length=255,
         description="URL of the user's avatar image",
     )
     website: str | None = Field(
