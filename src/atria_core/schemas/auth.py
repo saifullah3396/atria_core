@@ -16,6 +16,7 @@ class Token(BaseModel):
 class UserIn(Token):  # type: ignore
     model_config = ConfigDict(from_attributes=True, extra="ignore")
     id: SerializableUUID
+    email: str | None = None
     app_metadata: Dict[str, Any] | None = None
     user_metadata: Dict[str, Any] | None = None
     aud: str | None = None

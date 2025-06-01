@@ -12,11 +12,11 @@ from atria_core.schemas.utils import SerializableUUID
 
 class AgentType(str, enum.Enum):
     TRAINER = "trainer"
-    EVALUATOR = "evaluator"
     INFERENCER = "inferencer"
 
 
 class AgentTaskStatus(str, enum.Enum):
+    UNINITIATED = "uninitiated"
     PENDING = "pending"
     FAILED = "failed"
     COMPLETED = "completed"
@@ -26,10 +26,6 @@ class TrainerRequest(BaseModel):
     dataset_version_id: uuid.UUID
     model_version_id: uuid.UUID
     trainer_config: dict
-
-
-class EvaluatorRequest(BaseModel):
-    evaluator_config: dict
 
 
 class InferenceRequest(BaseModel):
@@ -44,7 +40,7 @@ class AgentTaskBase(BaseModel):
     status: AgentTaskStatus = Field(default=AgentTaskStatus.PENDING)
     error_message: str | None = None
     finished_at: datetime | None = None
-    request: TrainerRequest | EvaluatorRequest | InferenceRequest
+    request: TrainerRequest | InferenceRequest
 
 
 class AgentTaskCreate(AgentTaskBase):

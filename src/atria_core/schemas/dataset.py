@@ -1,13 +1,16 @@
 from enum import Enum
 from typing import List
 
-from pydantic import BaseModel, Field
-
 from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
 from atria_core.schemas.config import Config
 from atria_core.schemas.utils import NameStr, SerializableUUID
 from atria_core.types.datasets.metadata import DatasetLabels, DatasetMetadata  # noqa
 from atria_core.types.datasets.splits import DatasetSplitType
+from pydantic import BaseModel, Field
+
+
+class ShardFileType(str, Enum):
+    tar: str = "tar"
 
 
 class UploadStatus(str, Enum):
