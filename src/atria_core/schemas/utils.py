@@ -74,3 +74,8 @@ SerializableUUID = Annotated[
     BeforeValidator(lambda v: uuid.UUID(v) if not isinstance(v, uuid.UUID) else v),
     PlainSerializer(lambda x: str(x)),
 ]
+SerializableDateTime = Annotated[
+    str,
+    BeforeValidator(lambda v: v.isoformat() if hasattr(v, "isoformat") else v),
+    PlainSerializer(lambda x: x.isoformat() if hasattr(x, "isoformat") else x),
+]

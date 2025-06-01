@@ -1,10 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
 from atria_core.schemas.utils import SerializableUUID
 
 
 class ParamBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     key: str
     value: str
 
