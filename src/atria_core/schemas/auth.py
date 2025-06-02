@@ -3,7 +3,7 @@ from typing import Any, Dict
 from atria_core.schemas.base import BaseDatabaseSchema
 from atria_core.schemas.utils import NameStr, SerializableUUID
 from gotrue import User, UserAttributes  # type: ignore
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 # Shared properties
@@ -65,7 +65,7 @@ class LoginRequest(BaseModel):
 class UserProfileBase(BaseModel):
     username: NameStr = Field(..., min_length=1, max_length=50)
     full_name: str = Field(
-        None, min_length=1, max_length=100, description="Full name of the user"
+        ..., min_length=1, max_length=100, description="Full name of the user"
     )
     email: EmailStr = Field(
         None, max_length=255, description="Email address of the user"
@@ -106,13 +106,6 @@ class UserProfileUpdate(BaseModel):
         max_length=255,
         description="URL of the user's personal or professional website",
     )
-
-    @field_validator("bio", mode="after")
-    @classmethod
-    def set_default_bio(cls, v):
-        if not v or v.strip() == "":
-            return "Hey There"
-        return v
 
 
 class UserProfile(UserProfileBase, BaseDatabaseSchema):
