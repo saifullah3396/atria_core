@@ -55,7 +55,7 @@ def validate_name(input: str):
 
     input = input.strip()
 
-    if len(input) < 3 or len(input) > 100:
+    if len(input) < 2 or len(input) > 100:
         raise ValueError(
             "Name must be at least 3 characters long and at most 100 characters"
         )

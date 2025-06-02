@@ -4,7 +4,8 @@ import enum
 class TaskType(str, enum.Enum):
     image_classification = "image_classification"
     sequence_classification = "sequence_classification"
-    sermantic_entity_recognition = "sermantic_entity_recognition"
+    semantic_entity_recognition = "semantic_entity_recognition"
+    layout_entity_recognition = "layout_entity_recognition"
     question_answering = "question_answering"
     visual_question_answering = "visual_question_answering"
     layout_analysis = "layout_analysis"

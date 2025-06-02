@@ -1,6 +1,7 @@
 import enum
 import uuid
 
+from fastapi import HTTPException
 from httpx import AsyncClient
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from pydantic import BaseModel, ConfigDict
@@ -32,11 +33,15 @@ class ConfigBase(BaseModel):
     path: str
     is_public: bool = False
 
-    async def load(self) -> DictConfig | ListConfig:
+    async def download(self) -> DictConfig | ListConfig:
         if self.path.startswith("http://") or self.path.startswith("https://"):
-            async with AsyncClient() as avatar_client:
-                response = await avatar_client.get(self.path)
-            assert response.status_code == 200
+            async with AsyncClient() as client:
+                response = await client.get(self.path)
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Failed to load config from {self.path}: {response.text}",
+                )
             yaml_content = response.text
             return OmegaConf.create(yaml_content)
         else:
