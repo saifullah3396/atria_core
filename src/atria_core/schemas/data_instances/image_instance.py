@@ -1,22 +1,16 @@
-from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
-from atria_core.schemas.utils import SerializableUUID
+from atria_core.schemas.base import BaseDataInstanceStorageSchema
 from atria_core.types.data_instance.base import BaseDataInstance
-from atria_core.types.generic.ground_truth import GroundTruth
+from atria_core.types.datasets.splits import DatasetSplitType
 
 
 class ImageInstanceBase(BaseDataInstance):
-    index: int
-    sample_path: str | None = None
-    data: dict
+    branch_name: str
+    split: DatasetSplitType
+    sample_id: str
 
 
-class ImageInstanceCreate(ImageInstanceBase):
-    split_id: SerializableUUID
+class ImageInstance(ImageInstanceBase, BaseDataInstanceStorageSchema):
+    def get_storage_instance(self):
+        from atriax import storage
 
-
-class ImageInstanceUpdate(OptionalModel):
-    ground_truth: GroundTruth
-
-
-class ImageInstance(ImageInstanceBase, BaseDatabaseSchema):
-    split_id: SerializableUUID
+        return storage.image_instance

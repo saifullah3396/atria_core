@@ -1,214 +1,104 @@
 from enum import Enum
 from typing import List
 
-from fastapi import HTTPException
-from httpx import AsyncClient
+import yaml
+from omegaconf import OmegaConf
+from pydantic import BaseModel, Field, computed_field, model_validator
 
-from atria_core.schemas.base import BaseDatabaseSchema, DataInstanceType, OptionalModel
-from atria_core.schemas.config import Config
+from atria_core.schemas.base import (
+    BaseStorageDatabaseSchema,
+    DataInstanceType,
+)
+from atria_core.schemas.user_task import UserTask, UserTaskStatus
 from atria_core.schemas.utils import NameStr, SerializableUUID
-from atria_core.types.datasets.metadata import DatasetLabels, DatasetMetadata  # noqa
-from atria_core.types.datasets.splits import DatasetSplitType
-from pydantic import BaseModel, Field, computed_field
-
-
-class ShardFileType(str, Enum):
-    tar: str = "tar"
-
-
-class UploadStatus(str, Enum):
-    UNINITIATED = "uninitiated"
-    PENDING = "pending"
-    FAILED = "failed"
-    COMPLETED = "completed"
-
-
-class ProcessingStatus(str, Enum):
-    UNINITIATED = "uninitiated"
-    REQUESTED = "requested"
-    PENDING = "pending"
-    FAILED = "failed"
-    COMPLETED = "completed"
 
 
 class DatasetStatus(str, Enum):
-    READY = "ready"
-    FAILED = "failed"
-    PROCESSING = "processing"
-
-
-class DatasetDownloadStatus(str, Enum):
-    EMPTY_DATASET = "empty_dataset"
-    NOT_PREPARED = "not_prepared"
-    PREPARING = "preparing"
-    READY = "ready"
-    DATA_MODIFIED = "data_modified"
-
-
-# ShardFile
-class ShardFileBase(BaseModel):
-    index: int
-    url: str
-    nsamples: int = 0
-    filesize: int = 0
-
-
-class ShardFileCreate(ShardFileBase):
-    split_id: SerializableUUID
-
-
-class ShardFileUpdate(ShardFileBase, OptionalModel):
-    pass
-
-
-class ShardFile(ShardFileBase, BaseDatabaseSchema):
-    split_id: SerializableUUID
-
-    async def download(self) -> bytes:
-        async with AsyncClient() as client:
-            response = await client.get(self.url)
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"Failed to load model from {self.url}: {response.text}",
-            )
-        return response.content
-
-
-# DatasetSplit
-class DatasetSplitBase(BaseModel):
-    name: DatasetSplitType
-    upload_status: UploadStatus = UploadStatus.UNINITIATED
-    processing_status: ProcessingStatus = ProcessingStatus.UNINITIATED
-
-
-class DatasetSplitCreate(DatasetSplitBase):
-    dataset_id: SerializableUUID
-
-
-class DatasetSplitUpdate(OptionalModel):
-    # allow updating uploaded shard count and upload status
-    upload_status: UploadStatus = UploadStatus.UNINITIATED
-    processing_status: ProcessingStatus = ProcessingStatus.UNINITIATED
-
-
-class DatasetSplit(DatasetSplitBase, BaseDatabaseSchema):
-    dataset_id: SerializableUUID
-    shard_files: List[ShardFile] = Field(default_factory=list)
-
-    @computed_field
-    def size(self) -> int:
-        return sum(split.filesize for split in self.shard_files)
-
-    async def download(self) -> bytes:
-        shard_files = []
-        for shard_file in self.shard_files:
-            try:
-                content = await shard_file.download()
-                return shard_files.append(content)
-            except HTTPException as e:
-                raise HTTPException(
-                    status_code=e.status_code,
-                    detail=f"Failed to download shard file {shard_file.index}: {e.detail}",
-                )
-        return shard_files
+    unavailable = "unavailable"
+    available = "available"
+    processing = "processing"
+    outdated = "outdated"
 
 
 # Dataset
 class DatasetBase(BaseModel):
     name: NameStr
     config_name: NameStr = "default"
-    dataset_metadata: DatasetMetadata | None = None
+    description: str | None = None
     is_public: bool = False
+    status: DatasetStatus = DatasetStatus.unavailable
     data_instance_type: DataInstanceType
 
 
-class DatasetCreate(DatasetBase):
-    # on creation we also receive the config
-    # this config is received from cli but from UI
-    # it will be null
-    config: dict | None = None
-
-
-class DatasetUpdate(OptionalModel):
-    # allow updating name of dataset and to make it public/private
-    name: NameStr | None = None
-    config_name: NameStr | None = None
-    is_public: bool | None = None
-    dataset_metadata: DatasetMetadata | None = None
-
-
-class Dataset(DatasetBase, BaseDatabaseSchema):
+class DatasetListItem(DatasetBase, BaseStorageDatabaseSchema):
     user_id: SerializableUUID
-    config: Config
-    splits: List[DatasetSplit] = Field(default_factory=list)
+
+
+class Dataset(DatasetBase, BaseStorageDatabaseSchema):
+    user_id: SerializableUUID
+    tasks: List[UserTask] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def update_status_based_on_tasks(self) -> "Dataset":
+        if len(self.tasks) > 0 and any(
+            task.status in {UserTaskStatus.pending, UserTaskStatus.in_progress}
+            for task in self.tasks
+        ):
+            self.status = DatasetStatus.processing
+        return self
 
     @computed_field
-    def size(self) -> int:
-        return sum(split.size for split in self.splits)
+    @property
+    def shard_urls(self) -> List[str]:
+        from atriax import storage
+
+        if self.storage_objects:
+            shard_urls = []
+            for obj in self.storage_objects:
+                if obj.object_key.startswith(storage.dataset.__default_shards_path__):
+                    shard_urls.append(obj.presigned_url)
+            return shard_urls if shard_urls else []
+        return []
 
     @computed_field
-    def status(self) -> DatasetStatus:
-        for split in self.splits:
-            if (
-                split.upload_status == UploadStatus.PENDING
-                or split.processing_status
-                in [
-                    ProcessingStatus.REQUESTED,
-                    ProcessingStatus.PENDING,
-                ]
-            ):
-                return DatasetStatus.PROCESSING
-            if (
-                split.processing_status == ProcessingStatus.FAILED
-                or split.upload_status == UploadStatus.FAILED
-            ):
-                return DatasetStatus.FAILED
-            return DatasetStatus.READY
+    @property
+    def card_url(self) -> str | None:
+        from atriax import storage
+
+        if self.storage_objects:
+            return next(
+                (
+                    obj.presigned_url
+                    for obj in self.storage_objects
+                    if obj.object_key == storage.dataset.__default_card_path__
+                ),
+                None,
+            )
+        return None
 
     @computed_field
-    def download_status(self) -> DatasetDownloadStatus:
-        if len(self.splits) == 0:
-            return DatasetDownloadStatus.NOT_AVAILABLE
-        for split in self.splits:
-            if (
-                split.upload_status == UploadStatus.PENDING
-                or split.processing_status
-                in [
-                    ProcessingStatus.REQUESTED,
-                    ProcessingStatus.PENDING,
-                ]
-            ):
-                return DatasetStatus.PROCESSING
-            if (
-                split.processing_status == ProcessingStatus.FAILED
-                or split.upload_status == UploadStatus.FAILED
-            ):
-                return DatasetStatus.FAILED
-            return DatasetStatus.READY
+    @property
+    def config_url(self) -> str | None:
+        from atriax import storage
 
-    async def download(self) -> bytes:
-        splits = []
-        for split in self.splits:
-            try:
-                content = await split.download()
-                splits.append(content)
-            except HTTPException as e:
-                raise HTTPException(
-                    status_code=e.status_code,
-                    detail=f"Failed to download split {split.name}: {e.detail}",
-                )
-        return splits
+        if self.storage_objects:
+            return next(
+                (
+                    obj.presigned_url
+                    for obj in self.storage_objects
+                    if obj.object_key == storage.dataset.__default_config_path__
+                ),
+                None,
+            )
+        return None
 
+    async def fetch_card(self) -> str:
+        return await self.fetch_object(self.card_url).decode("utf-8")
 
-class SplitUploadRequest(BaseModel):
-    shard_index: int
-    total_shard_count: int
-
-
-class SplitUploadResponse(BaseModel):
-    dataset_split: DatasetSplit
-    token: str | None = None
+    async def fetch_config(self) -> str:
+        return OmegaConf.create(
+            yaml.safe_load(await self.fetch_object(self.config_url))
+        )
 
 
 class DatasetDownloadRequest(BaseModel):

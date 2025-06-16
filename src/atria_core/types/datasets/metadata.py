@@ -108,8 +108,8 @@ class DatasetLabels(BaseModel):
 
     Attributes:
         classification (List[str] | None): The classification labels.
+        ser (List[str] | None): The semantic entity recognition labels.
         layout (List[str] | None): The layout labels.
-        ner (List[str] | None): The named entity recognition labels.
     """
 
     classification: Optional[List[str]] = None

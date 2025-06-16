@@ -1,12 +1,11 @@
 import enum
 import uuid
 
-from fastapi import HTTPException
-from httpx import AsyncClient
-from omegaconf import DictConfig, ListConfig, OmegaConf
-from pydantic import BaseModel, ConfigDict
+import yaml
+from omegaconf import DictConfig, OmegaConf
+from pydantic import BaseModel, ConfigDict, computed_field
 
-from atria_core.schemas.base import BaseDatabaseSchema
+from atria_core.schemas.base import BaseStorageDatabaseSchema
 from atria_core.schemas.utils import NameStr, _generate_hash_from_dict
 
 
@@ -30,22 +29,7 @@ class ConfigTypes(str, enum.Enum):
 class ConfigBase(BaseModel):
     type: ConfigTypes
     name: NameStr
-    path: str
     is_public: bool = False
-
-    async def download(self) -> DictConfig | ListConfig:
-        if self.path.startswith("http://") or self.path.startswith("https://"):
-            async with AsyncClient() as client:
-                response = await client.get(self.path)
-            if response.status_code != 200:
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail=f"Failed to load config from {self.path}: {response.text}",
-                )
-            yaml_content = response.text
-            return OmegaConf.create(yaml_content)
-        else:
-            return OmegaConf.load(self.path)
 
 
 class ConfigCreate(BaseModel):
@@ -69,5 +53,22 @@ class ConfigUpdate(BaseModel):
     is_public: bool = None
 
 
-class Config(ConfigBase, BaseDatabaseSchema):
+class Config(ConfigBase, BaseStorageDatabaseSchema):
     user_id: uuid.UUID
+
+    @computed_field
+    @property
+    def data_url(self) -> str | None:
+        if self.storage_objects:
+            return next(
+                (
+                    obj.presigned_url
+                    for obj in self.storage_objects
+                    if obj.object_key == "data"
+                ),
+                None,
+            )
+        return None
+
+    async def fetch_data(self) -> DictConfig:
+        return OmegaConf.create(yaml.safe_load(await self.fetch_object(self.data_url)))

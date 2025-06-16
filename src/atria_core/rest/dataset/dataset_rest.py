@@ -1,12 +1,13 @@
+import json
 import os
 import uuid
 from functools import partial
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import requests
 import tqdm
 
-from atria.hub.utilities import ShardFileBuffer
+from atria.hub.utilities import ShardFilesBuffer
 from atria_core.logger.logger import get_logger
 from atria_core.rest.base import RESTBase
 from atria_core.schemas.dataset import (
@@ -150,35 +151,43 @@ class RESTDatasetSplit(RESTBase[DatasetSplit, DatasetSplitCreate, DatasetSplitUp
                 f"Failed to create {self.resource_path}: {response.status_code} - {response.text}"
             )
 
-
-class RESTShardFile(RESTBase[ShardFile, ShardFileCreate, ShardFileUpdate]):
-    def upload(
+    def upload_shards(
         self,
-        shard_info: DatasetShardInfo,
+        shard_info_list: List[DatasetShardInfo],
         dataset_split_id: uuid.UUID,
-        is_last: bool = False,
     ):
         """Helper function to upload a single shard with all files together."""
-        with ShardFileBuffer(shard_info) as shard_file_buffer:
+
+        with ShardFilesBuffer(shard_info_list) as shard_file_buffer:
             response = self.client.post(
                 self._url("upload"),
                 data={
-                    "index": shard_info.shard,
-                    "nsamples": shard_info.nsamples,
-                    "filesize": shard_info.filesize,
                     "dataset_split_id": str(dataset_split_id),
-                    "is_last": str(is_last),
+                    "metadata": json.dumps(
+                        [
+                            {
+                                "filesize": shard_info.filesize,
+                                "index": shard_info.shard,
+                                "nsamples": shard_info.nsamples,
+                            }
+                            for shard_info in shard_info_list
+                        ]
+                    ),
                 },
                 files=shard_file_buffer.files,
             )
             if response.status_code != 200:
                 raise RuntimeError(
-                    f"Failed to upload shard {shard_info.shard}: {response.status_code} - {response.text}"
+                    f"Failed to upload shard files: {response.status_code} - {response.text}"
                 )
         if response.status_code != 200:
             raise RuntimeError(
-                f"Failed to upload shard {shard_info.shard}: {response.status_code} - {response.text}"
+                f"Failed to upload shard files: {response.status_code} - {response.text}"
             )
+
+
+class RESTShardFile(RESTBase[ShardFile, ShardFileCreate, ShardFileUpdate]):
+    pass
 
 
 dataset = partial(RESTDataset, model=Dataset)

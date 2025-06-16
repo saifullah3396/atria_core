@@ -1,38 +1,63 @@
 from enum import Enum
+from typing import TYPE_CHECKING, Dict
 
-from atria_core.schemas.base import BaseDatabaseSchema, OptionalModel
-from atria_core.schemas.utils import SerializableUUID
+from fastapi import HTTPException
+from pydantic import computed_field
+
+from atria_core.schemas.base import BaseDataInstanceStorageSchema
 from atria_core.types.data_instance.base import BaseDataInstance
-from atria_core.types.generic.ground_truth import GroundTruth
-from atria_core.types.generic.ocr import OCRType
+from atria_core.types.datasets.splits import DatasetSplitType
+
+if TYPE_CHECKING:
+    from atriax.storage.dataset.document_instance_storage import DocumentInstanceStorage
 
 
 class OCRStatus(str, Enum):
-    UNINITIATED = "uninitiated"
-    REQUESTED = "requested"
-    PENDING = "pending"
-    FAILED = "failed"
-    COMPLETED = "completed"
+    available = "available"
+    unavailable = "unavailable"
 
 
 class DocumentInstanceBase(BaseDataInstance):
-    doc_id: str
-    page_id: int = 0
-    total_num_pages: int = 1
-    sample_path: str | None = None
-    ocr_type: OCRType | None = None
-    ocr_processing_status: OCRStatus = OCRStatus.UNINITIATED
-    data: dict
+    branch_name: str
+    split: DatasetSplitType
+    sample_id: str
+    ocr_status: OCRStatus = OCRStatus.unavailable
 
 
-class DocumentInstanceCreate(DocumentInstanceBase):
-    split_id: SerializableUUID
+class DocumentInstance(DocumentInstanceBase, BaseDataInstanceStorageSchema):
+    def get_storage_instance(self) -> "DocumentInstanceStorage":
+        from atriax import storage
 
+        return storage.document_instance
 
-class DocumentInstanceUpdate(OptionalModel):
-    doc_id: str
-    ground_truth: GroundTruth
+    @computed_field
+    @property
+    def ocr_urls(self) -> Dict[str, str]:
+        pass
 
+        if self.storage_objects:
+            ocr_urls = {}
+            for obj in self.storage_objects:
+                if obj.object_key.startswith(
+                    self.get_storage_instance().__default_ocr_path__
+                ):
+                    ocr_urls[
+                        obj.object_key.replace(
+                            self.get_storage_instance().__default_ocr_path__, ""
+                        )
+                    ] = obj.presigned_url
+            return ocr_urls if ocr_urls else []
+        return []
 
-class DocumentInstance(DocumentInstanceBase, BaseDatabaseSchema):
-    split_id: SerializableUUID
+    async def fetch_ocr(self) -> Dict[str, str]:
+        ocr = {}
+        for key, url in self.ocr_urls.items():
+            try:
+                ocr[key] = await self.fetch_object(url)
+                ocr[key] = ocr[key].decode("utf-8")
+            except HTTPException as e:
+                if e.status_code == 404:
+                    ocr[key] = None
+                    continue
+                raise e
+        return ocr

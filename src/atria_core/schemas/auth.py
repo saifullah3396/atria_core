@@ -1,9 +1,12 @@
 from typing import Any, Dict
 
-from atria_core.schemas.base import BaseDatabaseSchema
-from atria_core.schemas.utils import NameStr, SerializableUUID
 from gotrue import User, UserAttributes  # type: ignore
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
+
+from atria_core.schemas.base import (
+    BaseS3StorageDatabaseSchema,
+)
+from atria_core.schemas.utils import NameStr, SerializableUUID
 
 
 # Shared properties
@@ -14,6 +17,15 @@ class Token(BaseModel):
 
 # request
 class UserIn(Token):  # type: ignore
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
+    id: SerializableUUID
+    email: str | None = None
+    app_metadata: Dict[str, Any] | None = None
+    user_metadata: Dict[str, Any] | None = None
+    aud: str | None = None
+
+
+class UserInNoToken(BaseModel):  # type: ignore
     model_config = ConfigDict(from_attributes=True, extra="ignore")
     id: SerializableUUID
     email: str | None = None
@@ -68,17 +80,13 @@ class UserProfileBase(BaseModel):
         ..., min_length=1, max_length=100, description="Full name of the user"
     )
     email: EmailStr = Field(
-        None, max_length=255, description="Email address of the user"
+        ..., max_length=255, description="Email address of the user"
     )
     bio: str | None = Field(
         None, max_length=500, description="Short biography of the user"
     )
     location: str | None = Field(
         None, max_length=100, description="Location of the user"
-    )
-    avatar_url: str | None = Field(
-        None,
-        description="URL of the user's avatar image",
     )
     website: str | None = Field(
         None,
@@ -106,7 +114,25 @@ class UserProfileUpdate(BaseModel):
         max_length=255,
         description="URL of the user's personal or professional website",
     )
+    avatar_url: str | None = Field(
+        None,
+        description="URL of the user's avatar image",
+    )
 
 
-class UserProfile(UserProfileBase, BaseDatabaseSchema):
+class UserProfile(UserProfileBase, BaseS3StorageDatabaseSchema):
     user_id: SerializableUUID
+
+    @computed_field
+    @property
+    def avatar_url(self) -> str | None:
+        if self.storage_objects:
+            return next(
+                (
+                    obj.presigned_url
+                    for obj in self.storage_objects
+                    if obj.object_key == "avatar"
+                ),
+                None,
+            )
+        return None

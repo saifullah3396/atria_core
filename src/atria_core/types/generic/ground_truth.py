@@ -1,6 +1,5 @@
 from typing import List, Optional
 
-
 from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
 from atria_core.types.generic.annotated_object import AnnotatedObject
 from atria_core.types.generic.bounding_box import BoundingBox
