@@ -60,13 +60,14 @@ class StorageObject(BaseModel):
     presigned_url: str | None = None
     size: int = 0
 
+    @computed_field
     @property
     def path(self) -> str:
         return f"{self.base_path}/{self.object_key}{self.ext}"
 
 
 class LakeFSStorageObject(BaseModel):
-    physical_address: str
+    physical_address: str | None = None
     object_key: str
     ext: str
     presigned_url: str | None = None
@@ -74,9 +75,15 @@ class LakeFSStorageObject(BaseModel):
     modified: int = 0
     type: str = "file"
 
+    @computed_field
     @property
     def path(self) -> str:
         return f"{self.object_key}{self.ext}"
+
+
+class LakeFSStoragePaginatedObjects(BaseModel):
+    objects: List[LakeFSStorageObject]
+    next_after: Optional[str] = None
 
 
 class DataInstanceType(str, enum.Enum):
