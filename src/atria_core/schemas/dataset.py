@@ -23,7 +23,6 @@ class DatasetStatus(str, Enum):
 # Dataset
 class DatasetBase(BaseModel):
     name: NameStr
-    config_name: NameStr = "default"
     description: str | None = None
     is_public: bool = False
     status: DatasetStatus = DatasetStatus.unavailable
