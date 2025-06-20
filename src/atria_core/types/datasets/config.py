@@ -79,5 +79,3 @@ class AtriaHubDatasetConfig(BaseModel):
     """
 
     __target__: str = "atria.hub.atria_hub_dataset.AtriaHubDataset"
-    name: Optional[str] = None
-    config_name: str = "default"

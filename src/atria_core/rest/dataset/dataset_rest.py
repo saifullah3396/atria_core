@@ -36,9 +36,7 @@ class RESTDataset(RESTBase[Dataset, DatasetCreate, DatasetUpdate]):
     ) -> Optional[Dataset]:
         response = self.client.get(
             self._url("filter"),
-            params=self._serialize_filters(
-                dict(name=obj_in.name, config_name=obj_in.config_name)
-            ),
+            params=self._serialize_filters(dict(name=obj_in.name)),
         )
         if response.status_code == 200 and response.json():
             return self.model.model_validate(response.json())
