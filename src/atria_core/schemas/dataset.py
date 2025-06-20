@@ -3,12 +3,9 @@ from typing import List
 
 import yaml
 from omegaconf import OmegaConf
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import BaseModel, Field, computed_field
 
-from atria_core.schemas.base import (
-    BaseStorageDatabaseSchema,
-    DataInstanceType,
-)
+from atria_core.schemas.base import BaseStorageDatabaseSchema, DataInstanceType
 from atria_core.schemas.user_task import UserTask, UserTaskStatus
 from atria_core.schemas.utils import NameStr, SerializableUUID
 
@@ -16,7 +13,6 @@ from atria_core.schemas.utils import NameStr, SerializableUUID
 class DatasetStatus(str, Enum):
     unavailable = "unavailable"
     available = "available"
-    processing = "processing"
     outdated = "outdated"
 
 
@@ -38,14 +34,15 @@ class Dataset(DatasetBase, BaseStorageDatabaseSchema):
     user_id: SerializableUUID
     tasks: List[UserTask] = Field(default_factory=list)
 
-    @model_validator(mode="after")
-    def update_status_based_on_tasks(self) -> "Dataset":
+    @computed_field
+    @property
+    def under_processing(self) -> "Dataset":
         if len(self.tasks) > 0 and any(
             task.status in {UserTaskStatus.pending, UserTaskStatus.in_progress}
             for task in self.tasks
         ):
-            self.status = DatasetStatus.processing
-        return self
+            return True
+        return False
 
     @computed_field
     @property

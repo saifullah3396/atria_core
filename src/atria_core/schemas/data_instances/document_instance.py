@@ -18,7 +18,7 @@ class OCRStatus(str, Enum):
 
 
 class DocumentInstanceBase(BaseDataInstance):
-    branch_name: str
+    branch: str
     split: DatasetSplitType
     sample_id: str
     ocr_status: OCRStatus = OCRStatus.unavailable

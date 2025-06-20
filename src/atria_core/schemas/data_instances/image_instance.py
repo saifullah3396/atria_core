@@ -4,7 +4,7 @@ from atria_core.types.datasets.splits import DatasetSplitType
 
 
 class ImageInstanceBase(BaseDataInstance):
-    branch_name: str
+    branch: str
     split: DatasetSplitType
     sample_id: str
 
