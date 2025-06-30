@@ -22,7 +22,8 @@ License: MIT
 """
 
 import numbers
-from typing import Any, Callable, Mapping, Sequence, Tuple, Type, Union, cast
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, cast
 
 import numpy as np
 import torch
@@ -131,10 +132,10 @@ def _is_tensor_or_list_of_tensors(value: Any) -> bool:
 
 
 def _apply_to_type(
-    x: Union[Any, Sequence, Mapping, str, bytes],
-    input_type: Union[Type, Tuple[Type[Any], Any]],
+    x: Any | Sequence | Mapping | str | bytes,
+    input_type: type | tuple[type[Any], Any],
     func: Callable,
-) -> Union[Any, Sequence, Mapping, str, bytes]:
+) -> Any | Sequence | Mapping | str | bytes:
     """Apply a function on an object of `input_type` or mapping, or sequence of objects of `input_type`.
 
     Args:
@@ -158,4 +159,4 @@ def _apply_to_type(
         return cast(Callable, type(x))(
             [_apply_to_type(sample, input_type, func) for sample in x]
         )
-    raise TypeError((f"x must contain {input_type}, dicts or lists; found {type(x)}"))
+    raise TypeError(f"x must contain {input_type}, dicts or lists; found {type(x)}")

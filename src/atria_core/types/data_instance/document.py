@@ -25,18 +25,18 @@ Version: 1.0.0
 License: MIT
 """
 
+from typing import ClassVar
 
-from pydantic import model_validator
-
-from atria_core.types.base.data_model import BaseDataModelConfigDict
+from atria_core.types.base.data_model import BaseDataModelConfigDict, RowSerializable
 from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.ground_truth import GroundTruth
 from atria_core.types.generic.image import Image
 from atria_core.types.generic.ocr import OCR, OCRType
 from atria_core.types.ocr_parsers.hocr_parser import OCRProcessor
+from pydantic import model_validator
 
 
-class DocumentInstance(BaseDataInstance):
+class DocumentInstance(BaseDataInstance, RowSerializable):
     """
     A class for representing a single document with associated metadata and annotations.
 
@@ -49,15 +49,23 @@ class DocumentInstance(BaseDataInstance):
         ocr (OCR | None): The OCR data associated with the document instance. Defaults to None.
     """
 
+    _row_name: ClassVar[str | None] = None
+    _row_serialization_types: ClassVar[dict[str, str]] = {
+        **BaseDataInstance.row_serialization_types(),
+        **Image.row_serialization_types(),
+        **GroundTruth.row_serialization_types(),
+        **OCR.row_serialization_types(),
+    }
+
     model_config = BaseDataModelConfigDict(
         batch_skip_fields=["ocr", "page_id", "total_num_pages"],
+        row_serialization_types={},
     )
 
-    doc_id: str
     page_id: int = 0
     total_num_pages: int = 1
     image: Image | None = None
-    ocr: OCR | None = None
+    ocr: OCR
     ground_truth: GroundTruth = GroundTruth()
 
     @model_validator(mode="after")
@@ -77,10 +85,36 @@ class DocumentInstance(BaseDataInstance):
             raise ValueError("At least one of image or ocr must be provided")
 
         if self.ocr is not None and self.ground_truth.ocr is None:
-            if self.ocr.ocr_type == OCRType.TESSERACT:
+            if self.ocr.ocr_type == OCRType.tesseract:
                 self.ground_truth.ocr = OCRProcessor.parse(
                     raw_ocr=self.ocr.raw_content,
                     ocr_type=self.ocr.ocr_type,
                 )
 
         return self
+
+    def to_row(self) -> dict:
+        """
+        Converts the instance to a row format suitable for storage or serialization.
+        Returns:
+            dict: A dictionary representation of the instance, with keys prefixed by "image_", "ground_truth_", and "ocr_".
+        """
+        row = {
+            **self.model_dump(exclude={"ground_truth", "image", "ocr"}),
+            **self.image.to_row(),
+            **self.ground_truth.to_row(),
+            **self.ocr.to_row(),
+        }
+        return row
+
+    @classmethod
+    def from_row(cls, row: dict) -> "DocumentInstance":
+        return cls(
+            index=row["index"],
+            sample_id=row["sample_id"],
+            page_id=row["page_id"],
+            total_num_pages=row["total_num_pages"],
+            image=Image.from_row(row),
+            ground_truth=GroundTruth.from_row(row),
+            ocr=OCR.from_row(row),
+        )

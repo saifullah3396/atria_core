@@ -20,7 +20,10 @@ Version: 1.0.0
 License: MIT
 """
 
-from typing import TYPE_CHECKING, List, TypeVar
+from typing import TYPE_CHECKING, ClassVar, TypeVar
+
+from pydantic import BaseModel, ConfigDict, PrivateAttr
+from rich.pretty import pretty_repr
 
 from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
 from atria_core.logger.logger import get_logger
@@ -29,8 +32,6 @@ from atria_core.utilities.tensors import (
     _convert_to_tensor,
     _stack_tensors_if_possible,
 )
-from pydantic import BaseModel, ConfigDict, PrivateAttr
-from rich.pretty import pretty_repr
 
 if TYPE_CHECKING:
     import torch
@@ -50,8 +51,56 @@ def ungroup_by_repeats(flat_list, counts):
 
 
 class BaseDataModelConfigDict(ConfigDict):
-    batch_skip_fields: List[str] = []
-    batch_merge_fields: List[str] = []
+    batch_skip_fields: list[str] = []
+    batch_merge_fields: list[str] = []
+    row_serialization_types: dict[str, type] = {}
+
+
+class RowSerializable:
+    _row_name: ClassVar[str | None] = None
+    _row_serialization_types: ClassVar[dict[str, str]]
+
+    def __init__(self) -> None:
+        assert hasattr(
+            self, "_row_serialization_types"
+        ), f"{self.__class__.__name__} must define _row_serialization_types that maps row names to primitive types."
+
+    @classmethod
+    def row_serialization_types(cls) -> dict[str, type]:
+        """
+        Returns the serialization types for the row representation of the model.
+
+        This should be defined in subclasses to map row names to primitive types.
+        """
+        if cls._row_name is not None:
+            return {
+                f"{cls._row_name}_{key}": value
+                for key, value in cls._row_serialization_types.items()
+            }
+        else:
+            return cls._row_serialization_types
+
+    def to_row(self) -> dict:
+        if self._row_name is not None:
+            return {
+                f"{self._row_name}_{key}": value
+                for key, value in self.model_dump().items()
+            }
+        else:
+            return self.model_dump()
+
+    @classmethod
+    def from_row(cls, row: dict) -> "BaseDataModel":
+        if cls._row_name is not None:
+            return cls(
+                **{
+                    k.replace(f"{cls._row_name}_", ""): v
+                    for k, v in row.items()
+                    if k.startswith(cls._row_name)
+                }
+            )
+        else:
+            return cls(**row)
 
 
 class BaseDataModel(BaseModel):
@@ -88,7 +137,7 @@ class BaseDataModel(BaseModel):
         self._device = torch.device("cpu")
 
     @classmethod
-    def batched(cls, model_instances: List[T]) -> T:
+    def batched(cls, model_instances: list[T]) -> T:
         """
         Recursively converts a list of data models into a single batched model.
 
@@ -321,13 +370,13 @@ class BaseDataModel(BaseModel):
         return self
 
     def repeat_with_indices(
-        self: T, repeat_indices: List[int], ignored_fields: List[str]
+        self: T, repeat_indices: list[int], ignored_fields: list[str]
     ) -> T:
         import torch
 
         assert (
             self._is_tensor
-        ), f"This function only supports tensorized inputs. Call to_tensor() first."
+        ), "This function only supports tensorized inputs. Call to_tensor() first."
         assert (
             self._is_batched
         ), "This function only supports batched inputs. Call batched() on a list of instances first."
@@ -377,7 +426,7 @@ class BaseDataModel(BaseModel):
         return self
 
     def gather_with_indices(
-        self: T, gather_indices: List[int], ignored_fields: List[str]
+        self: T, gather_indices: list[int], ignored_fields: list[str]
     ) -> T:
         import torch
 

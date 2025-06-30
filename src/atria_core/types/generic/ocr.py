@@ -33,11 +33,15 @@ License: MIT
 import ast
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import ClassVar
 
 from pydantic import BaseModel, model_validator
 
-from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
+from atria_core.types.base.data_model import (
+    BaseDataModel,
+    BaseDataModelConfigDict,
+    RowSerializable,
+)
 from atria_core.types.generic.bounding_box import BoundingBox
 from atria_core.types.generic.label import Label
 from atria_core.types.typing.common import PydanticFilePath
@@ -56,13 +60,13 @@ class OCRType(str, Enum):
         OTHER (str): Custom OCR implementation.
     """
 
-    TESSERACT = "tesseract"
-    EASY_OCR = "easy_ocr"
-    GOOGLE_VISION = "google_vision"
-    AWS_REKOGNITION = "aws_rekognition"
-    AZURE_OCR = "azure_ocr"
-    CUSTOM = "custom"
-    OTHER = "other"
+    tesseract = "tesseract"
+    easy_ocr = "easy_ocr"
+    google_vision = "google_vision"
+    aws_rekognition = "aws_rekognition"
+    azure_ocr = "azure_ocr"
+    custom = "custom"
+    other = "other"
 
 
 class OCRLevel(str, Enum):
@@ -75,38 +79,38 @@ class OCRLevel(str, Enum):
 
 class OCRGraphNode(BaseModel):
     id: int
-    word: Optional[str] = None
-    level: Optional[OCRLevel] = None
-    bbox: Optional[BoundingBox] = None
-    segment_level_bbox: Optional[BoundingBox] = None
-    conf: Optional[float] = None
-    angle: Optional[float] = None
-    label: Optional[Label] = None
+    word: str | None = None
+    level: OCRLevel | None = None
+    bbox: BoundingBox | None = None
+    segment_level_bbox: BoundingBox | None = None
+    conf: float | None = None
+    angle: float | None = None
+    label: Label | None = None
 
 
 class OCRGraphLink(BaseModel):
     source: int
     target: int
-    relation: Optional[str] = None
+    relation: str | None = None
 
 
 class OCRGraph(BaseModel):
-    directed: Optional[bool]
-    multigraph: Optional[bool]
-    graph: Optional[dict]
-    nodes: List[OCRGraphNode]
-    links: List[OCRGraphLink]
+    directed: bool | None
+    multigraph: bool | None
+    graph: dict | None
+    nodes: list[OCRGraphNode]
+    links: list[OCRGraphLink]
 
     @property
-    def words(self) -> List[str]:
+    def words(self) -> list[str]:
         return [node.word for node in self.nodes if node.level == OCRLevel.WORD]
 
     @property
-    def word_bboxes(self) -> List[BoundingBox]:
+    def word_bboxes(self) -> list[BoundingBox]:
         return [node.bbox for node in self.nodes if node.level == OCRLevel.WORD]
 
     @property
-    def word_segment_level_bboxes(self) -> List[BoundingBox]:
+    def word_segment_level_bboxes(self) -> list[BoundingBox]:
         return [
             node.segment_level_bbox
             for node in self.nodes
@@ -114,26 +118,26 @@ class OCRGraph(BaseModel):
         ]
 
     @property
-    def word_labels(self) -> List[Label]:
+    def word_labels(self) -> list[Label]:
         return [node.label for node in self.nodes if node.level == OCRLevel.WORD]
 
     @property
-    def word_confs(self) -> List[float]:
+    def word_confs(self) -> list[float]:
         return [node.conf for node in self.nodes if node.level == OCRLevel.WORD]
 
     @property
-    def word_angles(self) -> List[float]:
+    def word_angles(self) -> list[float]:
         return [node.angle for node in self.nodes if node.level == OCRLevel.WORD]
 
     @classmethod
     def from_word_level_content(
         cls,
-        words: List[str],
-        word_bboxes: List[BoundingBox],
-        word_labels: List[Label],
-        word_segment_level_bboxes: List[BoundingBox] = None,
-        word_confs: List[float] = None,
-        word_angles: List[float] = None,
+        words: list[str],
+        word_bboxes: list[BoundingBox],
+        word_labels: list[Label],
+        word_segment_level_bboxes: list[BoundingBox] = None,
+        word_confs: list[float] = None,
+        word_angles: list[float] = None,
     ) -> "OCRGraph":
         nodes = []
         for i, word in enumerate(words):
@@ -168,7 +172,7 @@ class OCRGraph(BaseModel):
         )
 
 
-class OCR(BaseDataModel):
+class OCR(BaseDataModel, RowSerializable):
     """
     A class for managing OCR data.
 
@@ -177,18 +181,25 @@ class OCR(BaseDataModel):
 
     Attributes:
         file_path (PydanticFilePath): The file path to the OCR data. Defaults to None.
-        ocr_type (Optional[OCRType]): The type of OCR system used. Defaults to None.
+        type (Optional[OCRType]): The type of OCR system used. Defaults to None.
         raw_content (Optional[str]): The raw OCR content. Defaults to None.
     """
 
+    _row_name: ClassVar[str | None] = "ocr"
+    _row_serialization_types: ClassVar[dict[str, str]] = {
+        "file_path": str,
+        "type": str,
+        "raw_content": str,
+    }
+
     model_config = BaseDataModelConfigDict(
         batch_skip_fields=["file_path"],
-        batch_merge_fields=["ocr_type"],
+        batch_merge_fields=["type"],
     )
 
     file_path: PydanticFilePath = None
-    ocr_type: Optional[OCRType] = None
-    raw_content: Optional[str] = None
+    type: OCRType | None = None
+    raw_content: str | None = None
 
     @model_validator(mode="after")
     def validate(self):
@@ -216,7 +227,7 @@ class OCR(BaseDataModel):
             else:
                 if not Path(self.file_path).exists():
                     raise FileNotFoundError(f"File not found: {self.file_path}")
-                with open(self.file_path, "r", encoding="utf-8") as f:
+                with open(self.file_path, encoding="utf-8") as f:
                     self.raw_content = f.read()
                     if self.raw_content.startswith("b'"):
                         self.raw_content = ast.literal_eval(self.raw_content).decode(

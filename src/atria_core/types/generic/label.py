@@ -25,7 +25,7 @@ Version: 1.0.0
 License: MIT
 """
 
-from typing import Any, Union
+from typing import Any
 
 import torch
 from pydantic import field_validator
@@ -49,7 +49,7 @@ class Label(BaseDataModel):
         batch_skip_fields=["name"],
     )
 
-    value: Union[int, torch.Tensor]
+    value: int | torch.Tensor
     name: str
 
     @field_validator("value", mode="after")

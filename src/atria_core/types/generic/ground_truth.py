@@ -1,6 +1,11 @@
-from typing import List, Optional
+import json
+from typing import ClassVar
 
-from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
+from atria_core.types.base.data_model import (
+    BaseDataModel,
+    BaseDataModelConfigDict,
+    RowSerializable,
+)
 from atria_core.types.generic.annotated_object import AnnotatedObject
 from atria_core.types.generic.bounding_box import BoundingBox
 from atria_core.types.generic.label import Label
@@ -29,10 +34,10 @@ class OCRGT(BaseDataModel):
         batch_skip_fields=["word_confs", "word_angles"],
     )
 
-    words: List[str] | None = None
-    word_bboxes: List[BoundingBox] | None = None
-    word_confs: List[float] | None = None
-    word_angles: List[float] | None = None
+    words: list[str] | None = None
+    word_bboxes: list[BoundingBox] | None = None
+    word_confs: list[float] | None = None
+    word_angles: list[float] | None = None
 
 
 class SERGT(BaseDataModel):
@@ -48,10 +53,10 @@ class SERGT(BaseDataModel):
         word_labels (List[Label]): A list of labels for each word.
     """
 
-    words: List[str] | None = None
-    word_bboxes: List[BoundingBox] | None = None
-    word_labels: List[Label] | None = None
-    segment_level_bboxes: List[BoundingBox] | None = None
+    words: list[str] | None = None
+    word_bboxes: list[BoundingBox] | None = None
+    word_labels: list[Label] | None = None
+    segment_level_bboxes: list[BoundingBox] | None = None
 
 
 class QuestionAnswerGT(BaseDataModel):
@@ -67,18 +72,28 @@ class VisualQuestionAnswerGT(BaseDataModel):
 
 
 class LayoutAnalysisGT(BaseDataModel):
-    annotated_objects: List[AnnotatedObject] | None = None
-    words: List[str] | None = None
-    word_bboxes: List[BoundingBox] | None = None
+    annotated_objects: list[AnnotatedObject] | None = None
+    words: list[str] | None = None
+    word_bboxes: list[BoundingBox] | None = None
 
 
-class GroundTruth(BaseDataModel):
-    classification: Optional[ClassificationGT] = None
-    ser: Optional[SERGT] = None
-    ocr: Optional[OCRGT] = None
-    qa: Optional[QuestionAnswerGT] = None
-    vqa: Optional[VisualQuestionAnswerGT] = None
-    layout: Optional[LayoutAnalysisGT] = None
+class GroundTruth(BaseDataModel, RowSerializable):
+    _row_name: ClassVar[str | None] = "gt"
+    _row_serialization_types: ClassVar[dict[str, str]] = {
+        "classification": str,
+        "ser": str,
+        "ocr": str,
+        "qa": str,
+        "vqa": str,
+        "layout": str,
+    }
+
+    classification: ClassificationGT | None = None
+    ser: SERGT | None = None
+    ocr: OCRGT | None = None
+    qa: QuestionAnswerGT | None = None
+    vqa: VisualQuestionAnswerGT | None = None
+    layout: LayoutAnalysisGT | None = None
 
     @classmethod
     def from_url_dict(cls, url_dict: dict) -> "GroundTruth":
@@ -97,3 +112,22 @@ class GroundTruth(BaseDataModel):
                 gt_object = json.loads(response.content.decode("utf-8"))
                 values[key.replace("gt_", "")] = gt_object
         return cls(**values)
+
+    def to_row(self) -> dict:
+        data = self.model_dump()
+        return {
+            f"gt_{key}": (json.dumps(value) if value is not None else "")
+            for key, value in data.items()
+        }
+
+    @classmethod
+    def from_row(cls, row: dict) -> "GroundTruth":
+        return cls(
+            **{
+                key.replace("gt_", ""): (
+                    json.loads(value) if value is not None else None
+                )
+                for key, value in row.items()
+                if key.startswith("gt_") and value.strip() != ""
+            }
+        )

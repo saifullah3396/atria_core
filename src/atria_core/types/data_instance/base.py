@@ -22,17 +22,12 @@ Version: 1.0.0
 License: MIT
 """
 
-from typing import TypeVar
-from uuid import UUID, uuid4
+from typing import ClassVar
 
-from pydantic import Field, field_serializer, field_validator
-
-from atria_core.types.base.data_model import BaseDataModel
-
-T = TypeVar("T", bound="BaseDataModel")
+from atria_core.types.base.data_model import BaseDataModel, RowSerializable
 
 
-class BaseDataInstance(BaseDataModel):
+class BaseDataInstance(BaseDataModel, RowSerializable):
     """
     A base class for individual data instances with UUIDs and utility methods.
 
@@ -44,41 +39,13 @@ class BaseDataInstance(BaseDataModel):
         id (UUID): A unique identifier for the data instance. Defaults to a randomly generated UUID.
     """
 
+    _row_serialization_types: ClassVar[dict[str, str]] = {
+        "index": int,
+        "sample_id": str,
+    }
+
     index: int | None = None
-    id: UUID = Field(default_factory=uuid4)
-
-    @field_serializer("id")
-    def serialize_id(self, id: UUID, _info) -> str:
-        """
-        Serializes the UUID field to a string.
-
-        Args:
-            id (UUID): The UUID to serialize.
-            _info: Additional information (unused).
-
-        Returns:
-            str: The serialized UUID as a string.
-        """
-        return str(id)
-
-    @field_validator("id", mode="before")
-    @classmethod
-    def validate_id(cls, value) -> UUID:
-        """
-        Validates and converts the UUID field.
-
-        Args:
-            value: The value to validate and convert.
-
-        Returns:
-            UUID: The validated and converted UUID.
-
-        Raises:
-            ValueError: If the value cannot be converted to a UUID.
-        """
-        if isinstance(value, list):
-            return [UUID(str(v)) for v in value]
-        return UUID(str(value))
+    sample_id: str
 
     @property
     def key(self) -> str:
@@ -90,7 +57,7 @@ class BaseDataInstance(BaseDataModel):
         Returns:
             str: The unique key for the data instance.
         """
-        return str(self.id)
+        return str(self.sample_id)
 
     def visualize(self) -> None:
         """

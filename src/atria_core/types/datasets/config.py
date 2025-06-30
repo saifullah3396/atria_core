@@ -45,8 +45,6 @@ class AtriaDatasetConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
-    name: Optional[str] = None
-    config_name: str = "default"
     data_urls: Union[str, List[str], Dict[str, str], Dict[str, Tuple]] | None = None
     max_train_samples: Optional[int] = None
     max_validation_samples: Optional[int] = None

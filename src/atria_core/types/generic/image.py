@@ -26,7 +26,7 @@ License: MIT
 """
 
 from pathlib import Path
-from typing import Any, Optional, Tuple, Union
+from typing import Any, ClassVar
 
 import numpy as np
 import torch
@@ -35,14 +35,18 @@ from PIL.Image import Image as PILImage
 from pydantic import field_serializer, field_validator, model_validator
 
 from atria_core.logger.logger import get_logger
-from atria_core.types.base.data_model import BaseDataModel, BaseDataModelConfigDict
+from atria_core.types.base.data_model import (
+    BaseDataModel,
+    BaseDataModelConfigDict,
+    RowSerializable,
+)
 from atria_core.types.typing.common import PydanticFilePath
 from atria_core.utilities.encoding import _bytes_to_image, _image_to_bytes
 
 logger = get_logger(__name__)
 
 
-class Image(BaseDataModel):
+class Image(BaseDataModel, RowSerializable):
     """
     A class for representing and manipulating image data.
 
@@ -56,45 +60,35 @@ class Image(BaseDataModel):
         source_size (Tuple[int, int] | None): The original shape of the image. Defaults to None.
     """
 
+    _row_name: ClassVar[str | None] = "image"
+    _row_serialization_types: ClassVar[dict[str, str]] = {
+        "file_path": str,
+        "source_width": int,
+        "source_height": int,
+        "content": bytes,
+    }
+
     model_config = BaseDataModelConfigDict(
         batch_skip_fields=["file_path"],
     )
 
     file_path: PydanticFilePath | None = None
-    content: Optional[Union[torch.Tensor, PILImage]] = None
-    source_size: Tuple[int, int] | None = None
+    source_width: int | None = None
+    source_height: int | None = None
+    content: torch.Tensor | PILImage | None = None
 
-    @model_validator(mode="after")
-    def load_content(self):
-        """
-        Loads the image data from the file path or validates the content.
+    def to_row(self) -> dict:
+        return {f"image_{key}": value for key, value in self.model_dump().items()}
 
-        If the `file_path` is provided, the image is loaded from the file and converted
-        to a tensor. If the `content` is already provided, it is validated.
-
-        Raises:
-            ValueError: If neither `file_path` nor `content` is provided.
-            FileNotFoundError: If the file specified by `file_path` does not exist.
-        """
-
-        if self.file_path is None and self.content is None:
-            raise ValueError("Either file_path or content must be provided.")
-        if self.content is None:
-            assert self.file_path is not None, "Image file path is not set."
-            if str(self.file_path).startswith(("http", "https")):
-                import requests
-
-                response = requests.get(self.file_path)
-                if response.status_code != 200:
-                    raise ValueError(f"Failed to load image from URL: {self.file_path}")
-                self.content: PILImage = _bytes_to_image(response.content)
-                self.source_size = self.content.size
-            else:
-                if not Path(self.file_path).exists():
-                    raise FileNotFoundError(f"Image file not found: {self.file_path}")
-                self.content: PILImage = PILImageModule.open(self.file_path)
-                self.source_size = self.content.size
-        return self
+    @classmethod
+    def from_row(cls, row: dict) -> "Image":
+        return cls(
+            **{
+                k.replace("image_", ""): v
+                for k, v in row.items()
+                if k.startswith("image_")
+            }
+        )
 
     @field_validator("content", mode="before")
     @classmethod
@@ -121,13 +115,13 @@ class Image(BaseDataModel):
         elif isinstance(value, np.ndarray):
             try:
                 value = PIL.Image.fromarray(value)
-            except Exception as e:
+            except Exception:
                 value = to_tensor(value)
         return value
 
     @field_serializer("content")
     def serialize_content(
-        self, content: Optional[Union[torch.Tensor, PILImage]], _info
+        self, content: torch.Tensor | PILImage | None, _info
     ) -> bytes:
         """
         Serializes the image tensor to a base64-encoded string.
@@ -140,8 +134,51 @@ class Image(BaseDataModel):
             str: The serialized image as a base64-encoded string.
         """
         if content is None:
-            return content
+            return None
         return _image_to_bytes(content)
+
+    @model_validator(mode="after")
+    def validate_model(self):
+        """
+        Loads the image data from the file path or validates the content.
+
+        If the `file_path` is provided, the image is loaded from the file and converted
+        to a tensor. If the `content` is already provided, it is validated.
+
+        Raises:
+            ValueError: If neither `file_path` nor `content` is provided.
+            FileNotFoundError: If the file specified by `file_path` does not exist.
+        """
+        import imagesize
+
+        if self.file_path is None and self.content is None:
+            raise ValueError("Either file_path or content must be provided.")
+        if self.file_path is not None:
+            self.source_width, self.source_height = imagesize.get(self.file_path)
+        else:
+            if isinstance(self.content, torch.Tensor):
+                assert self.content.ndim in [
+                    3,
+                ], f"Invalid number of dimensions in the image tensor: {self.content.shape}. Image tensor must be 3D (channels, height, width)."
+                self.source_width = self.content.shape[2]
+                self.source_height = self.content.shape[1]
+            elif isinstance(self.content, PILImage):
+                self.source_width, self.source_height = self.content.size
+            else:
+                raise ValueError("Invalid content type. Must be a tensor or PIL image.")
+        return self
+
+    @property
+    def source_size(self) -> tuple[int, int]:
+        """
+        Returns the original size of the image as a tuple (width, height).
+
+        Returns:
+            Tuple[int, int]: The original size of the image.
+        """
+        if self.source_width is None or self.source_height is None:
+            raise ValueError("Source width and height must be set.")
+        return (self.source_width, self.source_height)
 
     @field_validator("content", mode="after")
     @classmethod
@@ -157,6 +194,29 @@ class Image(BaseDataModel):
                 value = value.unsqueeze(0)
         return value
 
+    def load_content(self):
+        """
+        Loads the image content from the file path or URL.
+        If the `file_path` is a URL, it fetches the image data using requests.
+        If the `file_path` is a local file, it opens the image using PIL.
+        Raises:
+            ValueError: If the image content is not loaded.
+            FileNotFoundError: If the image file does not exist.
+        """
+        print("Calling load_content on Image")
+        assert self.file_path is not None, "Image file path is not set."
+        if str(self.file_path).startswith(("http", "https")):
+            import requests
+
+            response = requests.get(self.file_path)
+            if response.status_code != 200:
+                raise ValueError(f"Failed to load image from URL: {self.file_path}")
+            return _bytes_to_image(response.content)
+        else:
+            if not Path(self.file_path).exists():
+                raise FileNotFoundError(f"Image file not found: {self.file_path}")
+            return PILImageModule.open(self.file_path)
+
     def to_tensor(self) -> torch.Tensor:
         """
         Converts the image content to a tensor.
@@ -171,6 +231,8 @@ class Image(BaseDataModel):
 
         if not self._is_tensor or self._is_tensor is None:
             logger.debug(f"Converting {self.__class__.__name__} to tensors.")
+            if self.content is None:
+                self.load_content()
             if isinstance(self.content, PILImage):
                 self.content = to_tensor(self.content)
             self._is_tensor = True
@@ -240,8 +302,8 @@ class Image(BaseDataModel):
 
     def normalize(
         self,
-        mean: Union[float, Tuple[float, ...]],
-        std: Union[float, Tuple[float, ...]],
+        mean: float | tuple[float, ...],
+        std: float | tuple[float, ...],
     ) -> "Image":
         """
         Normalizes the image tensor using the specified mean and standard deviation.

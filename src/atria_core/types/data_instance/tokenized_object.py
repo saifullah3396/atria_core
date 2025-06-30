@@ -23,13 +23,12 @@ Version: 1.0.0
 License: MIT
 """
 
+from collections.abc import Callable
 from types import NoneType
-from typing import Callable, List, Tuple, Union
 
 import torch
 from pydantic import PrivateAttr, model_validator
 
-from atria.models.utilities.nn_modules import _rgetattr, _rsetattr
 from atria_core.types.base.data_model import BaseDataModelConfigDict
 from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.image import Image
@@ -38,6 +37,7 @@ from atria_core.types.generic.question_answer_pair import (
     QuestionAnswerPair,
     TokenizedQuestionAnswerPair,
 )
+from atria_core.utilities.common import _rgetattr, _rsetattr
 
 NON_REPEATED_KEYS = [
     "token_ids",
@@ -107,11 +107,11 @@ class TokenizedDocumentInstance(BaseDataInstance):
     image: Image | None = None
     label: Label | None = None
     words: list[str] | None = None
-    qa_pair: Union[QuestionAnswerPair, TokenizedQuestionAnswerPair] | None = None
+    qa_pair: QuestionAnswerPair | TokenizedQuestionAnswerPair | None = None
 
     @classmethod
     def batched(
-        cls, model_instances: List["TokenizedDocumentInstance"]
+        cls, model_instances: list["TokenizedDocumentInstance"]
     ) -> "TokenizedDocumentInstance":
         batched = super().batched(
             model_instances
@@ -178,7 +178,7 @@ class TokenizedDocumentInstance(BaseDataInstance):
 
         return self
 
-    def select_all_overflow_samples(self) -> Tuple[bool, list[int], list[str]]:
+    def select_all_overflow_samples(self) -> tuple[bool, list[int], list[str]]:
         """
         Concatenates all overflowed samples into a single tensor.
         This method is useful for handling overflowed tokens in tokenized data.
@@ -203,7 +203,7 @@ class TokenizedDocumentInstance(BaseDataInstance):
         """
         assert (
             self._is_tensor
-        ), f"This function only supports tensorized document instances. Call to_tensor() first."
+        ), "This function only supports tensorized document instances. Call to_tensor() first."
         assert (
             self._is_batched
         ), "This function only supports batched document instances. Call batched() first."
@@ -231,7 +231,7 @@ class TokenizedDocumentInstance(BaseDataInstance):
         """
         assert (
             self._is_tensor
-        ), f"This function only supports tensorized document instances. Call to_tensor() first."
+        ), "This function only supports tensorized document instances. Call to_tensor() first."
         assert (
             self._is_batched
         ), "This function only supports batched document instances. Call batched() first."
@@ -259,7 +259,7 @@ class TokenizedDocumentInstance(BaseDataInstance):
         """
         assert (
             self._is_tensor
-        ), f"This function only supports tensorized document instances. Call to_tensor() first."
+        ), "This function only supports tensorized document instances. Call to_tensor() first."
         assert (
             self._is_batched
         ), "This function only supports batched document instances. Call batched() first."

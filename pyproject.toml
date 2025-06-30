@@ -7,7 +7,7 @@ name = "atria_core"
 version = "0.0.0"                                                                                                    
 description = "atria is a PyTorch-based toolkit designed for training/testing machine/deep learning models at scale."
 readme = "README.md"
-requires-python = "==3.12.*"
+requires-python = "==3.11.*"
 license = { file = "LICENSE.txt" }
 authors = [{ name = "Saifullah", email = "saifullah.saifullah@dfki.de" }]
 dependencies = [
@@ -21,10 +21,11 @@ dependencies = [
     "polyfactory>=2.21.0",
     "pytorch_ignite==0.5.0.post2",
     "rich==14.0.0",
-    "torch==2.2.2",
-    "torchvision==0.17.2",
+    "torch==2.1.2",
+    "torchvision==0.16.2",
     "beautifulsoup4==4.12.2",
     "supabase>=2.7.4",
+    "imagesize>=1.4.1",
 ]
 
 [tool.uv]
@@ -111,6 +112,14 @@ addopts = "-rXs --strict-config --strict-markers --tb=short --import-mode=import
 xfail_strict = true         # Treat tests that are marked as xfail but pass as test failures
 # filterwarnings = ["error"]  # Treat all warnings as errors
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu" },
+]
+torchvision = [
+  { index = "pytorch-cpu" },
+]
 
 [[tool.uv.index]]
 name = "pytorch-cpu"

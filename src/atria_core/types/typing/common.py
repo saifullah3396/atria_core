@@ -29,7 +29,7 @@ License: MIT
 """
 
 from pathlib import Path
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import (
     SerializerFunctionWrapHandler,
@@ -54,7 +54,7 @@ def _path_serializer(value: str, nxt: SerializerFunctionWrapHandler) -> str:
         TypeError: If the value is not a valid file path.
     """
     if value is None:
-        return
+        return ""
     elif isinstance(value, Path):
         return nxt(str(value))
     elif isinstance(value, str):
@@ -76,6 +76,10 @@ def _path_validator(value: str, handler: ValidatorFunctionWrapHandler) -> Path:
         FileNotFoundError: If the file path does not exist.
         ValueError: If the path is not a file.
     """
+    if value is None:
+        return None
+    if isinstance(value, str) and value.strip() == "":
+        return None
     if isinstance(value, str):
         if value.startswith(("s3://", "http://", "https://")):
             # Handle S3 paths separately
@@ -85,7 +89,7 @@ def _path_validator(value: str, handler: ValidatorFunctionWrapHandler) -> Path:
 
 
 PydanticFilePath = Annotated[
-    Union[str, Path],
+    str | Path,
     WrapSerializer(_path_serializer),
     WrapValidator(_path_validator),
 ]
