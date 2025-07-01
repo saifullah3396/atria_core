@@ -32,8 +32,8 @@ class AtriaDatasetConfig(BaseModel):
     including metadata such as name, description, version, and data URLs.
 
     Attributes:
-        name (str): The name of the dataset.
-        config_name (str): The name of the dataset.
+        name (str): The name of the config
+        config_name (str): The name of the configuration.
         data_urls (Union[str, List[str], Dict[str, str]] | None): The URLs for accessing
             the dataset. Can be a single URL, a list of URLs, or a dictionary mapping
             keys to URLs. Defaults to None.
@@ -45,6 +45,8 @@ class AtriaDatasetConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
+    dataset_name: str = None
+    config_name: str = None
     data_urls: Union[str, List[str], Dict[str, str], Dict[str, Tuple]] | None = None
     max_train_samples: Optional[int] = None
     max_validation_samples: Optional[int] = None
@@ -62,10 +64,11 @@ class AtriaHuggingfaceDatasetConfig(AtriaDatasetConfig):
         hf_repo (str): The Hugging Face repository name for the dataset.
     """
 
+    hf_repo: str
+
     __target__: str = (
         "atria.data.dataset.atria_huggingface_dataset.AtriaHuggingfaceDataset"
     )
-    hf_repo: str
 
 
 class AtriaHubDatasetConfig(BaseModel):
@@ -77,3 +80,5 @@ class AtriaHubDatasetConfig(BaseModel):
     """
 
     __target__: str = "atria.hub.atria_hub_dataset.AtriaHubDataset"
+    name: str
+    config_name: str

@@ -22,9 +22,6 @@ License: MIT
 
 from typing import TYPE_CHECKING, ClassVar, TypeVar
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr
-from rich.pretty import pretty_repr
-
 from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
 from atria_core.logger.logger import get_logger
 from atria_core.utilities.tensors import (
@@ -32,6 +29,8 @@ from atria_core.utilities.tensors import (
     _convert_to_tensor,
     _stack_tensors_if_possible,
 )
+from pydantic import BaseModel, ConfigDict, PrivateAttr
+from rich.pretty import pretty_repr
 
 if TYPE_CHECKING:
     import torch
@@ -61,9 +60,9 @@ class RowSerializable:
     _row_serialization_types: ClassVar[dict[str, str]]
 
     def __init__(self) -> None:
-        assert hasattr(
-            self, "_row_serialization_types"
-        ), f"{self.__class__.__name__} must define _row_serialization_types that maps row names to primitive types."
+        assert hasattr(self, "_row_serialization_types"), (
+            f"{self.__class__.__name__} must define _row_serialization_types that maps row names to primitive types."
+        )
 
     @classmethod
     def row_serialization_types(cls) -> dict[str, type]:
@@ -242,9 +241,9 @@ class BaseDataModel(BaseModel):
         return self._device
 
     def _validate_is_tensor(self: T) -> T:
-        assert (
-            self._is_tensor
-        ), f"This operation is only supported for tensor-based {self.__class__.__name__}. Call to_tensor() first."
+        assert self._is_tensor, (
+            f"This operation is only supported for tensor-based {self.__class__.__name__}. Call to_tensor() first."
+        )
 
     def to_tensor(self: T) -> T:
         """
@@ -256,7 +255,6 @@ class BaseDataModel(BaseModel):
             T: The model instance with data converted to tensors.
         """
         if not self._is_tensor or self._is_tensor is None:
-            logger.debug(f"Converting {self.__class__.__name__} to tensors.")
             for field_name, field_value in self.__dict__.items():
                 if isinstance(field_value, BaseDataModel):
                     setattr(self, field_name, field_value.to_tensor())
@@ -283,7 +281,6 @@ class BaseDataModel(BaseModel):
             T: The model instance with data converted from tensors.
         """
         if self._is_tensor or self._is_tensor is None:
-            logger.debug(f"Converting {self.__class__.__name__} from tensors.")
             for field_name, field_value in self.__dict__.items():
                 if isinstance(field_value, BaseDataModel):
                     setattr(self, field_name, field_value.from_tensor())
@@ -324,8 +321,6 @@ class BaseDataModel(BaseModel):
         import torch
 
         assert self._is_tensor, "Data is not loaded as tensor. Call to_tensor() first."
-        logger.debug(f"Moving {self.__class__.__name__} to device: {device}.")
-
         for field_name, field_value in self.__dict__.items():
             if isinstance(field_value, torch.Tensor):
                 setattr(self, field_name, field_value.to(device))
@@ -374,12 +369,12 @@ class BaseDataModel(BaseModel):
     ) -> T:
         import torch
 
-        assert (
-            self._is_tensor
-        ), "This function only supports tensorized inputs. Call to_tensor() first."
-        assert (
-            self._is_batched
-        ), "This function only supports batched inputs. Call batched() on a list of instances first."
+        assert self._is_tensor, (
+            "This function only supports tensorized inputs. Call to_tensor() first."
+        )
+        assert self._is_batched, (
+            "This function only supports batched inputs. Call batched() on a list of instances first."
+        )
         if not hasattr(self, "_is_repeated"):
             for field_name, field_value in self.__dict__.items():
                 try:

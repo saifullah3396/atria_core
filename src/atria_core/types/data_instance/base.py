@@ -22,9 +22,11 @@ Version: 1.0.0
 License: MIT
 """
 
+import uuid
 from typing import ClassVar
 
 from atria_core.types.base.data_model import BaseDataModel, RowSerializable
+from pydantic import Field
 
 
 class BaseDataInstance(BaseDataModel, RowSerializable):
@@ -45,7 +47,9 @@ class BaseDataInstance(BaseDataModel, RowSerializable):
     }
 
     index: int | None = None
-    sample_id: str
+    sample_id: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+    )
 
     @property
     def key(self) -> str:

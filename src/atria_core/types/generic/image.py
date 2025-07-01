@@ -30,10 +30,6 @@ from typing import Any, ClassVar
 
 import numpy as np
 import torch
-from PIL import Image as PILImageModule
-from PIL.Image import Image as PILImage
-from pydantic import field_serializer, field_validator, model_validator
-
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import (
     BaseDataModel,
@@ -41,7 +37,14 @@ from atria_core.types.base.data_model import (
     RowSerializable,
 )
 from atria_core.types.typing.common import PydanticFilePath
-from atria_core.utilities.encoding import _bytes_to_image, _image_to_bytes
+from atria_core.utilities.encoding import (
+    _base64_to_image,
+    _bytes_to_image,
+    _image_to_base64,
+)
+from PIL import Image as PILImageModule
+from PIL.Image import Image as PILImage
+from pydantic import field_serializer, field_validator, model_validator
 
 logger = get_logger(__name__)
 
@@ -57,15 +60,16 @@ class Image(BaseDataModel, RowSerializable):
     Attributes:
         file_path (PydanticFilePath | None): The file path to the image. Defaults to None.
         content (Optional[Union[torch.Tensor, PILImage]]): The image data as a tensor. Defaults to None.
-        source_size (Tuple[int, int] | None): The original shape of the image. Defaults to None.
+        width (int | None): The width of the image. Computed property.
+        height (int | None): The height of the image. Computed property.
     """
 
     _row_name: ClassVar[str | None] = "image"
     _row_serialization_types: ClassVar[dict[str, str]] = {
         "file_path": str,
-        "source_width": int,
-        "source_height": int,
-        "content": bytes,
+        "width": int,
+        "height": int,
+        "content": str,
     }
 
     model_config = BaseDataModelConfigDict(
@@ -73,9 +77,16 @@ class Image(BaseDataModel, RowSerializable):
     )
 
     file_path: PydanticFilePath | None = None
-    source_width: int | None = None
-    source_height: int | None = None
     content: torch.Tensor | PILImage | None = None
+    width: int | None = None
+    height: int | None = None
+
+    @model_validator(mode="after")
+    def check_dimensions(self) -> "Image":
+        if self.width is None or self.height is None:
+            self.width = self.size[0]
+            self.height = self.size[1]
+        return self
 
     def to_row(self) -> dict:
         return {f"image_{key}": value for key, value in self.model_dump().items()}
@@ -110,8 +121,8 @@ class Image(BaseDataModel, RowSerializable):
 
         if value is None:
             return value
-        if isinstance(value, (bytes, str)):
-            value = _bytes_to_image(value)
+        if isinstance(value, str):
+            value = _base64_to_image(value)
         elif isinstance(value, np.ndarray):
             try:
                 value = PIL.Image.fromarray(value)
@@ -120,9 +131,7 @@ class Image(BaseDataModel, RowSerializable):
         return value
 
     @field_serializer("content")
-    def serialize_content(
-        self, content: torch.Tensor | PILImage | None, _info
-    ) -> bytes:
+    def serialize_content(self, content: torch.Tensor | PILImage | None, _info) -> str:
         """
         Serializes the image tensor to a base64-encoded string.
 
@@ -135,50 +144,7 @@ class Image(BaseDataModel, RowSerializable):
         """
         if content is None:
             return None
-        return _image_to_bytes(content)
-
-    @model_validator(mode="after")
-    def validate_model(self):
-        """
-        Loads the image data from the file path or validates the content.
-
-        If the `file_path` is provided, the image is loaded from the file and converted
-        to a tensor. If the `content` is already provided, it is validated.
-
-        Raises:
-            ValueError: If neither `file_path` nor `content` is provided.
-            FileNotFoundError: If the file specified by `file_path` does not exist.
-        """
-        import imagesize
-
-        if self.file_path is None and self.content is None:
-            raise ValueError("Either file_path or content must be provided.")
-        if self.file_path is not None:
-            self.source_width, self.source_height = imagesize.get(self.file_path)
-        else:
-            if isinstance(self.content, torch.Tensor):
-                assert self.content.ndim in [
-                    3,
-                ], f"Invalid number of dimensions in the image tensor: {self.content.shape}. Image tensor must be 3D (channels, height, width)."
-                self.source_width = self.content.shape[2]
-                self.source_height = self.content.shape[1]
-            elif isinstance(self.content, PILImage):
-                self.source_width, self.source_height = self.content.size
-            else:
-                raise ValueError("Invalid content type. Must be a tensor or PIL image.")
-        return self
-
-    @property
-    def source_size(self) -> tuple[int, int]:
-        """
-        Returns the original size of the image as a tuple (width, height).
-
-        Returns:
-            Tuple[int, int]: The original size of the image.
-        """
-        if self.source_width is None or self.source_height is None:
-            raise ValueError("Source width and height must be set.")
-        return (self.source_width, self.source_height)
+        return _image_to_base64(content)
 
     @field_validator("content", mode="after")
     @classmethod
@@ -189,7 +155,9 @@ class Image(BaseDataModel, RowSerializable):
             assert value.ndim in [
                 2,
                 3,
-            ], f"Invalid number of dimensions in the image tensor: {value.shape}. Image tensor must be 2D (grayscale) or 3D (channels, height, width)."
+            ], (
+                f"Invalid number of dimensions in the image tensor: {value.shape}. Image tensor must be 2D (grayscale) or 3D (channels, height, width)."
+            )
             if value.ndim == 2:
                 value = value.unsqueeze(0)
         return value
@@ -203,7 +171,6 @@ class Image(BaseDataModel, RowSerializable):
             ValueError: If the image content is not loaded.
             FileNotFoundError: If the image file does not exist.
         """
-        print("Calling load_content on Image")
         assert self.file_path is not None, "Image file path is not set."
         if str(self.file_path).startswith(("http", "https")):
             import requests
@@ -230,9 +197,10 @@ class Image(BaseDataModel, RowSerializable):
         from torchvision.transforms.functional import to_tensor
 
         if not self._is_tensor or self._is_tensor is None:
-            logger.debug(f"Converting {self.__class__.__name__} to tensors.")
             if self.content is None:
-                self.load_content()
+                raise ValueError(
+                    "Image content is not loaded. Call load_content() first."
+                )
             if isinstance(self.content, PILImage):
                 self.content = to_tensor(self.content)
             self._is_tensor = True
@@ -251,7 +219,6 @@ class Image(BaseDataModel, RowSerializable):
         from torchvision.transforms.functional import to_pil_image
 
         if self._is_tensor or self._is_tensor is None:
-            logger.debug(f"Converting {self.__class__.__name__} from tensors.")
             if isinstance(self.content, torch.Tensor):
                 self.content = to_pil_image(self.content)
             self._is_tensor = False
@@ -357,30 +324,16 @@ class Image(BaseDataModel, RowSerializable):
         Returns:
             torch.Size: The size of the image.
         """
+        import imagesize
+
+        if self.file_path is not None:
+            return imagesize.get(self.file_path)
         if isinstance(self.content, torch.Tensor):
             return (self.content.shape[2], self.content.shape[1])
         elif isinstance(self.content, PILImage):
             return self.content.size
-
-    @property
-    def width(self) -> int:
-        """
-        Returns the width of the image.
-
-        Returns:
-            int: The width of the image.
-        """
-        return self.size[0]
-
-    @property
-    def height(self) -> int:
-        """
-        Returns the height of the image.
-
-        Returns:
-            int: The height of the image.
-        """
-        return self.size[1]
+        else:
+            raise ValueError("Image content is not loaded or has an unsupported type.")
 
     @property
     def channels(self) -> int:
