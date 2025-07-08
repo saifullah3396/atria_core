@@ -43,7 +43,7 @@ def _get_package_base_path(package: str) -> str | None:
     Returns:
         str | None: The base path of the specified package as a string, or None if the package is not found.
     """
-    spec = importlib.util.find_spec(package)
+    spec = importlib.util.find_spec(package)  # type: ignore
     return str(Path(spec.origin).parent) if spec else None
 
 

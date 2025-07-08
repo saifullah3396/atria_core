@@ -29,19 +29,20 @@ License: MIT
 
 import functools
 import inspect
-from typing import Any, Callable, TypeVar, Union, cast
+from collections.abc import Callable
+from typing import Any, TypeVar, cast
 
 import pydantic as _pyd
+
 from atria_core.logger.logger import get_logger
 
 _T = TypeVar("_T", bound=Callable[..., Any])
 
-__all__ = ["validates_with_pydantic"]
-
 
 if _pyd.__version__ >= "2.0":  # pragma: no cover
     _default_parser = _pyd.validate_call(
-        config={"arbitrary_types_allowed": True}, validate_return=False  # type: ignore
+        config={"arbitrary_types_allowed": True},
+        validate_return=False,  # type: ignore
     )
 else:  # pragma: no cover
     _default_parser = _pyd.validate_arguments(
@@ -90,7 +91,7 @@ def _constructor_as_fn(cls: Any) -> Any:
     return wrapper_function
 
 
-def _get_signature(x: Any) -> Union[None, inspect.Signature]:
+def _get_signature(x: Any) -> None | inspect.Signature:
     """
     Retrieves the signature of a callable object.
 
@@ -132,7 +133,10 @@ def pydantic_parser(target: _T, *, parser: Callable[[_T], _T] = _default_parser)
 
            from pydantic import PositiveInt
 
-           def f(x: PositiveInt): return x
+
+           def f(x: PositiveInt):
+               return x
+
 
            good_conf = builds(f, x=10)
            bad_conf = builds(f, x=-3)
@@ -147,13 +151,13 @@ def pydantic_parser(target: _T, *, parser: Callable[[_T], _T] = _default_parser)
         convert them based on the annotated type. (Note: this only
         works for pydantic v2 and higher.)
 
-        >>> def g(x: tuple): return x
+        >>> def g(x: tuple):
+        ...     return x
         >>> conf = builds(g, x=[1, 2, 3])
         >>> instantiate(conf, _target_wrapper_=pydantic_parser)
         (1, 2, 3)
     """
     try:
-        logger.debug(f"Initializing target: {target}")
         if inspect.isbuiltin(target):
             return cast(_T, target)
 
@@ -167,6 +171,6 @@ def pydantic_parser(target: _T, *, parser: Callable[[_T], _T] = _default_parser)
         if inspect.isclass(target):
             return cast(_T, parser(_constructor_as_fn(target)))
 
-        return parser(target)
+        return parser(target)  # type: ignore
     except Exception as e:
         raise RuntimeError(f"Failed to apply pydantic parsing to {target}: {e}") from e

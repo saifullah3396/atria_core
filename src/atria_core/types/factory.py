@@ -1,16 +1,12 @@
-import tempfile
-
-import numpy as np
-from faker import Faker
-from PIL import Image as PILImage
-
 import factory
-from atria_core.types.data_instance.document import DocumentInstance
-from atria_core.types.data_instance.image import ImageInstance
-from atria_core.types.data_instance.tokenized_object import TokenizedDocumentInstance
-from atria_core.types.generic.annotated_object import AnnotatedObject
-from atria_core.types.generic.bounding_box import BoundingBox
-from atria_core.types.generic.ground_truth import (
+from faker import Faker
+
+from atria_core.types.data_instance._raw.document_instance import DocumentInstance
+from atria_core.types.data_instance._raw.image_instance import ImageInstance
+from atria_core.types.enums import OCRType
+from atria_core.types.generic._raw.annotated_object import AnnotatedObject
+from atria_core.types.generic._raw.bounding_box import BoundingBox
+from atria_core.types.generic._raw.ground_truth import (
     OCRGT,
     SERGT,
     ClassificationGT,
@@ -19,17 +15,13 @@ from atria_core.types.generic.ground_truth import (
     QuestionAnswerGT,
     VisualQuestionAnswerGT,
 )
-from atria_core.types.generic.image import Image
-from atria_core.types.generic.label import Label
-from atria_core.types.generic.ocr import (
-    OCR,
-    OCRGraph,
-    OCRGraphLink,
-    OCRGraphNode,
-    OCRType,
+from atria_core.types.generic._raw.image import Image
+from atria_core.types.generic._raw.label import Label
+from atria_core.types.generic._raw.ocr import OCR
+from atria_core.types.generic._raw.question_answer_pair import (
+    QuestionAnswerPair,
+    TokenizedQuestionAnswerPair,
 )
-from atria_core.types.generic.question_answer_pair import QuestionAnswerPair
-from atria_core.types.ocr_parsers.hocr_graph_parser import HOCRGraphParser
 
 MOCK_HOCR_TESSERACT = """
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -101,6 +93,14 @@ class QuestionAnswerPairFactory(factory.Factory):
     answer_text = factory.LazyFunction(lambda: [fake.sentence()])
 
 
+class TokenizedQuestionAnswerPairFactory(factory.Factory):
+    class Meta:
+        model = TokenizedQuestionAnswerPair
+
+    answer_starts = factory.LazyFunction(lambda: [fake.random_int(0, 50)])
+    answer_ends = factory.LazyFunction(lambda: [fake.random_int(0, 50)])
+
+
 class AnnotatedObjectFactory(factory.Factory):
     class Meta:
         model = AnnotatedObject
@@ -108,59 +108,9 @@ class AnnotatedObjectFactory(factory.Factory):
     label = factory.SubFactory(LabelFactory)
     bbox = factory.SubFactory(BoundingBoxFactory)
     segmentation = factory.LazyFunction(
-        lambda: (
-            [[fake.pyfloat(min_value=0.0, max_value=200.0) for _ in range(6)]]
-            if fake.boolean()
-            else None
-        )
+        lambda: ([[fake.pyfloat(min_value=0.0, max_value=200.0) for _ in range(6)]])
     )
     iscrowd = factory.LazyFunction(lambda: fake.boolean())
-
-
-class OCRGraphNodeFactory(factory.Factory):
-    class Meta:
-        model = OCRGraphNode
-
-    id = factory.LazyFunction(lambda: fake.random_int(0, 100))
-    word = factory.LazyFunction(lambda: fake.word())
-    level = factory.LazyFunction(
-        lambda: fake.random_element(elements=("word", "line", "paragraph"))
-    )
-    bbox = factory.SubFactory(BoundingBoxFactory)
-    segment_level_bbox = factory.SubFactory(BoundingBoxFactory)
-    conf = factory.LazyFunction(
-        lambda: round(fake.pyfloat(min_value=0, max_value=1), 2)
-    )
-    angle = factory.LazyFunction(
-        lambda: round(fake.pyfloat(min_value=0, max_value=360), 2)
-    )
-    label = factory.SubFactory(LabelFactory)
-
-
-class OCRGraphLinkFactory(factory.Factory):
-    class Meta:
-        model = OCRGraphLink
-
-    source = factory.LazyFunction(lambda: fake.random_int(0, 100))
-    target = factory.LazyFunction(lambda: fake.random_int(0, 100))
-    relation = factory.LazyFunction(
-        lambda: fake.random_element(elements=("parent", "child", "sibling"))
-    )
-
-
-class OCRGraphFactory(factory.Factory):
-    class Meta:
-        model = OCRGraph
-
-    directed = factory.LazyFunction(lambda: fake.boolean())
-    multigraph = factory.LazyFunction(lambda: fake.boolean())
-    graph = factory.LazyFunction(lambda: {"name": fake.word()})
-    nodes = factory.LazyFunction(
-        lambda: [OCRGraphNodeFactory.build() for _ in range(5)]
-    )
-    links = factory.LazyFunction(
-        lambda: [OCRGraphLinkFactory.build() for _ in range(3)]
-    )
 
 
 class OCRFactory(factory.Factory):
@@ -168,26 +118,8 @@ class OCRFactory(factory.Factory):
         model = OCR
 
     file_path = factory.LazyFunction(lambda: fake.file_path())
-    raw_content = factory.LazyFunction(lambda: MOCK_HOCR_TESSERACT)
-
-
-class OCRWithGraphFactory(factory.Factory):
-    class Meta:
-        model = OCR
-
-    file_path = factory.LazyFunction(lambda: fake.file_path())
-    ocr_type = OCRType.tesseract
-    backend = "from_file"
-    raw_content = factory.LazyFunction(lambda: MOCK_HOCR_TESSERACT)
-
-    @factory.lazy_attribute
-    def graph(self):
-        if self.backend == "from_factory":
-            return OCRGraphFactory.build()
-        elif self.backend == "from_file":
-            return HOCRGraphParser(self.raw_content).parse()
-        else:
-            raise ValueError(f"Unsupported backend: {self.backend}")
+    type: OCRType = factory.LazyFunction(lambda: fake.random_element(OCRType))
+    content = factory.LazyFunction(lambda: MOCK_HOCR_TESSERACT)
 
 
 class ImageFactory(factory.Factory):
@@ -200,6 +132,9 @@ class ImageFactory(factory.Factory):
 
     @factory.lazy_attribute
     def content(self):
+        import numpy as np
+        from PIL import Image as PILImage
+
         if self._backend == "pil":
             return PILImage.new("RGB", self._image_size, color="white")
 
@@ -220,6 +155,10 @@ class ImageFactory(factory.Factory):
 
     @factory.lazy_attribute
     def file_path(self):
+        import tempfile
+
+        from PIL import Image as PILImage
+
         if self._backend == "pil_file":
             temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
             PILImage.new("RGB", self._image_size, color="white").save(temp_file.name)
@@ -245,20 +184,20 @@ class GroundTruthFactory(factory.Factory):
         model = GroundTruth
 
     classification = factory.LazyFunction(
-        lambda: ClassificationGT(label=LabelFactory())
+        lambda: ClassificationGT(label=LabelFactory.build())
     )
     ser = factory.LazyFunction(
         lambda: SERGT(
             words=fake.words(nb=5),
-            word_bboxes=[BoundingBoxFactory() for _ in range(5)],
-            word_labels=[LabelFactory() for _ in range(5)],
-            segment_level_bboxes=[BoundingBoxFactory() for _ in range(2)],
+            word_bboxes=BoundingBoxFactory.build_batch(5),
+            word_labels=LabelFactory.build_batch(5),
+            segment_level_bboxes=BoundingBoxFactory.build_batch(2),
         )
     )
     ocr = factory.LazyFunction(
         lambda: OCRGT(
             words=fake.words(nb=10),
-            word_bboxes=[BoundingBoxFactory() for _ in range(10)],
+            word_bboxes=BoundingBoxFactory.build_batch(10),
             word_confs=[fake.pyfloat(min_value=0.0, max_value=1.0) for _ in range(10)],
             word_angles=[
                 fake.pyfloat(min_value=0.0, max_value=360.0) for _ in range(10)
@@ -267,22 +206,22 @@ class GroundTruthFactory(factory.Factory):
     )
     qa = factory.LazyFunction(
         lambda: QuestionAnswerGT(
-            qa_pair=QuestionAnswerPairFactory(), words=fake.words(nb=8)
+            qa_pair=QuestionAnswerPairFactory.build(), words=fake.words(nb=8)
         )
     )
     vqa = factory.LazyFunction(
         lambda: VisualQuestionAnswerGT(
-            qa_pair=QuestionAnswerPairFactory(),
+            qa_pair=QuestionAnswerPairFactory.build(),
             words=fake.words(nb=8),
-            word_bboxes=[BoundingBoxFactory() for _ in range(8)],
-            segment_level_bboxes=[BoundingBoxFactory() for _ in range(3)],
+            word_bboxes=BoundingBoxFactory.build_batch(8),
+            segment_level_bboxes=BoundingBoxFactory.build_batch(3),
         )
     )
     layout = factory.LazyFunction(
         lambda: LayoutAnalysisGT(
-            annotated_objects=[AnnotatedObjectFactory() for _ in range(3)],
+            annotated_objects=AnnotatedObjectFactory.build_batch(3),
             words=fake.words(nb=15),
-            word_bboxes=[BoundingBoxFactory() for _ in range(15)],
+            word_bboxes=BoundingBoxFactory.build_batch(15),
         )
     )
 
@@ -294,7 +233,7 @@ class ImageInstanceFactory(factory.Factory):
     index = factory.LazyFunction(lambda: fake.random_int(min=0, max=1000))
     sample_id = factory.LazyFunction(lambda: str(fake.uuid4()))
     image = factory.SubFactory(ImageFactory)
-    ground_truth = factory.SubFactory(GroundTruthFactory)
+    gt = factory.SubFactory(GroundTruthFactory)
 
 
 class DocumentInstanceFactory(factory.Factory):
@@ -305,33 +244,33 @@ class DocumentInstanceFactory(factory.Factory):
     sample_id = factory.LazyFunction(lambda: str(fake.uuid4()))
     image = factory.SubFactory(ImageFactory)
     ocr = factory.SubFactory(OCRFactory)
-    ground_truth = factory.SubFactory(GroundTruthFactory)
+    gt = factory.SubFactory(GroundTruthFactory)
 
 
-class TokenizedObjectInstanceFactory(factory.Factory):
-    class Meta:
-        model = TokenizedDocumentInstance
+# class TokenizedObjectInstanceFactory(factory.Factory):
+#     class Meta:
+#         model = TokenizedDocumentInstance
 
-    token_ids = factory.LazyFunction(
-        lambda: [fake.random_int(min=0, max=1000) for _ in range(16)]
-    )
-    word_ids = factory.LazyFunction(
-        lambda: [fake.random_int(min=0, max=1000) for _ in range(16)]
-    )
-    token_labels = factory.LazyFunction(
-        lambda: [fake.random_int(min=0, max=10) for _ in range(16)]
-    )
-    token_type_ids = factory.LazyFunction(
-        lambda: [fake.random_int(min=0, max=1) for _ in range(16)]
-    )
-    attention_mask = factory.LazyFunction(
-        lambda: [fake.random_int(min=0, max=1) for _ in range(16)]
-    )
-    token_bboxes = factory.LazyFunction(
-        lambda: [[fake.random_int(min=0, max=100) for _ in range(4)] for _ in range(16)]
-    )
-    sequence_ids = factory.LazyFunction(
-        lambda: [fake.random_int(min=0, max=5) for _ in range(16)]
-    )
-    image = factory.SubFactory(ImageFactory)
-    label = factory.SubFactory(LabelFactory)
+#     token_ids = factory.LazyFunction(
+#         lambda: [fake.random_int(min=0, max=1000) for _ in range(16)]
+#     )
+#     word_ids = factory.LazyFunction(
+#         lambda: [fake.random_int(min=0, max=1000) for _ in range(16)]
+#     )
+#     token_labels = factory.LazyFunction(
+#         lambda: [fake.random_int(min=0, max=10) for _ in range(16)]
+#     )
+#     token_type_ids = factory.LazyFunction(
+#         lambda: [fake.random_int(min=0, max=1) for _ in range(16)]
+#     )
+#     attention_mask = factory.LazyFunction(
+#         lambda: [fake.random_int(min=0, max=1) for _ in range(16)]
+#     )
+#     token_bboxes = factory.LazyFunction(
+#         lambda: [[fake.random_int(min=0, max=100) for _ in range(4)] for _ in range(16)]
+#     )
+#     sequence_ids = factory.LazyFunction(
+#         lambda: [fake.random_int(min=0, max=5) for _ in range(16)]
+#     )
+#     image = factory.SubFactory(ImageFactory)
+#     label = factory.SubFactory(LabelFactory)

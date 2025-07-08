@@ -1,43 +1,38 @@
-from typing import List
+import pyarrow as pa
 
-import pytest
-
-from atria_core.types.base.data_model import BaseDataModel
-from atria_core.types.generic.annotated_object import (
-    AnnotatedObjectSequence,
-    BatchedAnnotatedObject,
-    BatchedAnnotatedObjectSequence,
-)
-from tests.types.factory import AnnotatedObjectFactory, AnnotatedObjectSequenceFactory
-from tests.types.tests_base import BaseDataModelTestBase
+from atria_core.types.factory import AnnotatedObjectFactory
+from tests.types.data_model_test_base import DataModelTestBase
 
 
-class TestAnnotatedObject(BaseDataModelTestBase):
-    @pytest.fixture
-    def model_instance(self):
-        return AnnotatedObjectFactory.build()
+class TestAnnotatedObject(DataModelTestBase):
+    """
+    Test class for AnnotatedObject.
+    """
 
-    def batched_model(self) -> type[BaseDataModel]:
-        return BatchedAnnotatedObject
+    factory = AnnotatedObjectFactory
 
-    def tensor_fields(self) -> List[str]:
-        return ["segmentation"]
+    def expected_table_schema(self) -> dict[str, pa.DataType]:
+        """
+        Expected table schema for the RawDataModel.
+        This should be overridden by child classes to provide specific schemas.
+        """
+        return {
+            "label": {"value": pa.int64(), "name": pa.string()},
+            "bbox": {"value": pa.list_(pa.float64()), "mode": pa.string()},
+            "segmentation": pa.list_(pa.list_(pa.float64())),
+            "iscrowd": pa.bool_(),
+        }
 
-
-class TestSequenceAnnotatedObjects(BaseDataModelTestBase):
-    @pytest.fixture(params=[True, False])
-    def from_annotated_objects(self, request):
-        return request.param
-
-    def batched_model(self) -> type[BaseDataModel]:
-        return BatchedAnnotatedObjectSequence
-
-    def tensor_fields(self) -> List[str]:
-        return ["segmentation"]
-
-    @pytest.fixture
-    def model_instance(self, from_annotated_objects):
-        if from_annotated_objects:
-            return AnnotatedObjectSequence.from_list(AnnotatedObjectFactory.batch(10))
-        else:
-            return AnnotatedObjectSequenceFactory.build()
+    def expected_table_schema_flattened(self) -> dict[str, pa.DataType]:
+        """
+        Expected flattened table schema for the RawDataModel.
+        This should be overridden by child classes to provide specific schemas.
+        """
+        return {
+            "label_value": pa.int64(),
+            "label_name": pa.string(),
+            "bbox_value": pa.list_(pa.float64()),
+            "bbox_mode": pa.string(),
+            "segmentation": pa.list_(pa.list_(pa.float64())),
+            "iscrowd": pa.bool_(),
+        }

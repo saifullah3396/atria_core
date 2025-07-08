@@ -23,9 +23,8 @@ License: MIT
 """
 
 import re
-from typing import List, Tuple
 
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import OmegaConf
 
 
 def _sanitize_string(input_str: str) -> str:
@@ -56,36 +55,7 @@ def _resolve_dir_name(input_str: str) -> str:
     return _sanitize_string(input_str)
 
 
-def _dir_name_from_overrides(overrides: ListConfig, filter: DictConfig) -> str:
-    """
-    Generates a directory name from a list of overrides filtered by specified keys.
-
-    Args:
-        overrides (ListConfig): List of CLI-style overrides (e.g., model=bert).
-        filter (DictConfig): Keys to match in overrides and their output aliases.
-
-    Returns:
-        str: A sanitized directory name composed from matched override values.
-    """
-    task_overrides: List[str] = overrides.task
-    overrides_filtered: List[str] = []
-
-    for override in task_overrides:
-        for key, target_key in filter.items():
-            if key in override:
-                parts = override.split("=")
-                if len(parts) == 2:
-                    _, value = parts
-                    overrides_filtered.append(f"{target_key}={value}")
-                break
-
-    if not overrides_filtered:
-        return "default"
-
-    return _sanitize_string("_".join(overrides_filtered))
-
-
-def _resolve_tuple(*args) -> Tuple:
+def _resolve_tuple(*args) -> tuple:
     """
     Returns a tuple from a list of arguments.
 
@@ -101,8 +71,6 @@ def _resolve_tuple(*args) -> Tuple:
 if not OmegaConf.has_resolver("resolve_dir_name"):
     OmegaConf.register_new_resolver("resolve_dir_name", _resolve_dir_name)
 
-if not OmegaConf.has_resolver("dir_name_from_overrides"):
-    OmegaConf.register_new_resolver("dir_name_from_overrides", _dir_name_from_overrides)
 
 if not OmegaConf.has_resolver("as_tuple"):
     OmegaConf.register_new_resolver("as_tuple", _resolve_tuple)

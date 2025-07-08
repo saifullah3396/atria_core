@@ -29,10 +29,10 @@ from types import NoneType
 import torch
 from pydantic import PrivateAttr, model_validator
 
-from atria_core.types.base.data_model import BaseDataModelConfigDict
-from atria_core.types.data_instance.base import BaseDataInstance
-from atria_core.types.generic.image import Image
-from atria_core.types.generic.label import Label
+from atria_core.types.base.tensor_data_model import RawDataModelConfigDict
+from atria_core.types.data_instance._tensor.base import BaseDataInstance
+from atria_core.types.generic._image import Image
+from atria_core.types.generic._label import Label
 from atria_core.types.generic.question_answer_pair import (
     QuestionAnswerPair,
     TokenizedQuestionAnswerPair,
@@ -80,7 +80,7 @@ class TokenizedDocumentInstance(BaseDataInstance):
             tokens to sample indices.
     """
 
-    model_config = BaseDataModelConfigDict(
+    model_config = RawDataModelConfigDict(
         batch_skip_fields=["ocr", "page_id", "total_num_pages"],
         batch_tensor_stack_skip_fields=[
             "token_ids",
@@ -144,19 +144,21 @@ class TokenizedDocumentInstance(BaseDataInstance):
                 "token_type_ids",
                 "attention_mask",
             ]:
-                assert (
-                    value.ndim == 2
-                ), f"Expected 1D tensor, but got {value.ndim}D tensor for {key}."
-                assert (
-                    value.shape == self.token_ids.shape
-                ), f"{key} must have the same shape as token_ids {self.token_ids.shape}."
+                assert value.ndim == 2, (
+                    f"Expected 1D tensor, but got {value.ndim}D tensor for {key}."
+                )
+                assert value.shape == self.token_ids.shape, (
+                    f"{key} must have the same shape as token_ids {self.token_ids.shape}."
+                )
             if key == "token_bboxes":
-                assert (
-                    value.ndim == 3
-                ), f"Expected 2D tensor, but got {value.ndim}D tensor for {key}."
+                assert value.ndim == 3, (
+                    f"Expected 2D tensor, but got {value.ndim}D tensor for {key}."
+                )
                 assert (
                     value.shape[1] == self.token_ids.shape[1] and value.shape[2] == 4
-                ), f"{key} must have compatible shape with token_ids {self.token_ids.shape}."
+                ), (
+                    f"{key} must have compatible shape with token_ids {self.token_ids.shape}."
+                )
 
         prediction_indices_mask = torch.zeros_like(self.token_ids, dtype=torch.bool)
         for idx, word_ids_per_sample in enumerate(self.word_ids):
@@ -201,17 +203,17 @@ class TokenizedDocumentInstance(BaseDataInstance):
                 - A list of indices indicating the number of times each sample was repeated.
                 - A list of keys that were not repeated.
         """
-        assert (
-            self._is_tensor
-        ), "This function only supports tensorized document instances. Call to_tensor() first."
-        assert (
-            self._is_batched
-        ), "This function only supports batched document instances. Call batched() first."
+        assert self._is_tensor, (
+            "This function only supports tensorized document instances. Call to_tensor() first."
+        )
+        assert self._is_batched, (
+            "This function only supports batched document instances. Call batched() first."
+        )
         repeat_indices = [sample.shape[0] for sample in self.token_ids]
         for key in NON_REPEATED_KEYS:
-            assert isinstance(
-                _rgetattr(self, key), (list, NoneType)
-            ), f"{key} must be a list."
+            assert isinstance(_rgetattr(self, key), list | NoneType), (
+                f"{key} must be a list."
+            )
             _apply(self, key, lambda list_of_samples: torch.cat(list_of_samples, dim=0))
         # we recursively repeat all the batched samples with given indices
         self.repeat_with_indices(
@@ -229,12 +231,12 @@ class TokenizedDocumentInstance(BaseDataInstance):
         Unlike concat_all_overflow_samples, this function randomly selects one sample
         from each overflowed sample and concatenates them into a single tensor.
         """
-        assert (
-            self._is_tensor
-        ), "This function only supports tensorized document instances. Call to_tensor() first."
-        assert (
-            self._is_batched
-        ), "This function only supports batched document instances. Call batched() first."
+        assert self._is_tensor, (
+            "This function only supports tensorized document instances. Call to_tensor() first."
+        )
+        assert self._is_batched, (
+            "This function only supports batched document instances. Call batched() first."
+        )
         assert isinstance(self.token_ids, list), "token_ids must be a list."
         random_select_ids = [
             torch.randint(0, sample.shape[0], size=(1,)).item()
@@ -243,13 +245,18 @@ class TokenizedDocumentInstance(BaseDataInstance):
 
         def stack_fn(list_of_samples):
             return torch.stack(
-                [sample[idx] for sample, idx in zip(list_of_samples, random_select_ids)]
+                [
+                    sample[idx]
+                    for sample, idx in zip(
+                        list_of_samples, random_select_ids, strict=True
+                    )
+                ]
             )
 
         for key in NON_REPEATED_KEYS:
-            assert isinstance(
-                _rgetattr(self, key), (list, NoneType)
-            ), f"{key} must be a list."
+            assert isinstance(_rgetattr(self, key), list | NoneType), (
+                f"{key} must be a list."
+            )
             _apply(self, key, stack_fn)
 
     def select_first_overflow_samples(self):
@@ -257,16 +264,16 @@ class TokenizedDocumentInstance(BaseDataInstance):
         Unlike concat_all_overflow_samples, this function randomly selects one sample
         from each overflowed sample and concatenates them into a single tensor.
         """
-        assert (
-            self._is_tensor
-        ), "This function only supports tensorized document instances. Call to_tensor() first."
-        assert (
-            self._is_batched
-        ), "This function only supports batched document instances. Call batched() first."
+        assert self._is_tensor, (
+            "This function only supports tensorized document instances. Call to_tensor() first."
+        )
+        assert self._is_batched, (
+            "This function only supports batched document instances. Call batched() first."
+        )
         for key in NON_REPEATED_KEYS:
-            assert isinstance(
-                _rgetattr(self, key), (list, NoneType)
-            ), f"{key} must be a list."
+            assert isinstance(_rgetattr(self, key), list | NoneType), (
+                f"{key} must be a list."
+            )
             _apply(
                 self,
                 key,

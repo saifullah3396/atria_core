@@ -19,6 +19,7 @@ License: MIT
 
 import logging
 
+
 class DistributedFilter(logging.Filter):
     """
     A logging filter that allows log records to be processed only if the rank is zero.

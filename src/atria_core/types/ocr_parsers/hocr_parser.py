@@ -1,8 +1,8 @@
-from functools import cached_property
 import bs4
-from atria_core.types.generic.bounding_box import BoundingBox
-from atria_core.types.generic.ground_truth import OCRGT
-from atria_core.types.generic.ocr import OCRType
+
+from atria_core.types.generic._raw.bounding_box import BoundingBox
+from atria_core.types.generic._raw.ground_truth import OCRGT
+from atria_core.types.generic._raw.ocr import OCRType
 
 
 class OCRProcessor:
@@ -13,8 +13,7 @@ class OCRProcessor:
 
     @staticmethod
     def parse(raw_ocr: str, ocr_type: OCRType):
-        ocr_type = ocr_type.lower()
-        if ocr_type == OCRType.TESSERACT:
+        if ocr_type == OCRType.tesseract:
             return HOCRProcessor.parse(raw_ocr)
         # Add more parsers here as needed
         else:
@@ -43,15 +42,15 @@ class HOCRProcessor:
         ocr_words = soup.findAll("span", {"class": "ocrx_word"})
         for word in ocr_words:
             title = word["title"]
-            conf = int(title[title.find(";") + 10 :])
+            conf = float(title[title.find(";") + 10 :])
             if word.text.strip() == "":
                 continue
 
             # Get text angle from line title
-            textangle = 0
+            textangle = 0.0
             parent_title = word.parent["title"]
             if "textangle" in parent_title:
-                textangle = int(parent_title.split("textangle")[1][1:3])
+                textangle = float(parent_title.split("textangle")[1][1:3])
 
             x1, y1, x2, y2 = map(int, title[5 : title.find(";")].split())
             words.append(word.text.strip())

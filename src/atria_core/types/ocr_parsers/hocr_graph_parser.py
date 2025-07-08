@@ -1,8 +1,7 @@
-from typing import Optional
-
 import bs4
 import networkx
 import tqdm
+
 from atria_core.types.generic.bounding_box import BoundingBox
 from atria_core.types.generic.ocr import OCRGraphNode, OCRLevel
 
@@ -26,12 +25,12 @@ class HOCRGraphParser:
         node_id: int,
         tag: bs4.Tag,
         level: str,
-        parent_id: Optional[str] = None,
+        parent_id: str | None = None,
     ):
         title = tag.get("title", "")
         bbox = None
         conf = None
-        angle = 0
+        angle = 0.0
 
         # Parse bbox
         if "bbox" in title:

@@ -1,47 +1,143 @@
-from typing import List
-
+import pyarrow as pa
 import pytest
+import torch
+from pydantic import ValidationError
 
-from atria_core.types.generic.label import (
-    BatchedLabel,
-    BatchedLabelSequence,
-    LabelSequence,
-)
-from tests.types.factory import LabelFactory, LabelSequenceFactory
-from tests.types.tests_base import BaseDataModelTestBase
-
-
-class TestLabel(BaseDataModelTestBase):
-    @pytest.fixture
-    def model_instance(self):
-        return LabelFactory.build()
-
-    def batched_model(self):
-        return BatchedLabel
-
-    def tensor_fields(self) -> List[str]:
-        return ["value"]
+from atria_core.types.factory import LabelFactory
+from atria_core.types.generic._raw.label import Label
+from atria_core.types.generic._tensor.label import TensorLabel
+from tests.types.data_model_test_base import DataModelTestBase
 
 
-class TestSequenceLabels(BaseDataModelTestBase):
-    @pytest.fixture
-    def model_instance(self):
-        return LabelSequenceFactory.build()
+class TestLabel(DataModelTestBase):
+    """
+    Test class for Label.
+    """
 
-    def batched_model(self):
-        return BatchedLabelSequence
+    factory = LabelFactory
 
-    def tensor_fields(self) -> List[str]:
-        return ["values"]
+    def expected_table_schema(self) -> dict[str, pa.DataType]:
+        """
+        Expected table schema for the RawDataModel.
+        This should be overridden by child classes to provide specific schemas.
+        """
+        return {"name": pa.string(), "value": pa.int64()}
+
+    def expected_table_schema_flattened(self) -> dict[str, pa.DataType]:
+        """
+        Expected flattened table schema for the RawDataModel.
+        This should be overridden by child classes to provide specific schemas.
+        """
+        return {"name": pa.string(), "value": pa.int64()}
 
 
-class TestSequenceFromLabels(BaseDataModelTestBase):
-    @pytest.fixture
-    def model_instance(self):
-        return LabelSequence.from_list(LabelFactory.batch(10))
+#########################################################
+# Basic Label Tests
+#########################################################
+@pytest.fixture
+def valid_label():
+    return Label(value=1, name="Label1")
 
-    def batched_model(self):
-        return BatchedLabelSequence
 
-    def tensor_fields(self) -> List[str]:
-        return ["values"]
+def test_raw_label_initialization(valid_label):
+    assert valid_label.value == 1
+    assert valid_label.name == "Label1"
+
+
+def test_raw_label_value_update(valid_label):
+    valid_label.value = 2
+    assert valid_label.value == 2
+
+
+def test_raw_label_name_update(valid_label):
+    valid_label.name = "UpdatedLabel"
+    assert valid_label.name == "UpdatedLabel"
+
+
+def test_to_tensor(valid_label: Label) -> None:
+    valid_label.load()
+    tensor = valid_label.to_tensor()
+    assert tensor is not None
+
+
+###
+# Tensor Label Tests
+###
+@pytest.fixture
+def scalar_tensor_label() -> TensorLabel:
+    """Fixture providing a valid TensorLabel with scalar tensor value."""
+    return TensorLabel(value=torch.tensor(1), name="SingleLabel")
+
+
+def test_tensor_label_creates_valid_scalar_instance(
+    scalar_tensor_label: TensorLabel,
+) -> None:
+    """Test that TensorLabel properly initializes with scalar tensor and name."""
+    assert scalar_tensor_label.value.ndim == 0  # Scalar tensor has 0 dimensions
+    assert scalar_tensor_label.name == "SingleLabel"
+
+
+def test_tensor_label_allows_scalar_value_updates(
+    scalar_tensor_label: TensorLabel,
+) -> None:
+    """Test that tensor value can be updated with another scalar tensor."""
+    new_value = torch.tensor(4)
+    scalar_tensor_label.value = new_value
+    assert torch.equal(scalar_tensor_label.value, new_value)
+
+
+def test_tensor_label_allows_name_updates(scalar_tensor_label: TensorLabel) -> None:
+    """Test that label name can be updated to a new string value."""
+    new_name = "UpdatedLabel"
+    scalar_tensor_label.name = new_name
+    assert scalar_tensor_label.name == new_name
+
+
+def test_tensor_label_rejects_float_dtype() -> None:
+    """Test that TensorLabel validation fails for non-integer tensor dtypes."""
+    with pytest.raises(ValidationError):
+        # Float tensors should be rejected
+        TensorLabel(value=torch.tensor([1.0, 2.5, 3.7]), name="FloatLabel")
+
+
+def test_tensor_label_rejects_multidimensional_tensors() -> None:
+    """Test that TensorLabel validation fails for tensors with more than 0 dimensions."""
+    with pytest.raises(ValidationError):
+        # 2D tensors should be rejected - only scalar tensors allowed
+        multi_dim_tensor = torch.tensor([[1, 2], [3, 4]])
+        TensorLabel(value=multi_dim_tensor, name="MultiDimLabel")
+
+
+def test_tensor_label_rejects_empty_tensors() -> None:
+    """Test that TensorLabel validation fails for empty tensor arrays."""
+    with pytest.raises(ValidationError):
+        # Empty tensors should be rejected
+        empty_tensor = torch.tensor([])
+        TensorLabel(value=empty_tensor, name="EmptyLabel")
+
+
+def test_tensor_label_equality_comparison() -> None:
+    """Test equality comparison between TensorLabel instances based on value and name."""
+    label1 = TensorLabel(value=torch.tensor(1), name="Label1")
+    label2 = TensorLabel(value=torch.tensor(1), name="Label1")  # Same as label1
+    label3 = TensorLabel(value=torch.tensor(3), name="Label3")  # Different value
+
+    # Labels with same value and name should have equal components
+    assert torch.equal(label1.value, label2.value)
+    assert label1.name == label2.name
+
+    # Labels with different values should not be equal
+    assert not torch.equal(label1.value, label3.value)
+
+
+def test_tensor_label_batching_functionality() -> None:
+    """Test that TensorLabel can be batched into a 1D tensor with repeated values."""
+    label = TensorLabel(value=torch.tensor(10), name="Label1")
+    batch_size = 10
+
+    # Create batched version with 10 copies of the same label
+    batched_label = label.batched([label] * batch_size)
+
+    # Batched result should be 1D tensor with repeated values
+    assert batched_label.value.ndim == 1
+    assert torch.equal(batched_label.value, torch.tensor([10] * batch_size))

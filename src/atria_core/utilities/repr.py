@@ -19,7 +19,7 @@ License: MIT
 
 from rich.pretty import RichReprResult, pretty_repr
 
-from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS, _TORCH_PRINT_OPTIONS_PROFILE
+from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
 
 
 class RepresentationMixin:
@@ -47,9 +47,6 @@ class RepresentationMixin:
         Yields:
             RichReprResult: A generator of key-value pairs or values for the object's attributes.
         """
-        import torch
-
-        torch.set_printoptions(profile=_TORCH_PRINT_OPTIONS_PROFILE)
         for name, field_repr in self.__dict__.items():
             if name is None:
                 yield field_repr
@@ -63,7 +60,7 @@ class RepresentationMixin:
         Returns:
             str: A developer-friendly string representation of the object.
         """
-        return pretty_repr(self, max_length=_MAX_REPR_PRINT_ELEMENTS)
+        return pretty_repr(self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=32)
 
     def __str__(self) -> str:
         """
@@ -72,4 +69,4 @@ class RepresentationMixin:
         Returns:
             str: A human-readable string representation of the object.
         """
-        return pretty_repr(self, max_length=_MAX_REPR_PRINT_ELEMENTS)
+        return pretty_repr(self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=32)

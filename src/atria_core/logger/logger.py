@@ -28,7 +28,6 @@ License: MIT
 import logging
 import os
 import sys
-from typing import Optional
 
 from atria_core.logger.constants import _DEFAULT_COLOR_STYLES, _ROOT_LOGGER_NAME
 from atria_core.logger.filters import DistributedFilter
@@ -66,7 +65,7 @@ class LoggerBase:
             LoggerBase: The singleton instance of the logger manager.
         """
         if cls._instance is None:
-            cls._instance = super(LoggerBase, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance._initialize()
         return cls._instance
 
@@ -85,8 +84,8 @@ class LoggerBase:
             else logging.getLevelName(log_level.upper())
         )
         self._styles = _DEFAULT_COLOR_STYLES
-        self._log_file_path: Optional[str] = None
-        self._rank: int = 0
+        self._log_file_path = None
+        self._rank = 0
 
     @property
     def rank(self) -> int:
@@ -111,7 +110,7 @@ class LoggerBase:
             self._reset_loggers()
 
     @property
-    def log_file_path(self) -> Optional[str]:
+    def log_file_path(self) -> str | None:
         """
         Get the current log file path.
 
@@ -157,7 +156,7 @@ class LoggerBase:
         self._reset_loggers()
 
     def create_logger(
-        self, name: Optional[str] = None, reset_logger: bool = False
+        self, name: str | None = None, reset_logger: bool = False
     ) -> logging.Logger:
         """
         Create or retrieve a logger with the specified name.
@@ -217,7 +216,7 @@ class LoggerBase:
         enable_colored_logging(logger, self._log_level, self._styles, self._format)
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """
     Retrieve a logger configured for distributed environments.
 

@@ -42,8 +42,8 @@ __getattr__, __dir__, __all__ = lazy.attach(
         "data_instance.document",
         "data_instance.image",
         "generic.bounding_box",
-        "generic.image",
-        "generic.label",
+        "generic._raw.image",
+        "generic._raw.label",
         "generic.ocr",
     ],
     submod_attrs={
@@ -52,8 +52,8 @@ __getattr__, __dir__, __all__ = lazy.attach(
         "data_instance.document": ["DocumentInstance"],
         "data_instance.image": ["ImageInstance"],
         "generic.bounding_box": ["BoundingBox"],
-        "generic.image": ["Image"],
-        "generic.label": ["Label"],
+        "generic._raw.image": ["Image"],
+        "generic._raw.label": ["Label"],
         "generic.ocr": ["OCR", "OCRType"],
     },
 )

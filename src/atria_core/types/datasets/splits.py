@@ -23,7 +23,7 @@ License: MIT
 
 from dataclasses import field
 from enum import Enum
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -56,4 +56,4 @@ class SplitConfig(BaseModel):
     """
 
     split: DatasetSplitType
-    gen_kwargs: Dict[str, Any] = field(default_factory=dict)
+    gen_kwargs: dict[str, Any] = field(default_factory=dict)

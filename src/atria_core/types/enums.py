@@ -1,0 +1,61 @@
+import enum
+
+
+class OCRType(str, enum.Enum):
+    """
+    Enum for OCR types.
+
+    Attributes:
+        TESSERACT (str): Tesseract OCR.
+        EASY_OCR (str): EasyOCR.
+        GOOGLE_VISION (str): Google Vision OCR.
+        AWS_REKOGNITION (str): AWS Rekognition OCR.
+        AZURE_OCR (str): Azure OCR.
+        OTHER (str): Custom OCR implementation.
+    """
+
+    tesseract = "tesseract"
+    easy_ocr = "easy_ocr"
+    google_vision = "google_vision"
+    aws_rekognition = "aws_rekognition"
+    azure_ocr = "azure_ocr"
+    custom = "custom"
+    other = "other"
+
+
+class TaskType(str, enum.Enum):
+    image_classification = "image_classification"
+    sequence_classification = "sequence_classification"
+    semantic_entity_recognition = "semantic_entity_recognition"
+    layout_entity_recognition = "layout_entity_recognition"
+    question_answering = "question_answering"
+    visual_question_answering = "visual_question_answering"
+    layout_analysis = "layout_analysis"
+
+
+class ModelType(str, enum.Enum):
+    timm = "timm"
+    torchvision = "torchvision"
+    transformers_image_classification = "transformers/image_classification"
+    transformers_sequence_classification = "transformers/sequence_classification"
+    transformers_token_classification = "transformers/token_classification"
+    transformers_question_answering = "transformers/question_answering"
+    diffusers = "diffusers"
+    mmdet = "mmdet"
+
+
+class ConfigTypes(str, enum.Enum):
+    batch_sampler = "batch_sampler"
+    data_pipeline = "data_pipeline"
+    dataset = "dataset"
+    data_transform = "data_transform"
+    dataset_splitter = "dataset_splitter"
+    dataset_storage_manager = "dataset_storage_manager"
+    engine = "engine"
+    engine_step = "engine_step"
+    lr_scheduler_factory = "lr_scheduler_factory"
+    metric_factory = "metric_factory"
+    model = "model"
+    model_pipeline = "model_pipeline"
+    optimizer_factory = "optimizer_factory"
+    task_pipeline = "task_pipeline"

@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import functools
 import inspect
+import types
 from functools import partial
 from typing import Any
 
@@ -152,15 +153,14 @@ def _validate_partial_class(object: Any, target_class: type[Any], object_name: s
     Raises:
         AssertionError: If the object is not a partial or not a subclass of the target class.
     """
-    assert isinstance(
-        object, partial
-    ), f"{object_name} must be a partial object of class {target_class} for late initialization"
+    assert isinstance(object, partial), (
+        f"{object_name} must be a partial object of class {target_class} for late initialization"
+    )
     unwrapped = _unwrap_partial(object)
     if not callable(unwrapped):
-        assert issubclass(
-            unwrapped,
-            target_class,
-        ), f"{object_name} partial class must be a subclass of {target_class} or a callable function"
+        assert issubclass(unwrapped, target_class), (
+            f"{object_name} partial class must be a subclass of {target_class} or a callable function"
+        )
 
 
 def _msg_with_separator(msg: str, separator: str = "=") -> str:
@@ -193,7 +193,7 @@ def _pretty_print(x: Any) -> str:
     return pretty_repr(x)
 
 
-def _get_possible_args(func: Any) -> inspect.Signature:
+def _get_possible_args(func: Any) -> types.MappingProxyType[str, inspect.Parameter]:
     """
     Retrieves all possible arguments of a function.
 
@@ -201,7 +201,7 @@ def _get_possible_args(func: Any) -> inspect.Signature:
         func (Any): The function to inspect.
 
     Returns:
-        inspect.Signature: The signature of the function's parameters.
+        dict[str, inspect.Parameter]: The signature of the function's parameters.
     """
     return inspect.signature(func).parameters
 

@@ -14,6 +14,6 @@ Version: 1.0.0
 License: MIT
 """
 
-from .utilities.yaml_resolvers import _dir_name_from_overrides  # noqa: F401
+import atria_core.utilities.yaml_resolvers  # noqa: F401
 
 __version__ = "0.1.0"

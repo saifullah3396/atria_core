@@ -21,7 +21,7 @@ License: MIT
 """
 
 import logging
-from typing import Dict, TextIO
+from typing import TextIO
 
 import coloredlogs
 
@@ -29,7 +29,7 @@ import coloredlogs
 def enable_colored_logging(
     logger: logging.Logger,
     log_level: int,
-    styles: Dict[str, Dict[str, str]],
+    styles: dict[str, dict[str, str]],
     log_format: str,
 ) -> None:
     """

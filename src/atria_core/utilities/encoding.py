@@ -31,19 +31,22 @@ Version: 1.0.0
 License: MIT
 """
 
-import base64
-import gzip
-import io
-from typing import Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 
-import numpy as np
-import PIL
-import PIL.Image
-import torch
+import pyarrow as pa
 from PIL.Image import Image as PILImage
+from pydantic import BeforeValidator, PlainSerializer
+
+from atria_core.types.typing.common import TableSchemaMetadata
+
+if TYPE_CHECKING:
+    import numpy as np
+    import PIL
+    import PIL.Image
+    import torch
 
 
-def _pil_image_to_bytes(image: PILImage, format: str = "PNG") -> bytes:
+def _pil_image_to_bytes(image: "PILImage", format: str = "PNG") -> bytes:
     """
     Converts a PIL image to a byte array.
 
@@ -54,13 +57,15 @@ def _pil_image_to_bytes(image: PILImage, format: str = "PNG") -> bytes:
     Returns:
         bytes: The byte array representation of the image.
     """
+    import io
+
     buffer = io.BytesIO()
     image.save(buffer, format=format)
     return buffer.getvalue()
 
 
 def _image_to_bytes(
-    image: Union[PILImage, torch.Tensor, np.ndarray], format: str = "PNG"
+    image: Union["PILImage", "torch.Tensor", "np.ndarray"], format: str = "PNG"
 ) -> bytes:
     """
     Converts an image (PIL, Tensor, or ndarray) to a byte array.
@@ -75,17 +80,22 @@ def _image_to_bytes(
     Raises:
         TypeError: If the image type is unsupported.
     """
-    from torchvision.transforms.functional import to_pil_image
+    from PIL.Image import Image as PILImage
 
-    if isinstance(image, (torch.Tensor, np.ndarray)):
-        return _pil_image_to_bytes(to_pil_image(image), format=format)
-    elif isinstance(image, PILImage):
+    if isinstance(image, PILImage):
         return _pil_image_to_bytes(image, format=format)
     else:
-        raise TypeError(f"Unsupported image type: {type(image)}")
+        import numpy as np
+        import torch
+        from torchvision.transforms.functional import to_pil_image
+
+        if isinstance(image, torch.Tensor | np.ndarray):
+            return _pil_image_to_bytes(to_pil_image(image), format=format)
+        else:
+            raise TypeError(f"Unsupported image type: {type(image)}")
 
 
-def _image_to_base64(image: Union[PILImage, torch.Tensor, np.ndarray]) -> str:
+def _image_to_base64(image: Union["PILImage", "torch.Tensor", "np.ndarray"]) -> str:
     """
     Converts an image to a base64-encoded string.
 
@@ -95,10 +105,12 @@ def _image_to_base64(image: Union[PILImage, torch.Tensor, np.ndarray]) -> str:
     Returns:
         str: The base64-encoded string representation of the image.
     """
+    import base64
+
     return base64.b64encode(_image_to_bytes(image)).decode("utf-8")
 
 
-def _bytes_to_image(encoded_image: bytes) -> PILImage:
+def _bytes_to_image(encoded_image: bytes) -> "PILImage":
     """
     Converts a byte array to a PIL image.
 
@@ -108,10 +120,14 @@ def _bytes_to_image(encoded_image: bytes) -> PILImage:
     Returns:
         PILImage: The decoded PIL image.
     """
-    return PIL.Image.open(io.BytesIO(encoded_image))
+    import io
+
+    from PIL import Image
+
+    return Image.open(io.BytesIO(encoded_image))
 
 
-def _base64_to_image(encoded_image: str) -> PILImage:
+def _base64_to_image(encoded_image: str) -> "PILImage":
     """
     Converts a base64-encoded string to a PIL image.
 
@@ -121,6 +137,9 @@ def _base64_to_image(encoded_image: str) -> PILImage:
     Returns:
         PILImage: The decoded PIL image.
     """
+    import base64
+    import io
+
     return PIL.Image.open(io.BytesIO(base64.b64decode(encoded_image)))
 
 
@@ -134,6 +153,9 @@ def _compress_string(input: str) -> bytes:
     Returns:
         bytes: The compressed byte string.
     """
+    import gzip
+    import io
+
     with io.BytesIO() as buffer:
         with gzip.GzipFile(fileobj=buffer, mode="wb") as f:
             f.write(input.encode("utf-8"))
@@ -150,6 +172,8 @@ def _encode_string(input: str) -> str:
     Returns:
         str: The base64-encoded compressed string.
     """
+    import base64
+
     return base64.b64encode(_compress_string(input)).decode("utf-8")
 
 
@@ -163,12 +187,15 @@ def _decompress_string(input: bytes) -> str:
     Returns:
         str: The decompressed string.
     """
+    import gzip
+    import io
+
     with io.BytesIO(input) as buffer:
         with gzip.GzipFile(fileobj=buffer, mode="rb") as f:
             return f.read().decode("utf-8")
 
 
-def _decode_string(input: Union[str, bytes]) -> str:
+def _decode_string(input: str | bytes) -> str:
     """
     Decodes a base64-encoded compressed string.
 
@@ -181,9 +208,46 @@ def _decode_string(input: Union[str, bytes]) -> str:
     Raises:
         gzip.BadGzipFile: If the input is not a valid gzip-compressed string.
     """
+    import base64
+    import gzip
+
     if isinstance(input, bytes):
         try:
             return _decompress_string(base64.b64decode(input))
         except gzip.BadGzipFile:
             return input.decode("utf-8")
     return input
+
+
+def _pil_image_validator(value: Any) -> "PILImage":
+    import numpy as np
+    import PIL.Image as PILImageModule
+
+    if value is None:
+        return None
+    if isinstance(value, bytes):
+        return _bytes_to_image(value)
+    elif isinstance(value, str):
+        return _base64_to_image(value)
+    elif isinstance(value, np.ndarray):
+        return PILImageModule.fromarray(value)
+    elif isinstance(value, PILImage):
+        return value
+    else:
+        raise ValueError(
+            "Unsupported type for image conversion. Supported types are: str, np.ndarray, PIL.Image."
+        )
+
+
+def _pil_image_serializer(value: Optional["PILImage"]) -> bytes | None:
+    if value is None:
+        return None
+    return _image_to_bytes(value)
+
+
+ValidatedPILImage = Annotated[
+    PILImage | None,
+    BeforeValidator(_pil_image_validator),
+    PlainSerializer(_pil_image_serializer),
+    TableSchemaMetadata(pyarrow=pa.binary()),
+]

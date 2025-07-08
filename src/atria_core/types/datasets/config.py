@@ -19,8 +19,6 @@ Version: 1.0.0
 License: MIT
 """
 
-from typing import Dict, List, Optional, Tuple, Union
-
 from pydantic import BaseModel, ConfigDict
 
 
@@ -45,12 +43,12 @@ class AtriaDatasetConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     __target__: str = "atria.data.dataset.atria_dataset.AtriaDataset"
-    dataset_name: str = None
-    config_name: str = None
-    data_urls: Union[str, List[str], Dict[str, str], Dict[str, Tuple]] | None = None
-    max_train_samples: Optional[int] = None
-    max_validation_samples: Optional[int] = None
-    max_test_samples: Optional[int] = None
+    dataset_name: str | None = None
+    config_name: str | None = None
+    data_urls: str | list[str] | dict[str, str] | dict[str, tuple] | None = None
+    max_train_samples: int | None = None
+    max_validation_samples: int | None = None
+    max_test_samples: int | None = None
 
 
 class AtriaHuggingfaceDatasetConfig(AtriaDatasetConfig):
@@ -80,5 +78,5 @@ class AtriaHubDatasetConfig(BaseModel):
     """
 
     __target__: str = "atria.hub.atria_hub_dataset.AtriaHubDataset"
-    name: str
-    config_name: str
+    dataset_name: str | None = None
+    config_name: str | None = None
