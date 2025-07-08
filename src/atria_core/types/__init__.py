@@ -1,59 +1,67 @@
-"""
-Data Structures Module
-
-This module serves as the entry point for importing various data structures used in the system.
-It provides access to foundational classes for data models, data instances, and generic structures
-such as bounding boxes, images, labels, and OCR data.
-
-Exports:
-    - BaseDataModel: The base class for data models.
-    - BaseDataInstance: The base class for individual data instances.
-    - DocumentInstance: A class for representing documents with associated metadata and annotations.
-    - ImageInstance: A class for representing images with associated metadata and annotations.
-    - BoundingBox: A class for representing and manipulating bounding boxes.
-    - Image: A class for representing and manipulating image data.
-    - Label: A class for representing labels associated with data instances.
-    - OCR: A class for managing OCR data.
-    - OCRType: Enum for specifying the type of OCR system used.
-
-Dependencies:
-    - atria_core.data_types.base.data_model: For the `BaseDataModel` class.
-    - atria_core.data_types.data_instance.base: For the `BaseDataInstance` class.
-    - atria_core.data_types.data_instance.document: For the `DocumentInstance` class.
-    - atria_core.data_types.data_instance.image: For the `ImageInstance` class.
-    - atria_core.data_types.generic.bounding_box: For the `BoundingBox` class.
-    - atria_core.data_types.generic.image: For the `Image` class.
-    - atria_core.data_types.generic.label: For the `Label` class.
-    - atria_core.data_types.generic.ocr: For the `OCR` class and `OCRType` enum.
-
-Author: Your Name (your.email@example.com)
-Date: 2025-04-07
-Version: 1.0.0
-License: MIT
-"""
-
-import lazy_loader as lazy
-
-__getattr__, __dir__, __all__ = lazy.attach(
-    __name__,
-    submodules=[
-        "base.data_model",
-        "data_instance.base",
-        "data_instance.document",
-        "data_instance.image",
-        "generic.bounding_box",
-        "generic._raw.image",
-        "generic._raw.label",
-        "generic.ocr",
-    ],
-    submod_attrs={
-        "base.data_model": ["BaseDataModel"],
-        "data_instance.base": ["BaseDataInstance"],
-        "data_instance.document": ["DocumentInstance"],
-        "data_instance.image": ["ImageInstance"],
-        "generic.bounding_box": ["BoundingBox"],
-        "generic._raw.image": ["Image"],
-        "generic._raw.label": ["Label"],
-        "generic.ocr": ["OCR", "OCRType"],
-    },
+from .data_instance._raw.document_instance import DocumentInstance
+from .data_instance._raw.image_instance import ImageInstance
+from .datasets.config import (
+    AtriaDatasetConfig,
+    AtriaHubDatasetConfig,
+    AtriaHuggingfaceDatasetConfig,
 )
+from .datasets.metadata import (
+    DatasetLabels,
+    DatasetMetadata,
+    DatasetShardInfo,
+    SplitInfo,
+)
+from .datasets.splits import DatasetSplitType, SplitConfig
+from .generic._raw.annotated_object import AnnotatedObject
+from .generic._raw.bounding_box import BoundingBox
+from .generic._raw.ground_truth import (
+    OCRGT,
+    SERGT,
+    ClassificationGT,
+    GroundTruth,
+    LayoutAnalysisGT,
+    QuestionAnswerGT,
+    VisualQuestionAnswerGT,
+)
+from .generic._raw.image import Image
+from .generic._raw.label import Label
+from .generic._raw.ocr import OCR, OCRType
+from .generic._raw.question_answer_pair import (
+    QuestionAnswerPair,
+    TokenizedQuestionAnswerPair,
+)
+
+__all__ = [
+    # datasets config
+    "AtriaDatasetConfig",
+    "AtriaHuggingfaceDatasetConfig",
+    "AtriaHubDatasetConfig",
+    # datasets metadata
+    "DatasetShardInfo",
+    "SplitInfo",
+    "DatasetLabels",
+    "DatasetMetadata",
+    "DatasetStorageInfo",
+    # datasets splits
+    "SplitConfig",
+    "DatasetSplitType",
+    # instance types
+    "DocumentInstance",
+    "ImageInstance",
+    # generic types
+    "BoundingBox",
+    "Image",
+    "Label",
+    "OCR",
+    "OCRType",
+    "GroundTruth",
+    "OCRGT",
+    "SERGT",
+    "ClassificationGT",
+    "LayoutAnalysisGT",
+    "QuestionAnswerGT",
+    "VisualQuestionAnswerGT",
+    "AnnotatedObject",
+    "QuestionAnswerPair",
+    "TokenizedQuestionAnswerPair",
+]

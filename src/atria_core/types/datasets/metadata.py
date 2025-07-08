@@ -1,30 +1,3 @@
-"""
-Dataset Metadata Module
-
-This module defines classes for managing metadata and related information for datasets
-used in the Atria application. It includes functionality for handling dataset splits,
-labels, storage information, and serialization/deserialization of metadata.
-
-Classes:
-    - DatasetShardInfo: Represents information about a dataset shard.
-    - SplitInfo: Represents information about a dataset split.
-    - DatasetLabels: Represents classification and token labels for a dataset.
-    - DatasetMetadata: Represents metadata for a dataset, including configuration and labels.
-    - AtriaDatasetStorageInfo: Represents storage information for a dataset, including metadata and split info.
-
-Dependencies:
-    - pydantic.BaseModel: For defining and validating data models.
-    - pathlib.Path: For handling file paths.
-    - typing: For type annotations and generic types.
-    - rich.pretty: For generating rich representations of objects.
-    - atria_types.data_instance.base: For base data instance structures.
-
-Author: Your Name (your.email@example.com)
-Date: 2025-04-07
-Version: 1.0.0
-License: MIT
-"""
-
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -119,7 +92,7 @@ class SplitInfo(BaseModel):
             file_path (Union[Path, str]): The path to the JSON file.
 
         Returns:
-            AtriaDatasetStorageInfo: The loaded storage information.
+            DatasetStorageInfo: The loaded storage information.
         """
         with Path(file_path).open("r", encoding="utf-8") as f:
             json_data = f.read()
@@ -271,7 +244,7 @@ class DatasetMetadata(BaseModel, RepresentationMixin):  # type: ignore[misc]
         self.model_validate(state_dict)
 
 
-class AtriaDatasetStorageInfo(BaseModel, RepresentationMixin):  # type: ignore[misc]
+class DatasetStorageInfo(BaseModel, RepresentationMixin):  # type: ignore[misc]
     """
     Represents storage information for a dataset, including metadata and split info.
 
@@ -302,7 +275,7 @@ class AtriaDatasetStorageInfo(BaseModel, RepresentationMixin):  # type: ignore[m
             file_path (Union[Path, str]): The path to the JSON file.
 
         Returns:
-            AtriaDatasetStorageInfo: The loaded storage information.
+            DatasetStorageInfo: The loaded storage information.
         """
         with Path(file_path).open("r", encoding="utf-8") as f:
             json_data = f.read()
