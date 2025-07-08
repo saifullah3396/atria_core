@@ -3,5 +3,5 @@
 set -e
 set -x
 
-ruff check $@        # linter
-ruff format $@ --check # formatter
+ruff check src      # linter
+ruff format src --check # formatter

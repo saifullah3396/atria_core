@@ -3,6 +3,6 @@
 set -e
 set -x
 
-mypy $@            # type check
-ruff check $@        # linter
-ruff format $@ --check # formatter
+mypy src       # type check
+ruff check src        # linter
+ruff format src --check # formatter
