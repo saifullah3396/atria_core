@@ -11,11 +11,11 @@ if TYPE_CHECKING:
 
 class TensorLabel(TensorDataModel["Label"]):
     _raw_model = "atria_core.types.generic._raw.label.Label"
-    value: torch.LongTensor
+    value: torch.Tensor
     name: str
 
     @field_validator("value", mode="after")
     @classmethod
-    def validate_value(cls, value: torch.LongTensor) -> torch.LongTensor:
+    def validate_value(cls, value: torch.Tensor) -> torch.Tensor:
         assert value.ndim in [0], "Expected a scalar tensor"
         return value

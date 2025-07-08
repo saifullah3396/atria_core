@@ -14,10 +14,10 @@ if TYPE_CHECKING:
 
 class TensorQuestionAnswerPair(TensorDataModel["QuestionAnswerPair"]):
     _raw_model = "atria_core.types.generic._raw.question_answer_pair.QuestionAnswerPair"
-    id: torch.LongTensor
+    id: torch.Tensor
     question_text: str
-    answer_start: torch.LongTensor
-    answer_end: torch.LongTensor
+    answer_start: torch.Tensor
+    answer_end: torch.Tensor
     answer_text: list[str]
 
     @model_validator(mode="after")
@@ -35,8 +35,8 @@ class TensorTokenizedQuestionAnswerPair(TensorDataModel["TokenizedQuestionAnswer
     _raw_model = (
         "atria_core.types.generic._raw.question_answer_pair.TokenizedQuestionAnswerPair"
     )
-    answer_starts: torch.LongTensor
-    answer_ends: torch.LongTensor
+    answer_starts: torch.Tensor
+    answer_ends: torch.Tensor
 
     @model_validator(mode="after")
     def validate_answer_field_lengths(self):

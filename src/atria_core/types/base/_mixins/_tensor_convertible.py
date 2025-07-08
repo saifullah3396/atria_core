@@ -17,6 +17,15 @@ class TensorConvertible(BaseModel, Generic[T_TensorModel]):
     def tensor_data_model(cls) -> type[T_TensorModel]:
         import importlib
 
+        try:
+            import torch  # type: ignore[import]
+        except ImportError:
+            raise ImportError(
+                "PyTorch is required for tensor operations but is not installed. "
+                "Please install it atria with torch dependency."
+                "uv add atria-core --extra torch-cpu # or torch-gpu"
+            )
+
         if not hasattr(cls, "_cached_tensor_model"):
             try:
                 module_name, class_name = cls._tensor_model.rsplit(".", 1)

@@ -59,6 +59,12 @@ class TensorDataModel(  # type: ignore[misc]
         arbitrary_types_allowed=True, validate_assignment=True, extra="ignore"
     )
 
+    def model_post_init(self, __context: Any) -> None:
+        """Initialize the device to CPU after model creation."""
+        import torch
+
+        self._device = torch.device("cpu")
+
     def model_dump(self, *args, **kwargs):
         """
         Dumps the raw data model representation.

@@ -36,12 +36,6 @@ class ToDeviceConvertible(BaseModel, Generic[T_RawModel]):
 
     _device: Optional["torch.device"] = PrivateAttr(default=None)
 
-    def model_post_init(self, __context: Any) -> None:
-        """Initialize the device to CPU after model creation."""
-        import torch
-
-        self._device = torch.device("cpu")
-
     @property
     def device(self) -> Optional["torch.device"]:
         """
@@ -160,7 +154,9 @@ class ToDeviceConvertible(BaseModel, Generic[T_RawModel]):
         import torch
 
         if not torch.cuda.is_available():
-            raise RuntimeError("CUDA is not available")
+            raise RuntimeError(
+                "CUDA is not available. To install atria-core with GPU support, use: uv add atria-core --extra torch-gpu"
+            )
 
         if gpu_id >= torch.cuda.device_count():
             raise RuntimeError(
