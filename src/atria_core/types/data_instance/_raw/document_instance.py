@@ -41,6 +41,8 @@ class DocumentInstance(BaseDataInstance, RawDataModel["TensorDocumentInstance"])
 
             if self.ocr.content is None:
                 raise ValueError("OCR content not found after loading")
+            if self.ocr.type is None:
+                raise ValueError("OCR type not found after loading")
 
             self.gt.ocr = OCRProcessor.parse(
                 raw_ocr=self.ocr.content, ocr_type=self.ocr.type

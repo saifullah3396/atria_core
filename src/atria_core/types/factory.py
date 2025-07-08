@@ -118,7 +118,7 @@ class OCRFactory(factory.Factory):
         model = OCR
 
     file_path = factory.LazyFunction(lambda: fake.file_path())
-    type: OCRType = factory.LazyFunction(lambda: fake.random_element(OCRType))
+    type = factory.LazyFunction(lambda: fake.random_element(OCRType))
     content = factory.LazyFunction(lambda: MOCK_HOCR_TESSERACT)
 
 
