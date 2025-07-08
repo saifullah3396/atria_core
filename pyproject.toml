@@ -10,17 +10,29 @@ readme = "README.md"
 requires-python = "==3.11.*"
 license = { file = "LICENSE.txt" }
 authors = [{ name = "Saifullah", email = "saifullah.saifullah@dfki.de" }]
+dependencies = [
+    "coloredlogs==15.0.1",
+    "lazy_loader==0.4",
+    "numpy==1.26.4",
+    "omegaconf==2.3.0",
+    "Pillow==10.0.0",
+    "rich==14.0.0",
+    "beautifulsoup4==4.12.2",
+    "imagesize>=1.4.1",
+    "pyarrow>=20.0.0",
+    "pydantic>=2.11.7",
+]
 
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [project.optional-dependencies]
-cpu = [
+torch-cpu = [
   "torch==2.1.2",
   "torchvision==0.16.2",
 ]
-cu121 = [
+torch-gpu = [
   "torch==2.1.2",
   "torchvision==0.16.2",
 ]
@@ -107,18 +119,18 @@ asyncio_default_fixture_loop_scope = "session"
 managed = true
 conflicts = [
   [
-    { extra = "cpu" },
-    { extra = "cu121" },
+    { extra = "torch-cpu" },
+    { extra = "torch-gpu" },
   ],
 ]
 [tool.uv.sources]
 torch = [
-  { index = "pytorch-cpu", extra = "cpu"},
-  { index = "pytorch-cu121", extra = "cu121" },
+  { index = "pytorch-cpu", extra = "torch-cpu"},
+  { index = "pytorch-cu121", extra = "torch-gpu" },
 ]
 torchvision = [
-  { index = "pytorch-cpu", extra = "cpu"},
-  { index = "pytorch-cu121", extra = "cu121" },
+  { index = "pytorch-cpu", extra = "torch-cpu"},
+  { index = "pytorch-cu121", extra = "torch-gpu" },
 ]
 
 [[tool.uv.index]]
@@ -132,32 +144,6 @@ url = "https://download.pytorch.org/whl/cu121"
 explicit = true
 
 [dependency-groups]
-all = [
-    "codename==1.1",
-    "coloredlogs==15.0.1",
-    "gotrue==2.12.0",
-    "lazy_loader==0.4",
-    "numpy==1.26.4",
-    "omegaconf==2.3.0",
-    "Pillow==10.0.0",
-    "polyfactory>=2.21.0",
-    "pytorch_ignite==0.5.0.post2",
-    "rich==14.0.0",
-    "torch==2.1.2",
-    "torchvision==0.16.2",
-    "beautifulsoup4==4.12.2",
-    "supabase>=2.7.4",
-    "imagesize>=1.4.1",
-    "ipykernel>=6.29.5",
-    "pyarrow>=20.0.0",
-    "factory-boy>=3.3.3",
-    "ruff>=0.12.2",
-    "ipykernel>=6.29.5",
-    "factory-boy>=3.3.3",
-    "bs4>=0.0.2",
-    "types-beautifulsoup4",
-    "lxml>=6.0.0",
-]
 dev = [
     "codename==1.1",
     "coloredlogs==15.0.1",
@@ -176,24 +162,9 @@ dev = [
     "imagesize>=1.4.1",
     "ipykernel>=6.29.5",
     "pyarrow>=20.0.0",
-    "factory-boy>=3.3.3",
     "ruff>=0.12.2",
     "ipykernel>=6.29.5",
     "factory-boy>=3.3.3",
-    "bs4>=0.0.2",
-]
-raw-types = [
-    "codename==1.1",
-    "coloredlogs==15.0.1",
-    "gotrue==2.12.0",
-    "lazy_loader==0.4",
-    "numpy==1.26.4",
-    "omegaconf==2.3.0",
-    "Pillow==10.0.0",
-    "rich==14.0.0",
-    "beautifulsoup4==4.12.2",
-    "imagesize>=1.4.1",
-    "pyarrow>=20.0.0",
     "bs4>=0.0.2",
 ]
 
