@@ -68,8 +68,8 @@ class TensorImage(TensorDataModel["Image"]):
                     f"Invalid number of dimensions in the image tensor: {self.content.shape}. "
                     f"Image tensor must be 2D (grayscale) or 3D (channels, height, width)"
                 )
-            if self.content.ndim == 2:
-                self.content = self.content.unsqueeze(0)
+                if self.content.ndim == 2:
+                    self.content = self.content.unsqueeze(0)
 
         return self
 

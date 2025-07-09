@@ -1,12 +1,19 @@
-from typing import Any, Generic
+import types
+from typing import Any, Generic, Union, get_args, get_origin
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    ValidationInfo,
+    ValidatorFunctionWrapHandler,
+    field_validator,
+)
 from rich.pretty import RichReprResult
 
 from atria_core.logger.logger import get_logger
-from atria_core.types.base._mixins._batchable import Batchable
 from atria_core.types.base._mixins._loadable import Loadable
 from atria_core.types.base._mixins._raw_convertible import RawConvertible
+from atria_core.types.base._mixins._repeatable import Repeatable
 from atria_core.types.base._mixins._table_serializable import TableSerializable
 from atria_core.types.base._mixins._tensor_convertible import TensorConvertible
 from atria_core.types.base._mixins._to_device_convertible import ToDeviceConvertible
@@ -31,6 +38,43 @@ class RawDataModel(  # type: ignore[misc]
         arbitrary_types_allowed=True, validate_assignment=True, extra="forbid"
     )
 
+    @classmethod
+    def _get_types(cls, field_annotation: Any) -> list[type]:
+        """Extract non-None types from a field annotation."""
+        origin = get_origin(field_annotation)
+        args = get_args(field_annotation)
+        if origin in {Union, types.UnionType} and len(args) > 1:
+            return [arg for arg in args if arg is not types.NoneType]
+        else:
+            return [field_annotation]
+
+    @classmethod
+    def _verify_types(cls, type) -> None:
+        non_none_types = cls._get_types(type)
+
+        for t in non_none_types:
+            if t == TensorDataModel:
+                raise TypeError(
+                    f"Field {type} is a subclass of {TensorDataModel}"
+                    f"{RawDataModel} cannot contain {TensorDataModel} as children."
+                )
+            elif get_origin(t) in [list, tuple]:
+                for tt in get_args(t):
+                    if tt and issubclass(tt, TensorDataModel):
+                        raise TypeError(
+                            f"Field {type} is a list of {tt} or its children. "
+                            f"{TensorDataModel} does not support nested lists of {TensorDataModel} as children."
+                        )
+
+    @classmethod
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
+        super().__pydantic_init_subclass__(**kwargs)
+
+        for _, field in cls.model_fields.items():
+            cls._verify_types(field.annotation)
+
+        cls.model_rebuild(force=True)
+
     def _set_skip_validation(self, name: str, value: Any) -> None:
         """Workaround to be able to set fields without validation."""
         attr = getattr(self.__class__, name, None)
@@ -49,7 +93,7 @@ class RawDataModel(  # type: ignore[misc]
 
 class TensorDataModel(  # type: ignore[misc]
     BaseDataModel,
-    Batchable,
+    Repeatable,
     ToDeviceConvertible,
     RawConvertible[T_RawModel],
     RepresentationMixin,
@@ -58,6 +102,52 @@ class TensorDataModel(  # type: ignore[misc]
     model_config = ConfigDict(
         arbitrary_types_allowed=True, validate_assignment=True, extra="ignore"
     )
+
+    @classmethod
+    def _get_types(cls, field_annotation: Any) -> list[type]:
+        """Extract non-None types from a field annotation."""
+        origin = get_origin(field_annotation)
+        args = get_args(field_annotation)
+        if origin in {Union, types.UnionType} and len(args) > 1:
+            return [arg for arg in args if arg is not types.NoneType]
+        else:
+            return [field_annotation]
+
+    @classmethod
+    def _verify_types(cls, type) -> None:
+        non_none_types = cls._get_types(type)
+
+        for t in non_none_types:
+            if t == RawDataModel:
+                raise TypeError(
+                    f"Field {type} is a subclass of {RawDataModel}"
+                    f"{TensorDataModel} cannot contain {RawDataModel} as children."
+                )
+            elif get_origin(t) in [list, tuple]:
+                for tt in get_args(t):
+                    if tt and issubclass(tt, TensorDataModel | RawDataModel):
+                        raise TypeError(
+                            f"Field {type} is a list of {tt} or its children. "
+                            f"{(cls)} does not support nested lists of {(TensorDataModel, RawDataModel)} as children."
+                        )
+
+    @classmethod
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
+        super().__pydantic_init_subclass__(**kwargs)
+
+        for _, field in cls.model_fields.items():
+            cls._verify_types(field.annotation)
+
+        cls.model_rebuild(force=True)
+
+    @field_validator("*", mode="wrap")
+    def ignore_validation(
+        cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
+    ):
+        if info.context and "no_validation" in info.context:
+            return value
+        else:
+            return handler(value)
 
     def model_post_init(self, __context: Any) -> None:
         """Initialize the device to CPU after model creation."""
@@ -90,6 +180,20 @@ class TensorDataModel(  # type: ignore[misc]
             str: The JSON representation.
         """
         return self.to_raw().model_dump_json(*args, **kwargs)
+
+    def to_raw(self) -> T_RawModel:
+        """
+        Converts the current object and its fields to tensor representations.
+
+        Returns:
+            T_RawModel: An instance of the tensor model.
+        """
+        if self._is_batched:
+            raise RuntimeError(
+                "Cannot convert a batched TensorDataModel to raw. "
+                "Please convert individual instances instead."
+            )
+        return super().to_raw()
 
     def __rich_repr__(self) -> RichReprResult:  # type: ignore[override]
         """

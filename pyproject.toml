@@ -112,7 +112,6 @@ pythonpath = [".", "src", "tests"]
 addopts = "-rXs --strict-config --strict-markers --tb=short --import-mode=importlib"
 xfail_strict = true         # Treat tests that are marked as xfail but pass as test failures
 # filterwarnings = ["error"]  # Treat all warnings as errors
-asyncio_default_fixture_loop_scope = "session"
 
 
 [tool.uv]

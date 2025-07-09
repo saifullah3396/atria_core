@@ -6,8 +6,8 @@ import pyarrow as pa
 from pydantic import field_serializer, field_validator
 
 from atria_core.types.base.data_model import RawDataModel
-from atria_core.types.enums import OCRType
-from atria_core.types.typing.common import PydanticFilePath, TableSchemaMetadata
+from atria_core.types.common import OCRType
+from atria_core.types.typing.common import OptStrField, TableSchemaMetadata
 
 if TYPE_CHECKING:
     from atria_core.types.generic._tensor.ocr import TensorOCR  # noqa
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class OCR(RawDataModel["TensorOCR"]):
     _tensor_model = "atria_core.types.generic._tensor.ocr.TensorOCR"
-    file_path: PydanticFilePath = None
+    file_path: OptStrField = None
     type: Annotated[OCRType | None, TableSchemaMetadata(pyarrow=pa.string())] = None
     content: Annotated[str | None, TableSchemaMetadata(pyarrow=pa.binary())] = None
 
@@ -23,7 +23,7 @@ class OCR(RawDataModel["TensorOCR"]):
         if self.content is None:
             if self.file_path is None:
                 raise ValueError("Either file_path or content must be provided.")
-            if str(self.file_path).startswith(("http", "https")):
+            if self.file_path.startswith(("http", "https")):
                 import requests
 
                 response = requests.get(self.file_path)
@@ -32,7 +32,11 @@ class OCR(RawDataModel["TensorOCR"]):
                 self.content = response.content.decode("utf-8")
             else:
                 if not Path(self.file_path).exists():
-                    raise FileNotFoundError(f"File not found: {self.file_path}")
+                    raise FileNotFoundError(f"Image file not found: {self.file_path}")
+                if not Path(self.file_path).is_file():
+                    raise ValueError(
+                        f"Provided file path is not a file: {self.file_path}"
+                    )
                 with open(self.file_path, encoding="utf-8") as f:
                     self.content = f.read()
                     if self.content.startswith("b'"):

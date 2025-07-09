@@ -150,7 +150,7 @@ def test_to_tensor(valid_raw_image: Image) -> None:
 
 def test_to_tensor_without_content() -> None:
     raw_image = Image(file_path="dummy_path.jpg")
-    with pytest.raises(RuntimeError):
+    with pytest.raises(FileNotFoundError):
         raw_image.load()
         raw_image.tensor_data_model()
 

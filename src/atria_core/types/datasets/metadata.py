@@ -1,17 +1,35 @@
 import json
+from dataclasses import field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 from rich.pretty import pretty_repr
 
 from atria_core.logger import get_logger
+from atria_core.types.common import DatasetSplitType
 from atria_core.utilities.repr import RepresentationMixin
 
 if TYPE_CHECKING:
-    from datasets.metadata import DatasetInfo  # type: ignore[import-not-found]
+    from datasets.info import DatasetInfo  # type: ignore[import-not-found]
 
 logger = get_logger(__name__)
+
+
+class SplitConfig(BaseModel):
+    """
+    A configuration class for dataset splits.
+
+    This class defines the split type and additional keyword arguments for generating
+    the dataset split.
+
+    Attributes:
+        split (DatasetSplit): The type of dataset split (e.g., train, test, validation).
+        gen_kwargs (Dict[str, Any]): Additional keyword arguments for generating the split.
+    """
+
+    split: DatasetSplitType
+    gen_kwargs: dict[str, Any] = field(default_factory=dict)
 
 
 class DatasetShardInfo(BaseModel):

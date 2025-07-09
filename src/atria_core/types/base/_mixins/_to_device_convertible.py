@@ -1,8 +1,10 @@
-from typing import TYPE_CHECKING, Any, Generic, Optional
+from functools import partial
+from typing import TYPE_CHECKING, Generic, Self
 
 from pydantic import BaseModel, PrivateAttr
 
 from atria_core.logger.logger import get_logger
+from atria_core.types.base._mixins._utils import _recursive_apply
 from atria_core.types.base.types import T_RawModel
 
 if TYPE_CHECKING:
@@ -34,10 +36,10 @@ class ToDeviceConvertible(BaseModel, Generic[T_RawModel]):
         ```
     """
 
-    _device: Optional["torch.device"] = PrivateAttr(default=None)
+    _device: "torch.device | str" = PrivateAttr(default="cpu")
 
     @property
-    def device(self) -> Optional["torch.device"]:
+    def device(self) -> "torch.device | str":
         """
         Get the current device where the model's tensors are stored.
 
@@ -47,9 +49,7 @@ class ToDeviceConvertible(BaseModel, Generic[T_RawModel]):
         """
         return self._device
 
-    def to_device(
-        self, device: "torch.device | str" = "cpu"
-    ) -> "ToDeviceConvertible[T_RawModel]":
+    def to_device(self, device: "torch.device | str" = "cpu") -> Self:
         """
         Move the model's tensors to the specified device.
 
@@ -74,65 +74,20 @@ class ToDeviceConvertible(BaseModel, Generic[T_RawModel]):
             assert gpu_model.device.type == "cuda"
             ```
         """
-        import torch
+        if self._device != device:
+            from atria_core.utilities.tensors import _convert_to_device
 
-        try:
-            target_device = torch.device(device)
+            apply_results = _recursive_apply(
+                self, ToDeviceConvertible, partial(_convert_to_device, device=device)
+            )  # type: ignore[return-value]
+            device_instance = self.model_validate(
+                apply_results, context={"no_validation": True}
+            )
+            device_instance._device = device
+            return device_instance
+        return self
 
-            # Process all model fields
-            for field_name in self.__class__.model_fields:
-                field_value = getattr(self, field_name)
-                setattr(
-                    self,
-                    field_name,
-                    self._convert_field_to_device(field_value, target_device),
-                )
-
-            self._device = target_device
-            return self
-
-        except Exception as e:
-            logger.error(f"Failed to move model to device {device}: {e}")
-            raise RuntimeError(f"Device conversion failed: {e}") from e
-
-    def _convert_field_to_device(self, field_value: Any, device: "torch.device") -> Any:
-        """
-        Convert a single field value to the target device.
-
-        Args:
-            field_value: The field value to convert.
-            device: Target device.
-
-        Returns:
-            Any: The converted field value.
-        """
-        import torch
-
-        if field_value is None:
-            return None
-
-        if isinstance(field_value, torch.Tensor):
-            return field_value.to(device)
-
-        if isinstance(field_value, ToDeviceConvertible):
-            return field_value.to_device(device)
-
-        if isinstance(field_value, list | tuple):
-            converted_items = [
-                self._convert_field_to_device(item, device) for item in field_value
-            ]
-            return type(field_value)(converted_items)
-
-        if isinstance(field_value, dict):
-            return {
-                key: self._convert_field_to_device(value, device)
-                for key, value in field_value.items()
-            }
-
-        # Return unchanged for non-tensor types
-        return field_value
-
-    def to_gpu(self, gpu_id: int = 0) -> "ToDeviceConvertible[T_RawModel]":
+    def to_gpu(self, gpu_id: int = 0) -> Self:
         """
         Move the model's tensors to GPU.
 
@@ -165,7 +120,7 @@ class ToDeviceConvertible(BaseModel, Generic[T_RawModel]):
 
         return self.to_device(f"cuda:{gpu_id}")
 
-    def to_cpu(self) -> "ToDeviceConvertible[T_RawModel]":
+    def to_cpu(self) -> Self:
         """
         Move the model's tensors to CPU.
 

@@ -1,11 +1,14 @@
 import factory
 from faker import Faker
 
+from atria_core.types.common import OCRType
 from atria_core.types.data_instance._raw.document_instance import DocumentInstance
 from atria_core.types.data_instance._raw.image_instance import ImageInstance
-from atria_core.types.enums import OCRType
-from atria_core.types.generic._raw.annotated_object import AnnotatedObject
-from atria_core.types.generic._raw.bounding_box import BoundingBox
+from atria_core.types.generic._raw.annotated_object import (
+    AnnotatedObject,
+    AnnotatedObjectList,
+)
+from atria_core.types.generic._raw.bounding_box import BoundingBox, BoundingBoxList
 from atria_core.types.generic._raw.ground_truth import (
     OCRGT,
     SERGT,
@@ -16,7 +19,7 @@ from atria_core.types.generic._raw.ground_truth import (
     VisualQuestionAnswerGT,
 )
 from atria_core.types.generic._raw.image import Image
-from atria_core.types.generic._raw.label import Label
+from atria_core.types.generic._raw.label import Label, LabelList
 from atria_core.types.generic._raw.ocr import OCR
 from atria_core.types.generic._raw.question_answer_pair import (
     QuestionAnswerPair,
@@ -68,6 +71,19 @@ class LabelFactory(factory.Factory):
     value = factory.LazyFunction(lambda: fake.random_int(0, 10))
 
 
+class LabelListFactory(factory.Factory):
+    class Meta:
+        model = LabelList
+
+    @classmethod
+    def _create(cls, model_class: LabelList, *args, **kwargs):
+        return model_class.from_list(LabelFactory.build_batch(10))
+
+    @classmethod
+    def _build(cls, model_class: LabelList, *args, **kwargs):
+        return model_class.from_list(LabelFactory.build_batch(10))
+
+
 class BoundingBoxFactory(factory.Factory):
     class Meta:
         model = BoundingBox
@@ -80,6 +96,19 @@ class BoundingBoxFactory(factory.Factory):
             fake.random_int(101, 200),
         ]
     )
+
+
+class BoundingBoxListFactory(factory.Factory):
+    class Meta:
+        model = BoundingBoxList
+
+    @classmethod
+    def _create(cls, model_class: BoundingBoxList, *args, **kwargs):
+        return model_class.from_list(BoundingBoxFactory.build_batch(10))
+
+    @classmethod
+    def _build(cls, model_class: BoundingBoxList, *args, **kwargs):
+        return model_class.from_list(BoundingBoxFactory.build_batch(10))
 
 
 class QuestionAnswerPairFactory(factory.Factory):
@@ -108,9 +137,30 @@ class AnnotatedObjectFactory(factory.Factory):
     label = factory.SubFactory(LabelFactory)
     bbox = factory.SubFactory(BoundingBoxFactory)
     segmentation = factory.LazyFunction(
-        lambda: ([[fake.pyfloat(min_value=0.0, max_value=200.0) for _ in range(6)]])
+        lambda: (
+            [
+                [
+                    fake.pyfloat(min_value=0.0, max_value=200.0),
+                    fake.pyfloat(min_value=0.0, max_value=200.0),
+                ]
+                for _ in range(6)
+            ]
+        )
     )
     iscrowd = factory.LazyFunction(lambda: fake.boolean())
+
+
+class AnnotatedObjectListFactory(factory.Factory):
+    class Meta:
+        model = AnnotatedObjectList
+
+    @classmethod
+    def _create(cls, model_class: AnnotatedObjectList, *args, **kwargs):
+        return model_class.from_list(AnnotatedObjectFactory.build_batch(10))
+
+    @classmethod
+    def _build(cls, model_class: AnnotatedObjectList, *args, **kwargs):
+        return model_class.from_list(AnnotatedObjectFactory.build_batch(10))
 
 
 class OCRFactory(factory.Factory):
@@ -189,15 +239,15 @@ class GroundTruthFactory(factory.Factory):
     ser = factory.LazyFunction(
         lambda: SERGT(
             words=fake.words(nb=5),
-            word_bboxes=BoundingBoxFactory.build_batch(5),
-            word_labels=LabelFactory.build_batch(5),
-            segment_level_bboxes=BoundingBoxFactory.build_batch(2),
+            word_bboxes=BoundingBoxListFactory.build(),
+            word_labels=LabelListFactory.build(),
+            segment_level_bboxes=BoundingBoxListFactory.build(),
         )
     )
     ocr = factory.LazyFunction(
         lambda: OCRGT(
             words=fake.words(nb=10),
-            word_bboxes=BoundingBoxFactory.build_batch(10),
+            word_bboxes=BoundingBoxListFactory.build(),
             word_confs=[fake.pyfloat(min_value=0.0, max_value=1.0) for _ in range(10)],
             word_angles=[
                 fake.pyfloat(min_value=0.0, max_value=360.0) for _ in range(10)
@@ -213,15 +263,15 @@ class GroundTruthFactory(factory.Factory):
         lambda: VisualQuestionAnswerGT(
             qa_pair=QuestionAnswerPairFactory.build(),
             words=fake.words(nb=8),
-            word_bboxes=BoundingBoxFactory.build_batch(8),
-            segment_level_bboxes=BoundingBoxFactory.build_batch(3),
+            word_bboxes=BoundingBoxListFactory.build(),
+            segment_level_bboxes=BoundingBoxListFactory.build(),
         )
     )
     layout = factory.LazyFunction(
         lambda: LayoutAnalysisGT(
-            annotated_objects=AnnotatedObjectFactory.build_batch(3),
+            annotated_objects=AnnotatedObjectListFactory.build(),
             words=fake.words(nb=15),
-            word_bboxes=BoundingBoxFactory.build_batch(15),
+            word_bboxes=BoundingBoxListFactory.build(),
         )
     )
 

@@ -5,10 +5,10 @@ import torch
 from atria_core.types.base.data_model import TensorDataModel
 
 if TYPE_CHECKING:
-    from atria_core.types.data_instance._raw.image_instance import ImageInstance  # noqa
+    from atria_core.types.data_instance._raw.base import BaseDataInstance  # noqa
 
 
-class TensorBaseDataInstance(TensorDataModel["ImageInstance"]):
+class TensorBaseDataInstance(TensorDataModel["BaseDataInstance"]):
     _raw_model = "atria_core.types.data_instance._raw.base.BaseDataInstance"
     index: torch.Tensor
     sample_id: str

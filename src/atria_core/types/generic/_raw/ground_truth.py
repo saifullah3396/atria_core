@@ -5,9 +5,9 @@ import pyarrow as pa
 from pydantic import field_serializer, field_validator
 
 from atria_core.types.base.data_model import RawDataModel
-from atria_core.types.generic._raw.annotated_object import AnnotatedObject
-from atria_core.types.generic._raw.bounding_box import BoundingBox
-from atria_core.types.generic._raw.label import Label
+from atria_core.types.generic._raw.annotated_object import AnnotatedObjectList
+from atria_core.types.generic._raw.bounding_box import BoundingBoxList
+from atria_core.types.generic._raw.label import Label, LabelList
 from atria_core.types.generic._raw.question_answer_pair import QuestionAnswerPair
 from atria_core.types.typing.common import TableSchemaMetadata
 
@@ -33,7 +33,7 @@ class ClassificationGT(RawDataModel["TensorClassificationGT"]):
 class OCRGT(RawDataModel["TensorOCRGT"]):
     _tensor_model = "atria_core.types.generic._tensor.ground_truth.TensorOCRGT"
     words: list[str] | None = None
-    word_bboxes: list[BoundingBox] | None = None
+    word_bboxes: BoundingBoxList | None = None
     word_confs: list[float] | None = None
     word_angles: list[float] | None = None
 
@@ -41,9 +41,9 @@ class OCRGT(RawDataModel["TensorOCRGT"]):
 class SERGT(RawDataModel["TensorSERGT"]):
     _tensor_model = "atria_core.types.generic._tensor.ground_truth.TensorSERGT"
     words: list[str] | None = None
-    word_bboxes: list[BoundingBox] | None = None
-    word_labels: list[Label] | None = None
-    segment_level_bboxes: list[BoundingBox] | None = None
+    word_bboxes: BoundingBoxList | None = None
+    word_labels: LabelList | None = None
+    segment_level_bboxes: BoundingBoxList | None = None
 
 
 class QuestionAnswerGT(RawDataModel["TensorQuestionAnswerGT"]):
@@ -60,17 +60,17 @@ class VisualQuestionAnswerGT(RawDataModel["TensorVisualQuestionAnswerGT"]):
     )
     qa_pair: QuestionAnswerPair
     words: list[str]
-    word_bboxes: list[BoundingBox]
-    segment_level_bboxes: list[BoundingBox]
+    word_bboxes: BoundingBoxList
+    segment_level_bboxes: BoundingBoxList
 
 
 class LayoutAnalysisGT(RawDataModel["TensorLayoutAnalysisGT"]):
     _tensor_model = (
         "atria_core.types.generic._tensor.ground_truth.TensorLayoutAnalysisGT"
     )
-    annotated_objects: list[AnnotatedObject] | None = None
+    annotated_objects: AnnotatedObjectList | None = None
     words: list[str] | None = None
-    word_bboxes: list[BoundingBox] | None = None
+    word_bboxes: BoundingBoxList | None = None
 
 
 class GroundTruth(RawDataModel["TensorGroundTruth"]):

@@ -1,41 +1,16 @@
-"""
-Tokenized Object Data Instance Module
-
-This module defines the `TokenizedObjectInstance` and `BatchedTokenizedObjectInstance` classes, which represent data instances
-containing tokenized information. These classes are designed to handle tokenized data such as token IDs, word IDs, token labels,
-and other related attributes. They are useful for tasks like token classification, sequence labeling, and object detection in
-tokenized formats.
-
-Classes:
-    - TokenizedObjectInstance: Represents a single tokenized data instance.
-    - BatchedTokenizedObjectInstance: Represents a batch of tokenized data instances.
-
-Dependencies:
-    - pydantic: For data validation and serialization.
-    - atria_core.data_types.data_instance.base: For the base data instance class.
-    - atria_core.data_types.generic.image: For handling image data.
-    - atria_core.data_types.generic.label: For handling label data.
-    - atria_core.data_types.typing.tensor: For defining tensor types.
-
-Author: Your Name (your.email@example.com)
-Date: 2025-04-07
-Version: 1.0.0
-License: MIT
-"""
-
 from collections.abc import Callable
 from types import NoneType
+from typing import Self
 
 import torch
 from pydantic import PrivateAttr, model_validator
 
-from atria_core.types.base.tensor_data_model import RawDataModelConfigDict
-from atria_core.types.data_instance._tensor.base import BaseDataInstance
-from atria_core.types.generic._image import Image
-from atria_core.types.generic._label import Label
-from atria_core.types.generic.question_answer_pair import (
-    QuestionAnswerPair,
-    TokenizedQuestionAnswerPair,
+from atria_core.types.data_instance._tensor.base import TensorBaseDataInstance
+from atria_core.types.generic._tensor.image import TensorImage
+from atria_core.types.generic._tensor.label import TensorLabel
+from atria_core.types.generic._tensor.question_answer_pair import (
+    TensorQuestionAnswerPair,
+    TensorTokenizedQuestionAnswerPair,
 )
 from atria_core.utilities.common import _rgetattr, _rsetattr
 
@@ -60,39 +35,18 @@ def _apply(obj: object, key: str, fn: Callable):
     _rsetattr(obj, key, fn(value))
 
 
-class TokenizedDocumentInstance(BaseDataInstance):
-    """
-    Represents a single tokenized data instance.
-
-    This class is designed to handle tokenized data such as token IDs, word IDs,
-    token labels, and other related attributes. It is useful for tasks like token
-    classification, sequence labeling, and object detection in tokenized formats.
-
-    Attributes:
-        token_ids (PydanticTensor): The token IDs for the instance.
-        token_bboxes (PydanticTensor, optional): The bounding boxes for the tokens.
-        token_type_ids (PydanticTensor, optional): The type IDs for the tokens.
-        token_labels (PydanticTensor, optional): The labels for the tokens.
-        attention_mask (PydanticTensor, optional): The attention mask for the tokens.
-        word_ids (PydanticTensor, optional): The word IDs for the tokens.
-        sequence_ids (PydanticTensor, optional): The sequence IDs for the tokens.
-        overflow_to_sample_mapping (PydanticTensor, optional): Mapping from overflowed
-            tokens to sample indices.
-    """
-
-    model_config = RawDataModelConfigDict(
-        batch_skip_fields=["ocr", "page_id", "total_num_pages"],
-        batch_tensor_stack_skip_fields=[
-            "token_ids",
-            "token_bboxes",
-            "token_labels",
-            "prediction_indices_mask",
-            "attention_mask",
-            "word_ids",
-            "sequence_ids",
-            "overflow_to_sample_mapping",
-        ],
-    )
+class TokenizedInstance(TensorBaseDataInstance):  # type: ignore[misc]
+    _batch_skip_fields = ["ocr", "page_id", "total_num_pages"]
+    _batch_tensor_stack_skip_fields = [
+        "token_ids",
+        "token_bboxes",
+        "token_labels",
+        "prediction_indices_mask",
+        "attention_mask",
+        "word_ids",
+        "sequence_ids",
+        "overflow_to_sample_mapping",
+    ]
     _tokenizer = PrivateAttr(default=None)
 
     token_ids: torch.Tensor
@@ -104,23 +58,31 @@ class TokenizedDocumentInstance(BaseDataInstance):
     sequence_ids: torch.Tensor | None = None
     overflow_to_sample_mapping: torch.Tensor | None = None
     prediction_indices_mask: torch.Tensor | None = None
-    image: Image | None = None
-    label: Label | None = None
+    image: TensorImage | None = None
+    label: TensorLabel | None = None
     words: list[str] | None = None
-    qa_pair: QuestionAnswerPair | TokenizedQuestionAnswerPair | None = None
+    qa_pair: TensorQuestionAnswerPair | TensorTokenizedQuestionAnswerPair | None = None
+
+    @property
+    def tokenizer(self):
+        if self._tokenizer is None:
+            raise ValueError("Tokenizer is not set for this instance.")
+        return self._tokenizer
+
+    @tokenizer.setter
+    def tokenizer(self, tokenizer):
+        if not hasattr(tokenizer, "decode"):
+            raise ValueError("Provided tokenizer does not have a decode method.")
+        self._tokenizer = tokenizer
 
     @classmethod
-    def batched(
-        cls, model_instances: list["TokenizedDocumentInstance"]
-    ) -> "TokenizedDocumentInstance":
-        batched = super().batched(
-            model_instances
-        )  # Call parent method with new behavior
-        batched._tokenizer = model_instances[0]._tokenizer
-        return batched
+    def batched(cls, model_instances: list[Self]) -> Self:
+        batched_instance = super().batched(model_instances)
+        batched_instance._tokenizer = model_instances[0]._tokenizer
+        return batched_instance
 
     @model_validator(mode="after")
-    def validate_tensor_shapes(self) -> "TokenizedDocumentInstance":
+    def validate_tensor_shapes(self) -> Self:
         """
         Validates the shapes of the tensors in the instance.
 
@@ -203,9 +165,6 @@ class TokenizedDocumentInstance(BaseDataInstance):
                 - A list of indices indicating the number of times each sample was repeated.
                 - A list of keys that were not repeated.
         """
-        assert self._is_tensor, (
-            "This function only supports tensorized document instances. Call to_tensor() first."
-        )
         assert self._is_batched, (
             "This function only supports batched document instances. Call batched() first."
         )
@@ -231,9 +190,6 @@ class TokenizedDocumentInstance(BaseDataInstance):
         Unlike concat_all_overflow_samples, this function randomly selects one sample
         from each overflowed sample and concatenates them into a single tensor.
         """
-        assert self._is_tensor, (
-            "This function only supports tensorized document instances. Call to_tensor() first."
-        )
         assert self._is_batched, (
             "This function only supports batched document instances. Call batched() first."
         )
@@ -264,9 +220,6 @@ class TokenizedDocumentInstance(BaseDataInstance):
         Unlike concat_all_overflow_samples, this function randomly selects one sample
         from each overflowed sample and concatenates them into a single tensor.
         """
-        assert self._is_tensor, (
-            "This function only supports tensorized document instances. Call to_tensor() first."
-        )
         assert self._is_batched, (
             "This function only supports batched document instances. Call batched() first."
         )

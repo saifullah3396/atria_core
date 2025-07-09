@@ -2,6 +2,7 @@ from typing import Any, ClassVar, Generic
 
 from pydantic import BaseModel
 
+from atria_core.types.base._mixins._utils import _recursive_apply
 from atria_core.types.base.types import T_TensorModel
 
 
@@ -49,6 +50,7 @@ class TensorConvertible(BaseModel, Generic[T_TensorModel]):
                     f"Class '{class_name}' not found in module '{module_name}'"
                 ) from e
 
+        cls.model_rebuild()
         return cls._cached_tensor_model
 
     def to_tensor(self) -> T_TensorModel:
@@ -62,34 +64,7 @@ class TensorConvertible(BaseModel, Generic[T_TensorModel]):
         from atria_core.utilities.tensors import _convert_to_tensor
 
         tensor_model_class = self.tensor_data_model()
-        tensor_fields = {}
-        for field_name in self.__class__.model_fields:
-            try:
-                field_value = getattr(self, field_name)
-                if isinstance(field_value, TensorConvertible):
-                    tensor_fields[field_name] = field_value.to_tensor()
-                elif (
-                    isinstance(field_value, list)
-                    and len(field_value) > 0
-                    and isinstance(field_value[0], TensorConvertible)
-                ):
-
-                    def safe_to_tensor(item: Any):
-                        if isinstance(item, TensorConvertible):
-                            return item.to_tensor()
-                        else:
-                            raise RuntimeError(
-                                "A list with variable types is not supported."
-                            )
-
-                    tensor_fields[field_name] = [
-                        safe_to_tensor(item) for item in field_value
-                    ]
-                else:
-                    tensor_fields[field_name] = _convert_to_tensor(field_value)  # type: ignore[assignment]
-            except Exception as e:
-                raise RuntimeError(
-                    f"Error converting field '{field_name}' to tensor"
-                ) from e
-        tensor_model_class.model_rebuild()
-        return tensor_model_class(**tensor_fields)
+        apply_results = _recursive_apply(self, TensorConvertible, _convert_to_tensor)  # type: ignore[return-value]
+        return tensor_model_class.model_validate(
+            apply_results, context={"no_validation": True}
+        )

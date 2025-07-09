@@ -5,7 +5,7 @@ from pydantic import model_validator
 
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import RawDataModel
-from atria_core.types.typing.common import OptIntField, PydanticFilePath
+from atria_core.types.typing.common import OptIntField, OptStrField
 from atria_core.utilities.encoding import ValidatedPILImage
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 
 class Image(RawDataModel["TensorImage"]):
     _tensor_model = "atria_core.types.generic._tensor.image.TensorImage"
-    file_path: PydanticFilePath = None
+    file_path: OptStrField = None
     content: ValidatedPILImage = None
     width: OptIntField | None = None
     height: OptIntField | None = None
@@ -28,11 +28,7 @@ class Image(RawDataModel["TensorImage"]):
             if self.content is not None:
                 self._set_skip_validation("width", self.content.size[0])
                 self._set_skip_validation("height", self.content.size[1])
-            elif (
-                self.file_path is not None
-                and isinstance(self.file_path, Path)
-                and self.file_path.exists()
-            ):
+            elif self.file_path is not None and Path(self.file_path).exists():
                 import imagesize
 
                 size = imagesize.get(self.file_path)
@@ -68,7 +64,7 @@ class Image(RawDataModel["TensorImage"]):
                 raise ValueError(
                     "Image file path is not set. Please set the file_path before loading the image."
                 )
-            if str(self.file_path).startswith(("http", "https")):
+            if self.file_path.startswith(("http", "https")):
                 import requests
 
                 response = requests.get(self.file_path)
@@ -76,9 +72,9 @@ class Image(RawDataModel["TensorImage"]):
                     raise ValueError(f"Failed to load image from URL: {self.file_path}")
                 self.content = _bytes_to_image(response.content)
             else:
-                if not self.file_path.exists():
+                if not Path(self.file_path).exists():
                     raise FileNotFoundError(f"Image file not found: {self.file_path}")
-                if not self.file_path.is_file():
+                if not Path(self.file_path).is_file():
                     raise ValueError(
                         f"Provided file path is not a file: {self.file_path}"
                     )

@@ -181,6 +181,25 @@ def _apply_to_type(
     raise TypeError(f"x must contain {input_type}, dicts or lists; found {type(x)}")
 
 
+def _convert_to_device(
+    x: Any | Sequence | Mapping | str | bytes, device: "torch.device | str" = "cpu"
+) -> Any | Sequence | Mapping | str | bytes:
+    """Convert a tensor or a sequence of tensors to the specified device.
+
+    Args:
+        x: object or mapping or sequence.
+        device: target device.
+
+    Returns:
+        The converted object, mapping, or sequence.
+    """
+    import torch
+
+    return _apply_to_type(
+        x, torch.Tensor, lambda t: t.to(device) if isinstance(t, torch.Tensor) else t
+    )
+
+
 def _validate_tensor(self):
     import torch
 

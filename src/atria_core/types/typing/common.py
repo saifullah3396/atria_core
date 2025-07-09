@@ -142,6 +142,9 @@ StrField = Annotated[str, TableSchemaMetadata(pyarrow=pa.string())]
 ListStrField = Annotated[list[str], TableSchemaMetadata(pyarrow=pa.list_(pa.string()))]
 """A list of strings field type annotation with PyArrow metadata.
 """
+ListBoolField = Annotated[list[bool], TableSchemaMetadata(pyarrow=pa.list_(pa.bool_()))]
+"""A list of booleans field type annotation with PyArrow metadata.
+"""
 
 ###
 # Optional fields

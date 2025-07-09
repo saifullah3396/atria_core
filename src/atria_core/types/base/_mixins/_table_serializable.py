@@ -122,7 +122,6 @@ def _extract_pyarrow_schema(model_cls: type[BaseModel]) -> dict[str, type | dict
                         )
 
             # Handle direct TableSerializable subclass (not annotated)
-
             elif isinstance(annotated_type, type) and issubclass(
                 annotated_type, TableSerializable
             ):

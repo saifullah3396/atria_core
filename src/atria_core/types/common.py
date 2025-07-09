@@ -1,6 +1,21 @@
 import enum
 
 
+class DatasetSplitType(str, enum.Enum):
+    """
+    An enumeration representing the dataset splits.
+
+    Attributes:
+        train (str): Represents the training split of the dataset.
+        test (str): Represents the testing split of the dataset.
+        validation (str): Represents the validation split of the dataset.
+    """
+
+    train = "train"
+    test = "test"
+    validation = "validation"
+
+
 class OCRType(str, enum.Enum):
     """
     Enum for OCR types.
@@ -44,7 +59,7 @@ class ModelType(str, enum.Enum):
     mmdet = "mmdet"
 
 
-class ConfigTypes(str, enum.Enum):
+class ConfigType(str, enum.Enum):
     batch_sampler = "batch_sampler"
     data_pipeline = "data_pipeline"
     dataset = "dataset"

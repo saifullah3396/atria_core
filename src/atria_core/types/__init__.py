@@ -1,3 +1,5 @@
+from .common import ConfigType, DatasetSplitType, ModelType, OCRType, TaskType
+from .data_instance._raw.base import BaseDataInstance
 from .data_instance._raw.document_instance import DocumentInstance
 from .data_instance._raw.image_instance import ImageInstance
 from .datasets.config import (
@@ -9,11 +11,11 @@ from .datasets.metadata import (
     DatasetLabels,
     DatasetMetadata,
     DatasetShardInfo,
+    SplitConfig,
     SplitInfo,
 )
-from .datasets.splits import DatasetSplitType, SplitConfig
 from .generic._raw.annotated_object import AnnotatedObject
-from .generic._raw.bounding_box import BoundingBox
+from .generic._raw.bounding_box import BoundingBox, BoundingBoxMode
 from .generic._raw.ground_truth import (
     OCRGT,
     SERGT,
@@ -25,7 +27,7 @@ from .generic._raw.ground_truth import (
 )
 from .generic._raw.image import Image
 from .generic._raw.label import Label
-from .generic._raw.ocr import OCR, OCRType
+from .generic._raw.ocr import OCR
 from .generic._raw.question_answer_pair import (
     QuestionAnswerPair,
     TokenizedQuestionAnswerPair,
@@ -44,12 +46,19 @@ __all__ = [
     "DatasetStorageInfo",
     # datasets splits
     "SplitConfig",
+    # common types
+    "OCRType",
     "DatasetSplitType",
+    "ConfigType",
+    "ModelType",
+    "TaskType",
     # instance types
+    "BaseDataInstance",
     "DocumentInstance",
     "ImageInstance",
     # generic types
     "BoundingBox",
+    "BoundingBoxMode",
     "Image",
     "Label",
     "OCR",

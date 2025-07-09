@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, ClassVar, Self
 
 import torch
-from pydantic import model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from atria_core.types.base.data_model import TensorDataModel
 from atria_core.types.generic._raw.bounding_box import BoundingBoxMode
@@ -10,38 +10,10 @@ if TYPE_CHECKING:
     from atria_core.types.generic._raw.bounding_box import BoundingBox  # noqa
 
 
-class TensorBoundingBox(TensorDataModel["BoundingBox"]):
-    _raw_model = "atria_core.types.generic._raw.bounding_box.BoundingBox"
-    _batch_merge_fields: ClassVar[list[str] | None] = ["mode"]
-
+class TensorBoundingBoxBase(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     value: torch.Tensor
     mode: BoundingBoxMode = BoundingBoxMode.XYXY
-
-    def switch_mode(self):
-        assert not self._is_batched, "Cannot switch mode for batched bounding boxes."
-        if self.mode == BoundingBoxMode.XYXY:
-            self.value = torch.tensor([self.x1, self.y1, self.width, self.height])
-            self.mode = BoundingBoxMode.XYWH
-        else:
-            self.value = torch.tensor([self.x1, self.y1, self.x2, self.y2])
-            self.mode = BoundingBoxMode.XYXY
-        return self
-
-    @model_validator(mode="after")  # type: ignore[misc]
-    def validate_value(self) -> Self:
-        if self._is_batched:
-            assert self.value.ndim == 2, (
-                "Expected a 2D tensor for batched bounding boxes."
-            )
-            assert self.value.shape[-1] == 4, (
-                "Batched bounding boxes must have dimension (N, 4)."
-            )
-        else:
-            assert self.value.ndim == 1, (
-                "Expected a 1D tensor of shape (4,) for bounding boxes."
-            )
-            assert self.value.shape[-1] == 4, "Bounding boxes must have dimension (4,)"
-        return self
 
     @property
     def is_valid(self) -> torch.Tensor:
@@ -151,4 +123,71 @@ class TensorBoundingBox(TensorDataModel["BoundingBox"]):
             self.y1 /= height
             self.x2 /= width
             self.y2 /= height
+        return self
+
+
+class TensorBoundingBox(TensorDataModel["BoundingBox"], TensorBoundingBoxBase):  # type: ignore[misc]
+    _raw_model = "atria_core.types.generic._raw.bounding_box.BoundingBox"
+    _batch_merge_fields: ClassVar[list[str] | None] = ["mode"]
+
+    def switch_mode(self):
+        assert not self._is_batched, "Cannot switch mode for batched bounding boxes."
+        if self.mode == BoundingBoxMode.XYXY:
+            self.value = torch.tensor([self.x1, self.y1, self.width, self.height])
+            self.mode = BoundingBoxMode.XYWH
+        else:
+            self.value = torch.tensor([self.x1, self.y1, self.x2, self.y2])
+            self.mode = BoundingBoxMode.XYXY
+        return self
+
+    @model_validator(mode="after")  # type: ignore[misc]
+    def validate_value(self) -> Self:
+        if self._is_batched:
+            assert self.value.ndim == 2, (
+                "Expected a 2D tensor for batched bounding boxes."
+            )
+            assert self.value.shape[-1] == 4, (
+                "Batched bounding boxes must have dimension (N, 4)."
+            )
+        else:
+            assert self.value.ndim == 1, (
+                "Expected a 1D tensor of shape (4,) for bounding boxes."
+            )
+            assert self.value.shape[-1] == 4, "Bounding boxes must have dimension (4,)"
+        return self
+
+
+class TensorBoundingBoxList(TensorDataModel["BoundingBoxList"], TensorBoundingBoxBase):  # type: ignore[misc]
+    _raw_model = "atria_core.types.generic._raw.bounding_box.BoundingBoxList"
+    _batch_merge_fields: ClassVar[list[str] | None] = ["mode"]
+
+    value: torch.Tensor
+    mode: BoundingBoxMode = BoundingBoxMode.XYXY
+
+    def switch_mode(self):
+        assert not self._is_batched, "Cannot switch mode for batched bounding boxes."
+        if self.mode == BoundingBoxMode.XYXY:
+            self.value = torch.tensor([self.x1, self.y1, self.width, self.height])
+            self.mode = BoundingBoxMode.XYWH
+        else:
+            self.value = torch.tensor([self.x1, self.y1, self.x2, self.y2])
+            self.mode = BoundingBoxMode.XYXY
+        return self
+
+    @model_validator(mode="after")  # type: ignore[misc]
+    def validate_value(self) -> Self:
+        if self._is_batched:
+            assert self.value.ndim == 3, (
+                "Expected a 3D tensor for batched bounding boxes."
+            )
+            assert self.value.shape[-1] == 4, (
+                "Batched bounding boxes must have dimension (B, L, 4)."
+            )
+        else:
+            assert self.value.ndim == 2, (
+                "Expected a 2D tensor of shape (L, 4) for bounding boxes."
+            )
+            assert self.value.shape[-1] == 4, (
+                "Bounding boxes must have dimension (L, 4)"
+            )
         return self

@@ -8,7 +8,10 @@ from atria_core.types.base.data_model import RawDataModel
 from atria_core.types.typing.common import ListFloatField, TableSchemaMetadata
 
 if TYPE_CHECKING:
-    from atria_core.types.generic._tensor.bounding_box import TensorBoundingBox  # noqa
+    from atria_core.types.generic._tensor.bounding_box import (
+        TensorBoundingBox,  # noqa
+        TensorBoundingBoxList,  # noqa
+    )
 
 
 class BoundingBoxMode(str, enum.Enum):
@@ -143,3 +146,26 @@ class BoundingBox(RawDataModel["TensorBoundingBox"]):
             self.x2 /= width
             self.y2 /= height
         return self
+
+
+class BoundingBoxList(RawDataModel["TensorBoundingBoxList"]):
+    _tensor_model = (
+        "atria_core.types.generic._tensor.bounding_box.TensorBoundingBoxList"
+    )
+    value: Annotated[
+        list[list[float]], TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64())))
+    ]
+    mode: Annotated[BoundingBoxMode, TableSchemaMetadata(pyarrow=pa.string())] = (
+        BoundingBoxMode.XYXY
+    )
+
+    @classmethod
+    def from_list(cls, bboxes: list[BoundingBox]) -> "BoundingBoxList":
+        """
+        Create a BoundingBoxList from a list of BoundingBox objects.
+        """
+        print("Creating BoundingBoxList from list of BoundingBox objects.")
+        return cls(
+            value=[bbox.value for bbox in bboxes],
+            mode=bboxes[0].mode if bboxes else BoundingBoxMode.XYXY,
+        )
