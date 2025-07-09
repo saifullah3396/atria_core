@@ -67,6 +67,7 @@ source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "coloredlogs" },
+    { name = "factory-boy" },
     { name = "imagesize" },
     { name = "lazy-loader" },
     { name = "numpy" },
@@ -129,6 +130,7 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = "==4.12.2" },
     { name = "coloredlogs", specifier = "==15.0.1" },
     { name = "coverage", marker = "extra == 'test'" },
+    { name = "factory-boy", specifier = ">=3.3.3" },
     { name = "imagesize", specifier = ">=1.4.1" },
     { name = "lazy-loader", specifier = "==0.4" },
     { name = "numpy", specifier = "==1.26.4" },
@@ -1616,7 +1618,7 @@ name = "triton"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "filelock" },
+    { name = "filelock", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5c/c1/54fffb2eb13d293d9a429fead3646752ea190de0229bcf3d591ba2481263/triton-2.1.0-0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:919b06453f0033ea52c13eaf7833de0e57db3178d23d4e04f9fc71c4f2c32bf8", size = 89234153, upload_time = "2023-09-01T07:26:20.161Z" },
