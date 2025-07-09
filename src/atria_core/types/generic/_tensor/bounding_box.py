@@ -7,7 +7,7 @@ from atria_core.types.base.data_model import TensorDataModel
 from atria_core.types.generic._raw.bounding_box import BoundingBoxMode
 
 if TYPE_CHECKING:
-    from atria_core.types.generic._raw.bounding_box import BoundingBox  # noqa
+    from atria_core.types.generic._raw.bounding_box import BoundingBox, BoundingBoxList  # noqa
 
 
 class TensorBoundingBoxBase(BaseModel):

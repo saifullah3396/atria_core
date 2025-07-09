@@ -76,9 +76,12 @@ class AnnotatedObjectList(RawDataModel["TensorAnnotatedObjectList"]):
         """
         Create an AnnotatedObjectList from a list of AnnotatedObject objects.
         """
+        segmentation = [obj.segmentation for obj in objects]
+        if any(s is None for s in segmentation):
+            segmentation = None
         return cls(
             label=LabelList.from_list([obj.label for obj in objects]),
             bbox=BoundingBoxList.from_list([obj.bbox for obj in objects]),
-            segmentation=[obj.segmentation for obj in objects],
+            segmentation=segmentation,
             iscrowd=[obj.iscrowd for obj in objects],
         )

@@ -67,7 +67,6 @@ source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "coloredlogs" },
-    { name = "factory-boy" },
     { name = "imagesize" },
     { name = "lazy-loader" },
     { name = "numpy" },
@@ -130,7 +129,6 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = "==4.12.2" },
     { name = "coloredlogs", specifier = "==15.0.1" },
     { name = "coverage", marker = "extra == 'test'" },
-    { name = "factory-boy", specifier = ">=3.3.3" },
     { name = "imagesize", specifier = ">=1.4.1" },
     { name = "lazy-loader", specifier = "==0.4" },
     { name = "numpy", specifier = "==1.26.4" },
