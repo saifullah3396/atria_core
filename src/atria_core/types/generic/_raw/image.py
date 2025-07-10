@@ -19,8 +19,8 @@ class Image(RawDataModel["TensorImage"]):
     _tensor_model = "atria_core.types.generic._tensor.image.TensorImage"
     file_path: OptStrField = None
     content: ValidatedPILImage = None
-    width: OptIntField | None = None
-    height: OptIntField | None = None
+    width: OptIntField = None
+    height: OptIntField = None
 
     @model_validator(mode="after")
     def _validate_dims(self):

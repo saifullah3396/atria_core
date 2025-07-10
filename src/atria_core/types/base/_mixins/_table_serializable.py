@@ -74,7 +74,9 @@ def _extract_pyarrow_schema(model_cls: type[BaseModel]) -> dict[str, type | dict
     if not issubclass(model_cls, BaseModel) or not issubclass(
         model_cls, TableSerializable
     ):
-        raise TypeError(f"Expected TableSerializable subclass, got {model_cls}")
+        raise TypeError(
+            f"Expected a subclass of {TableSerializable} subclass, got {model_cls}"
+        )
 
     schema: dict[str, type | dict] = {}
 
@@ -125,7 +127,6 @@ def _extract_pyarrow_schema(model_cls: type[BaseModel]) -> dict[str, type | dict
             elif isinstance(annotated_type, type) and issubclass(
                 annotated_type, TableSerializable
             ):
-                print("annotated_type", annotated_type)
                 nested_schema = _extract_pyarrow_schema(annotated_type)
                 schema[field_name] = nested_schema
 

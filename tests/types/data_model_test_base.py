@@ -53,7 +53,6 @@ class DataModelTestBase:
         """
         row = model_instance.to_row()
         assert isinstance(row, dict), "Row representation should be a dictionary"
-        print("row", row)
         new_instance = model_instance.from_row(row)
         assert isinstance(new_instance, RawDataModel), (
             "New instance should be a RawDataModel"

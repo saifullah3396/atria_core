@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class BaseDataInstance(RawDataModel["TensorBaseDataInstance"]):
     _tensor_data_model = "atria_core.types.data_instance._tensor.base.BaseDataInstance"
-    index: OptIntField
+    index: OptIntField = None
     sample_id: StrField = Field(default_factory=lambda: str(uuid.uuid4()))
 
     @property

@@ -105,4 +105,6 @@ class GroundTruth(RawDataModel["TensorGroundTruth"]):
 
     @field_serializer("classification", "ser", "ocr", "qa", "vqa", "layout")
     def serialize_gt(self, value) -> str:
-        return json.dumps(value.model_dump())
+        if value is not None:
+            return json.dumps(value.model_dump())
+        return None

@@ -35,7 +35,7 @@ def _apply(obj: object, key: str, fn: Callable):
     _rsetattr(obj, key, fn(value))
 
 
-class TokenizedInstance(TensorBaseDataInstance):  # type: ignore[misc]
+class TokenizedDocumentInstance(TensorBaseDataInstance):  # type: ignore[misc]
     _batch_skip_fields = ["ocr", "page_id", "total_num_pages"]
     _batch_tensor_stack_skip_fields = [
         "token_ids",

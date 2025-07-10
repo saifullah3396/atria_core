@@ -164,7 +164,6 @@ class BoundingBoxList(RawDataModel["TensorBoundingBoxList"]):
         """
         Create a BoundingBoxList from a list of BoundingBox objects.
         """
-        print("Creating BoundingBoxList from list of BoundingBox objects.")
         return cls(
             value=[bbox.value for bbox in bboxes],
             mode=bboxes[0].mode if bboxes else BoundingBoxMode.XYXY,
