@@ -49,6 +49,4 @@ class RawConvertible(BaseModel, Generic[T_RawModel]):
 
         raw_model_class = self.raw_data_model()
         apply_results = _recursive_apply(self, RawConvertible, _convert_from_tensor)
-        return raw_model_class.model_validate(
-            apply_results, context={"no_validation": True}
-        )  # type: ignore[return-value]
+        return raw_model_class.model_validate(apply_results)  # type: ignore[return-value]

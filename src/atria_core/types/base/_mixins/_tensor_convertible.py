@@ -65,6 +65,4 @@ class TensorConvertible(BaseModel, Generic[T_TensorModel]):
 
         tensor_model_class = self.tensor_data_model()
         apply_results = _recursive_apply(self, TensorConvertible, _convert_to_tensor)  # type: ignore[return-value]
-        return tensor_model_class.model_validate(
-            apply_results, context={"no_validation": True}
-        )
+        return tensor_model_class.model_validate(apply_results)
