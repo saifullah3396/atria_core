@@ -19,7 +19,7 @@ class TensorConvertible(BaseModel, Generic[T_TensorModel]):
         import importlib
 
         try:
-            import torch  # type: ignore[import]
+            import torch  # type: ignore[import]  # noqa: F401
         except ImportError:
             raise ImportError(
                 "PyTorch is required for tensor operations but is not installed. "

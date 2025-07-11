@@ -61,7 +61,7 @@ class RepresentationMixin:
             str: A developer-friendly string representation of the object.
         """
         return pretty_repr(
-            self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=4, max_depth=4
+            self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=32, max_depth=4
         )
 
     def __str__(self) -> str:
@@ -72,5 +72,5 @@ class RepresentationMixin:
             str: A human-readable string representation of the object.
         """
         return pretty_repr(
-            self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=4, max_depth=4
+            self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=32, max_depth=4
         )
