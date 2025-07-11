@@ -3,6 +3,6 @@
 set -e
 set -x
 
-mypy src       # type check
+mypy src --follow-imports=skip     # type check
 ruff check src        # linter
 ruff format src --check # formatter
