@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 import torch
 
@@ -7,8 +7,12 @@ from atria_core.types.base.data_model import TensorDataModel
 if TYPE_CHECKING:
     from atria_core.types.data_instance._raw.base import BaseDataInstance  # noqa
 
+T_BaseDataInstance = TypeVar("T_BaseDataInstance", bound="BaseDataInstance")
 
-class TensorBaseDataInstance(TensorDataModel["BaseDataInstance"]):
+
+class TensorBaseDataInstance(
+    TensorDataModel["T_BaseDataInstance"], Generic["T_BaseDataInstance"]
+):
     _raw_model = "atria_core.types.data_instance._raw.base.BaseDataInstance"
     index: torch.Tensor
     sample_id: str

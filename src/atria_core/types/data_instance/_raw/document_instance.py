@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 from pydantic import model_validator
 
-from atria_core.types.base.data_model import RawDataModel
 from atria_core.types.data_instance._raw.base import BaseDataInstance
 from atria_core.types.generic._raw.ground_truth import GroundTruth
 from atria_core.types.generic._raw.image import Image
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
     )
 
 
-class DocumentInstance(BaseDataInstance, RawDataModel["TensorDocumentInstance"]):  # type: ignore[misc]
+class DocumentInstance(BaseDataInstance["TensorDocumentInstance"]):  # type: ignore[misc]
     _tensor_model = "atria_core.types.data_instance._tensor.document_instance.TensorDocumentInstance"
     page_id: IntField = 0
     total_num_pages: IntField = 1

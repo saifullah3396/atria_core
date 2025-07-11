@@ -122,23 +122,24 @@ class TokenizedDocumentInstance(TensorBaseDataInstance):  # type: ignore[misc]
                     f"{key} must have compatible shape with token_ids {self.token_ids.shape}."
                 )
 
-        prediction_indices_mask = torch.zeros_like(self.token_ids, dtype=torch.bool)
-        for idx, word_ids_per_sample in enumerate(self.word_ids):
-            if self.token_labels is not None:
-                prediction_indices = [
-                    i
-                    for i in range(len(word_ids_per_sample))
-                    if word_ids_per_sample[i] != word_ids_per_sample[i - 1]
-                    and self.token_labels[idx][i] != -100
-                ]
-            else:
-                prediction_indices = [
-                    i
-                    for i in range(len(word_ids_per_sample))
-                    if word_ids_per_sample[i] != word_ids_per_sample[i - 1]
-                ]
-            prediction_indices_mask[idx][prediction_indices] = True
-        self.prediction_indices_mask = prediction_indices_mask
+        if self.word_ids is not None:
+            prediction_indices_mask = torch.zeros_like(self.token_ids, dtype=torch.bool)
+            for idx, word_ids_per_sample in enumerate(self.word_ids):
+                if self.token_labels is not None:
+                    prediction_indices = [
+                        i
+                        for i in range(len(word_ids_per_sample))
+                        if word_ids_per_sample[i] != word_ids_per_sample[i - 1]
+                        and self.token_labels[idx][i] != -100
+                    ]
+                else:
+                    prediction_indices = [
+                        i
+                        for i in range(len(word_ids_per_sample))
+                        if word_ids_per_sample[i] != word_ids_per_sample[i - 1]
+                    ]
+                prediction_indices_mask[idx][prediction_indices] = True
+            self.prediction_indices_mask = prediction_indices_mask
 
         return self
 
