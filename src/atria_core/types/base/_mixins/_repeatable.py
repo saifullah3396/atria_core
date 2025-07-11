@@ -1,11 +1,9 @@
-from functools import partial
 from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import PrivateAttr
 
 from atria_core.logger.logger import get_logger
 from atria_core.types.base._mixins._batchable import Batchable
-from atria_core.types.base._mixins._utils import _recursive_apply
 
 if TYPE_CHECKING:
     pass
@@ -107,22 +105,41 @@ class Repeatable(Batchable):
         if any(idx < 0 for idx in repeat_indices):
             raise ValueError("All repeat indices must be non-negative")
 
-        apply_results = _recursive_apply(
-            self,
-            Repeatable,
-            partial(self._repeat_field, repeat_indices=repeat_indices),
-            exclude_fields=exclude_fields,
-        )  # type: ignore[return-value]
+        for field_name in self.__class__.model_fields:
+            field_value = getattr(self, field_name)
+            if isinstance(field_value, Repeatable):
+                # Recurse into nested model
+                if exclude_fields is None or field_name not in exclude_fields:
+                    # Apply the function recursively
+                    setattr(
+                        self,
+                        field_name,
+                        field_value.repeat(
+                            repeat_indices, exclude_fields=exclude_fields
+                        ),
+                    )
+            elif (
+                isinstance(field_value, list)
+                and len(field_value) > 0
+                and isinstance(field_value[0], Repeatable)
+            ):
+                raise RuntimeError(
+                    f"Field '{field_name}' contains list of {Repeatable}, which is not supported."
+                )
+            else:
+                if exclude_fields is None or field_name not in exclude_fields:
+                    setattr(
+                        self,
+                        field_name,
+                        self._repeat_field(field_value, repeat_indices),
+                    )
 
-        repeated_instance = self.model_validate(
-            **apply_results, context={"no_validation": True}
-        )
-        repeated_instance._is_repeated = True
-        repeated_instance._repeat_indices = repeat_indices
-        repeated_instance._exclude_fields = exclude_fields
-        repeated_instance._is_batched = True
-        repeated_instance._batch_size = sum(repeat_indices)
-        return repeated_instance
+        self._is_repeated = True
+        self._repeat_indices = repeat_indices
+        self._exclude_fields = exclude_fields
+        self._is_batched = True
+        self._batch_size = sum(repeat_indices)
+        return self
 
     def _repeat_field(self, field_value: Any, repeat_indices: list[int]) -> Any:
         import torch
@@ -156,16 +173,37 @@ class Repeatable(Batchable):
             return self
 
         assert self._repeat_indices is not None, "Repeat indices must be set"
-        apply_results = _recursive_apply(
-            self,
-            Repeatable,
-            partial(self._undo_repeat_on_field, repeat_indices=self._repeat_indices),
-            exclude_fields=self._exclude_fields,
-        )
-        instance = self.model_validate(**apply_results, context={"no_validation": True})
-        instance._batch_size = len(self._repeat_indices) if self._repeat_indices else 0
-        instance._is_batched = True
-        return instance
+        for field_name in self.__class__.model_fields:
+            field_value = getattr(self, field_name)
+            if isinstance(field_value, Repeatable):
+                # Recurse into nested model
+                if (
+                    self._exclude_fields is None
+                    or field_name not in self._exclude_fields
+                ):
+                    # Apply the function recursively
+                    setattr(self, field_name, field_value.undo_repeat())
+            elif (
+                isinstance(field_value, list)
+                and len(field_value) > 0
+                and isinstance(field_value[0], Repeatable)
+            ):
+                raise RuntimeError(
+                    f"Field '{field_name}' contains list of {Repeatable}, which is not supported."
+                )
+            else:
+                if (
+                    self._exclude_fields is None
+                    or field_name not in self._exclude_fields
+                ):
+                    setattr(
+                        self,
+                        field_name,
+                        self._undo_repeat_on_field(field_value, self._repeat_indices),
+                    )
+        self._batch_size = len(self._repeat_indices) if self._repeat_indices else 0
+        self._is_batched = True
+        return self
 
     def _undo_repeat_on_field(self, field_value: Any, repeat_indices: list[int]) -> Any:
         import torch

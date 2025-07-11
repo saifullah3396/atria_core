@@ -11,7 +11,7 @@ T_BaseDataInstance = TypeVar("T_BaseDataInstance", bound="BaseDataInstance")
 
 
 class TensorBaseDataInstance(
-    TensorDataModel["T_BaseDataInstance"], Generic["T_BaseDataInstance"]
+    TensorDataModel[T_BaseDataInstance], Generic[T_BaseDataInstance]
 ):
     _raw_model = "atria_core.types.data_instance._raw.base.BaseDataInstance"
     index: torch.Tensor

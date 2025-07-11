@@ -2,8 +2,6 @@ from typing import Self
 
 from pydantic import BaseModel, PrivateAttr
 
-from atria_core.types.base._mixins._utils import _recursive_apply_in_place
-
 
 class Loadable(BaseModel):
     """
@@ -23,12 +21,12 @@ class Loadable(BaseModel):
             Exception: If loading fails for any field.
         """
         if not self._is_loaded:
-            _recursive_apply_in_place(
-                self, Loadable, lambda x: x._load() if isinstance(x, Loadable) else None
-            )  # type: ignore[return-value]
+            for field_name in self.__class__.model_fields:
+                field_value = getattr(self, field_name)
+                if isinstance(field_value, Loadable):
+                    field_value.load()
             self._load()
             self._is_loaded = True
-
         return self
 
     def unload(self) -> Self:
@@ -42,12 +40,12 @@ class Loadable(BaseModel):
             Exception: If unloading fails for any field.
         """
         if self._is_loaded:
-            _recursive_apply_in_place(
-                self, Loadable, lambda x: x._unload() if isinstance(x, Loadable) else x
-            )  # type: ignore[return-value]
+            for field_name in self.__class__.model_fields:
+                field_value = getattr(self, field_name)
+                if isinstance(field_value, Loadable):
+                    field_value.unload()
             self._unload()
             self._is_loaded = False
-
         return self
 
     def _load(self) -> None:

@@ -9,13 +9,13 @@ from atria_core.types.typing.common import OptIntField, StrField
 if TYPE_CHECKING:
     from atria_core.types.data_instance._tensor.base import TensorBaseDataInstance  # noqa
 
-    T_TensorBaseDataInstance = TypeVar(
-        "T_TensorBaseDataInstance", bound="TensorBaseDataInstance"
-    )
+T_TensorBaseDataInstance = TypeVar(
+    "T_TensorBaseDataInstance", bound="TensorBaseDataInstance"
+)
 
 
 class BaseDataInstance(
-    RawDataModel["T_TensorBaseDataInstance"], Generic["T_TensorBaseDataInstance"]
+    RawDataModel[T_TensorBaseDataInstance], Generic[T_TensorBaseDataInstance]
 ):
     _tensor_data_model = "atria_core.types.data_instance._tensor.base.BaseDataInstance"
     index: OptIntField = None

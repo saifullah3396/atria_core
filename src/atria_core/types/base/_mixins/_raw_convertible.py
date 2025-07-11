@@ -2,7 +2,6 @@ from typing import Any, ClassVar, Generic
 
 from pydantic import BaseModel
 
-from atria_core.types.base._mixins._utils import _recursive_apply
 from atria_core.types.base.types import T_RawModel
 
 
@@ -37,16 +36,38 @@ class RawConvertible(BaseModel, Generic[T_RawModel]):
                 ) from e
         return cls._cached_raw_model
 
-    def to_raw(self) -> T_RawModel:
+    def to_raw(self) -> "T_RawModel":
         """
-        Converts the current object and its fields to tensor representations.
+        Converts the model instance to its raw data representation.
 
         Returns:
-            T_RawModel: An instance of the tensor model.
-        """
+            T_RawModel: The raw data model instance.
 
+        Raises:
+            ValueError: If a field cannot be converted.
+        """
         from atria_core.utilities.tensors import _convert_from_tensor
 
         raw_model_class = self.raw_data_model()
-        apply_results = _recursive_apply(self, RawConvertible, _convert_from_tensor)
-        return raw_model_class.model_validate(apply_results)  # type: ignore[return-value]
+        raw_fields: dict[str, Any] = {}
+        for field_name in self.__class__.model_fields:
+            try:
+                field_value = getattr(self, field_name)
+                if isinstance(field_value, RawConvertible):
+                    raw_fields[field_name] = field_value.to_raw()
+                elif (
+                    isinstance(field_value, list)
+                    and len(field_value) > 0
+                    and isinstance(field_value[0], RawConvertible)
+                ):
+                    raise RuntimeError(
+                        f"Field '{field_name}' contains list of RawConvertible, which is not supported."
+                    )
+                else:
+                    raw_fields[field_name] = _convert_from_tensor(field_value)
+            except Exception as e:
+                raise RuntimeError(
+                    f"Failed to convert field '{field_name}' to raw format."
+                ) from e
+
+        return raw_model_class.model_validate(raw_fields)

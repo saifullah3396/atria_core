@@ -2,7 +2,6 @@ from typing import Any, ClassVar, Generic
 
 from pydantic import BaseModel
 
-from atria_core.types.base._mixins._utils import _recursive_apply
 from atria_core.types.base.types import T_TensorModel
 
 
@@ -64,5 +63,24 @@ class TensorConvertible(BaseModel, Generic[T_TensorModel]):
         from atria_core.utilities.tensors import _convert_to_tensor
 
         tensor_model_class = self.tensor_data_model()
-        apply_results = _recursive_apply(self, TensorConvertible, _convert_to_tensor)  # type: ignore[return-value]
-        return tensor_model_class.model_validate(apply_results)
+        tensor_fields = {}
+        for field_name in self.__class__.model_fields:
+            try:
+                field_value = getattr(self, field_name)
+                if isinstance(field_value, TensorConvertible):
+                    tensor_fields[field_name] = field_value.to_tensor()
+                elif (
+                    isinstance(field_value, list)
+                    and len(field_value) > 0
+                    and isinstance(field_value[0], TensorConvertible)
+                ):
+                    raise RuntimeError(
+                        f"Field '{field_name}' contains list of TensorConvertible, which is not supported."
+                    )
+                else:
+                    tensor_fields[field_name] = _convert_to_tensor(field_value)  # type: ignore[assignment]
+            except Exception as e:
+                raise RuntimeError(
+                    f"Error converting field '{field_name}' to tensor"
+                ) from e
+        return tensor_model_class.model_validate(tensor_fields)
