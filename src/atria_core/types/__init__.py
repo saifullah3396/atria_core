@@ -1,4 +1,12 @@
-from .common import ConfigType, DatasetSplitType, ModelType, OCRType, TaskType
+from .common import (
+    ConfigType,
+    DatasetSplitType,
+    GANStage,
+    ModelType,
+    OCRType,
+    TaskType,
+    TrainingStage,
+)
 from .data_instance._raw.base import BaseDataInstance
 from .data_instance._raw.document_instance import DocumentInstance
 from .data_instance._raw.image_instance import ImageInstance
@@ -47,6 +55,8 @@ __all__ = [
     # datasets splits
     "SplitConfig",
     # common types
+    "TrainingStage",
+    "GANStage",
     "OCRType",
     "DatasetSplitType",
     "ConfigType",
