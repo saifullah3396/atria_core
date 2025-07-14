@@ -102,6 +102,8 @@ PydanticFilePath = Annotated[
     WrapValidator(_path_validator),
     TableSchemaMetadata(pyarrow=pa.string()),
 ]
+
+
 """
 A type annotation for file paths.
 

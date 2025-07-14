@@ -133,12 +133,6 @@ class Batchable(BaseModel):
 
         # If all values are None, return None
         if any(v is None for v in values):
-            logger.warning(
-                f"Found inputs with partial None values in field {field_name}. "
-                "Ignoring field for batch."
-            )
-            return None
-        if all(v is None for v in values):
             return None
 
         # Skip fields marked for skipping

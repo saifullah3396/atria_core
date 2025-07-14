@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from pydantic import model_validator
 
 from atria_core.types.data_instance._raw.base import BaseDataInstance
@@ -8,14 +6,8 @@ from atria_core.types.generic._raw.image import Image
 from atria_core.types.generic._raw.ocr import OCR
 from atria_core.types.typing.common import IntField
 
-if TYPE_CHECKING:
-    from atria_core.types.data_instance._tensor.document_instance import (
-        TensorDocumentInstance,  # noqa
-    )
 
-
-class DocumentInstance(BaseDataInstance["TensorDocumentInstance"]):  # type: ignore[misc]
-    _tensor_model = "atria_core.types.data_instance._tensor.document_instance.TensorDocumentInstance"
+class DocumentInstance(BaseDataInstance):
     page_id: IntField = 0
     total_num_pages: IntField = 1
     image: Image

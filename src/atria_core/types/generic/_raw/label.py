@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from atria_core.types.base.data_model import RawDataModel
 from atria_core.types.typing.common import (
     IntField,
@@ -8,18 +6,13 @@ from atria_core.types.typing.common import (
     StrField,
 )
 
-if TYPE_CHECKING:
-    from atria_core.types.generic._tensor.label import TensorLabel, TensorLabelList  # noqa
 
-
-class Label(RawDataModel["TensorLabel"]):
-    _tensor_model = "atria_core.types.generic._tensor.label.TensorLabel"
+class Label(RawDataModel):
     value: IntField
     name: StrField
 
 
-class LabelList(RawDataModel["TensorLabelList"]):
-    _tensor_model = "atria_core.types.generic._tensor.label.TensorLabelList"
+class LabelList(RawDataModel):
     value: ListIntField
     name: ListStrField
 

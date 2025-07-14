@@ -1,5 +1,5 @@
 import enum
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import Annotated, Any
 
 import pyarrow as pa
 from pydantic import field_validator
@@ -7,20 +7,13 @@ from pydantic import field_validator
 from atria_core.types.base.data_model import RawDataModel
 from atria_core.types.typing.common import ListFloatField, TableSchemaMetadata
 
-if TYPE_CHECKING:
-    from atria_core.types.generic._tensor.bounding_box import (
-        TensorBoundingBox,  # noqa
-        TensorBoundingBoxList,  # noqa
-    )
-
 
 class BoundingBoxMode(str, enum.Enum):
     XYXY = "xyxy"  # (x1, y1, x2, y2)
     XYWH = "xywh"  # (x1, y1, width, height)
 
 
-class BoundingBox(RawDataModel["TensorBoundingBox"]):
-    _tensor_model = "atria_core.types.generic._tensor.bounding_box.TensorBoundingBox"
+class BoundingBox(RawDataModel):
     value: ListFloatField
     mode: Annotated[BoundingBoxMode, TableSchemaMetadata(pyarrow=pa.string())] = (
         BoundingBoxMode.XYXY
@@ -148,10 +141,7 @@ class BoundingBox(RawDataModel["TensorBoundingBox"]):
         return self
 
 
-class BoundingBoxList(RawDataModel["TensorBoundingBoxList"]):
-    _tensor_model = (
-        "atria_core.types.generic._tensor.bounding_box.TensorBoundingBoxList"
-    )
+class BoundingBoxList(RawDataModel):
     value: Annotated[
         list[list[float]], TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64())))
     ]

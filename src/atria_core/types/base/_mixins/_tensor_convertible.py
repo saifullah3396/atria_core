@@ -1,74 +1,35 @@
-from typing import Any, ClassVar, Generic
+from typing import Self
 
-from pydantic import BaseModel
-
-from atria_core.types.base.types import T_TensorModel
+from pydantic import BaseModel, PrivateAttr
 
 
-class TensorConvertible(BaseModel, Generic[T_TensorModel]):
+class TensorConvertible(BaseModel):
     """
-    A mixin class for converting models to their tensor data representation.
+    A mixin class for converting models to their tensor data representation and back.
     """
 
-    _tensor_model: ClassVar[str]
-    _cached_tensor_model: ClassVar[Any]
+    _is_tensor = PrivateAttr(default=False)
 
-    @classmethod
-    def tensor_data_model(cls) -> type[T_TensorModel]:
-        import importlib
+    def to_tensor(self):
+        from atria_core.types.typing.imports import TORCH_AVAILABLE
 
-        try:
-            import torch  # type: ignore[import]  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "PyTorch is required for tensor operations but is not installed. "
-                "Please install it atria with torch dependency."
-                "uv add atria-core --extra torch-cpu # or torch-gpu"
-            )
+        assert TORCH_AVAILABLE, "Torch is not available. Cannot convert to tensor."
+        if not self._is_tensor:
+            self._to_tensor()
+            self._is_tensor = True
+        return self
 
-        if not hasattr(cls, "_cached_tensor_model"):
-            try:
-                module_name, class_name = cls._tensor_model.rsplit(".", 1)
-            except ValueError as e:
-                raise ValueError(
-                    f"Invalid tensor model path '{cls._tensor_model}'. "
-                    "Expected format: 'module.path.ClassName'"
-                ) from e
+    def _to_tensor(self):
+        from atria_core.types.typing.imports import TORCH_AVAILABLE
 
-            try:
-                module = importlib.import_module(module_name)
-            except ImportError as e:
-                raise ImportError(
-                    f"Could not import module '{module_name}' for tensor model"
-                ) from e
-
-            try:
-                cls._cached_tensor_model = getattr(module, class_name)
-            except AttributeError as e:
-                raise AttributeError(
-                    f"Class '{class_name}' not found in module '{module_name}'"
-                ) from e
-
-        cls.model_rebuild()
-        return cls._cached_tensor_model
-
-    def to_tensor(self) -> T_TensorModel:
-        """
-        Converts the current object and its fields to tensor representations.
-
-        Returns:
-            T_TensorModel: An instance of the tensor model.
-        """
-
+        assert TORCH_AVAILABLE, "Torch is not available. Cannot convert to tensor."
         from atria_core.utilities.tensors import _convert_to_tensor
 
-        tensor_model_class = self.tensor_data_model()
-        tensor_fields = {}
         for field_name in self.__class__.model_fields:
             try:
                 field_value = getattr(self, field_name)
                 if isinstance(field_value, TensorConvertible):
-                    tensor_fields[field_name] = field_value.to_tensor()
+                    setattr(self, field_name, field_value._to_tensor())
                 elif (
                     isinstance(field_value, list)
                     and len(field_value) > 0
@@ -78,9 +39,35 @@ class TensorConvertible(BaseModel, Generic[T_TensorModel]):
                         f"Field '{field_name}' contains list of TensorConvertible, which is not supported."
                     )
                 else:
-                    tensor_fields[field_name] = _convert_to_tensor(field_value)  # type: ignore[assignment]
+                    setattr(self, field_name, _convert_to_tensor(field_value))
             except Exception as e:
                 raise RuntimeError(
                     f"Error converting field '{field_name}' to tensor"
                 ) from e
-        return tensor_model_class.model_validate(tensor_fields)
+
+    def to_raw(self) -> Self:
+        if self._is_tensor:
+            from atria_core.utilities.tensors import _convert_from_tensor
+
+            for field_name in self.__class__.model_fields:
+                try:
+                    field_value = getattr(self, field_name)
+                    if isinstance(field_value, TensorConvertible):
+                        setattr(self, field_name, field_value.to_raw())
+                    elif (
+                        isinstance(field_value, list)
+                        and len(field_value) > 0
+                        and isinstance(field_value[0], TensorConvertible)
+                    ):
+                        raise RuntimeError(
+                            f"Field '{field_name}' contains list of TensorConvertible, which is not supported."
+                        )
+                    else:
+                        setattr(self, field_name, _convert_from_tensor(field_value))
+                except Exception as e:
+                    raise RuntimeError(
+                        f"Error converting field '{field_name}' to tensor"
+                    ) from e
+
+            self._is_tensor = False
+        return self

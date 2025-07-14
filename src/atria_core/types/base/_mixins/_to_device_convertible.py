@@ -1,9 +1,8 @@
-from typing import TYPE_CHECKING, Generic, Self
+from typing import TYPE_CHECKING, Self
 
 from pydantic import BaseModel, PrivateAttr
 
 from atria_core.logger.logger import get_logger
-from atria_core.types.base.types import T_RawModel
 
 if TYPE_CHECKING:
     import torch
@@ -11,7 +10,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class ToDeviceConvertible(BaseModel, Generic[T_RawModel]):
+class ToDeviceConvertible(BaseModel):
     """
     A mixin class for converting PyTorch tensors within Pydantic models to different devices.
 
@@ -72,13 +71,12 @@ class ToDeviceConvertible(BaseModel, Generic[T_RawModel]):
             assert gpu_model.device.type == "cuda"
             ```
         """
-        if self._device != device:
-            from atria_core.utilities.tensors import _convert_to_device
+        from atria_core.utilities.tensors import _convert_to_device
 
-            for field_name in self.__class__.model_fields:
-                field_value = getattr(self, field_name)
-                setattr(self, field_name, _convert_to_device(field_value, device))
-            self._device = device
+        for field_name in self.__class__.model_fields:
+            field_value = getattr(self, field_name)
+            setattr(self, field_name, _convert_to_device(field_value, device))
+        self._device = device
         return self
 
     def to_gpu(self, gpu_id: int = 0) -> Self:

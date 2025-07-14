@@ -12,12 +12,11 @@ from rich.pretty import RichReprResult
 
 from atria_core.logger.logger import get_logger
 from atria_core.types.base._mixins._loadable import Loadable
-from atria_core.types.base._mixins._raw_convertible import RawConvertible
 from atria_core.types.base._mixins._repeatable import Repeatable
 from atria_core.types.base._mixins._table_serializable import TableSerializable
 from atria_core.types.base._mixins._tensor_convertible import TensorConvertible
 from atria_core.types.base._mixins._to_device_convertible import ToDeviceConvertible
-from atria_core.types.base.types import T_RawModel, T_TensorModel
+from atria_core.types.base.types import T_RawModel
 from atria_core.utilities.repr import RepresentationMixin
 
 logger = get_logger(__name__)
@@ -29,13 +28,14 @@ class BaseDataModel(RepresentationMixin, BaseModel):  # type: ignore[misc]
 
 class RawDataModel(  # type: ignore[misc]
     BaseDataModel,
-    TensorConvertible[T_TensorModel],
+    TensorConvertible,
     Loadable,
+    Repeatable,
+    ToDeviceConvertible,
     TableSerializable,
-    Generic[T_TensorModel],
 ):
     model_config = ConfigDict(
-        arbitrary_types_allowed=True, validate_assignment=True, extra="forbid"
+        arbitrary_types_allowed=True, validate_assignment=False, extra="forbid"
     )
 
     @classmethod
@@ -85,17 +85,62 @@ class RawDataModel(  # type: ignore[misc]
             self.__pydantic_fields_set__.add(name)
 
     def model_dump(self, *args, **kwargs):
+        if self._is_tensor:
+            self.to_raw()
         return super().model_dump(*args, round_trip=True, **kwargs)
 
     def model_dump_json(self, *args, **kwargs):
+        if self._is_tensor:
+            self.to_raw()
         return super().model_dump_json(*args, round_trip=True, **kwargs)
+
+    def __repr__(self) -> str:
+        """Custom repr to include device information."""
+
+        if self._is_tensor:
+            import torch
+
+            from atria_core.constants import _TORCH_PRINT_OPTIONS_PROFILE
+
+            # Set the print options for tensors
+            torch.set_printoptions(profile=_TORCH_PRINT_OPTIONS_PROFILE)
+
+            base_repr = super().__repr__()
+            device_info = f" (device: {getattr(self, '_device', 'unknown')})"
+
+            # Insert device info before the closing parenthesis
+            if base_repr.endswith(")"):
+                return base_repr[:-1] + device_info + ")"
+            else:
+                return base_repr + device_info
+        else:
+            return super().__repr__()
+
+    def __str__(self) -> str:
+        """Custom str to include device information."""
+        if self._is_tensor:
+            import torch
+
+            from atria_core.constants import _TORCH_PRINT_OPTIONS_PROFILE
+
+            torch.set_printoptions(profile=_TORCH_PRINT_OPTIONS_PROFILE)
+
+            base_str = super().__str__()
+            device_info = f" (device: {getattr(self, '_device', 'unknown')})"
+
+            # Insert device info before the closing parenthesis
+            if base_str.endswith(")"):
+                return base_str[:-1] + device_info + ")"
+            else:
+                return base_str + device_info
+        else:
+            return super().__str__()
 
 
 class TensorDataModel(  # type: ignore[misc]
     BaseDataModel,
     Repeatable,
     ToDeviceConvertible,
-    RawConvertible[T_RawModel],
     RepresentationMixin,
     Generic[T_RawModel],
 ):

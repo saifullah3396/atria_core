@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import Annotated, Any
 
 import pyarrow as pa
 from pydantic import field_validator
@@ -7,12 +7,6 @@ from atria_core.types.base.data_model import RawDataModel
 from atria_core.types.generic._raw.bounding_box import BoundingBox, BoundingBoxList
 from atria_core.types.generic._raw.label import Label, LabelList
 from atria_core.types.typing.common import BoolField, ListBoolField, TableSchemaMetadata
-
-if TYPE_CHECKING:
-    from atria_core.types.generic._tensor.annotated_object import (
-        TensorAnnotatedObject,  # noqa
-        TensorAnnotatedObjectList,  # noqa
-    )
 
 
 def _validate_segmentation_field(v) -> list[list[float]] | None:
@@ -26,10 +20,7 @@ def _validate_segmentation_field(v) -> list[list[float]] | None:
     return v
 
 
-class AnnotatedObject(RawDataModel["TensorAnnotatedObject"]):
-    _tensor_model = (
-        "atria_core.types.generic._tensor.annotated_object.TensorAnnotatedObject"
-    )
+class AnnotatedObject(RawDataModel):
     label: Label
     bbox: BoundingBox
     segmentation: Annotated[
@@ -47,10 +38,7 @@ class AnnotatedObject(RawDataModel["TensorAnnotatedObject"]):
         return _validate_segmentation_field(value)
 
 
-class AnnotatedObjectList(RawDataModel["TensorAnnotatedObjectList"]):
-    _tensor_model = (
-        "atria_core.types.generic._tensor.annotated_object.TensorAnnotatedObjectList"
-    )
+class AnnotatedObjectList(RawDataModel):
     label: LabelList
     bbox: BoundingBoxList
     segmentation: Annotated[

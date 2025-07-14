@@ -1,6 +1,6 @@
 import ast
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar
 
 import pyarrow as pa
 from pydantic import field_serializer, field_validator
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
     from atria_core.types.generic._tensor.ocr import TensorOCR  # noqa
 
 
-class OCR(RawDataModel["TensorOCR"]):
-    _tensor_model = "atria_core.types.generic._tensor.ocr.TensorOCR"
+class OCR(RawDataModel):
+    _batch_merge_fields: ClassVar[list[str] | None] = ["type"]
     file_path: OptStrField = None
     type: Annotated[OCRType | None, TableSchemaMetadata(pyarrow=pa.string())] = None
     content: Annotated[str | None, TableSchemaMetadata(pyarrow=pa.binary())] = None

@@ -10,9 +10,6 @@ if TYPE_CHECKING:
     )
 
 
-class ImageInstance(BaseDataInstance["TensorImageInstance"]):  # type: ignore[misc]
-    _tensor_model = (
-        "atria_core.types.data_instance._tensor.image_instance.TensorImageInstance"
-    )
+class ImageInstance(BaseDataInstance):  # type: ignore[misc]
     image: Image
     gt: GroundTruth = GroundTruth()

@@ -17,10 +17,7 @@ if TYPE_CHECKING:
     )
 
 
-class QuestionAnswerPair(RawDataModel["TensorQuestionAnswerPair"]):
-    _tensor_model = (
-        "atria_core.types.generic._tensor.question_answer_pair.TensorQuestionAnswerPair"
-    )
+class QuestionAnswerPair(RawDataModel):
     id: IntField
     question_text: StrField
     answer_start: ListIntField
@@ -38,17 +35,9 @@ class QuestionAnswerPair(RawDataModel["TensorQuestionAnswerPair"]):
         return self
 
 
-class TokenizedQuestionAnswerPair(RawDataModel["TensorTokenizedQuestionAnswerPair"]):
+class TokenizedQuestionAnswerPair(RawDataModel):
     answer_starts: ListIntField
     answer_ends: ListIntField
-
-    @classmethod
-    def tensor_data_model(self):
-        from atria_core.types.generic._tensor.question_answer_pair import (
-            TensorTokenizedQuestionAnswerPair,
-        )
-
-        return TensorTokenizedQuestionAnswerPair
 
     @model_validator(mode="after")
     def validate_answer_field_lengths(self):
