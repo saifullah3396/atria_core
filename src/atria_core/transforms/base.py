@@ -9,8 +9,12 @@ from atria_core.utilities.repr import RepresentationMixin
 
 
 class DataTransform(RepresentationMixin):
-    def __init__(self, input_path: str | None = None):
-        self.input_path = input_path
+    def __init__(self, apply_path: str | None = None):
+        self.apply_path = apply_path
+
+    @property
+    def name(self) -> str:
+        return self.__class__.__name__
 
     @abstractmethod
     def _apply_transforms(self, input: Any) -> Any:
@@ -21,15 +25,19 @@ class DataTransform(RepresentationMixin):
     def _validate_and_apply_transforms(
         self, input: Any | Mapping[str, Any]
     ) -> Mapping[str, Any]:
-        if self.input_path is not None:
-            attrs = self.input_path.split(".")
+        if self.apply_path is not None:
+            attrs = self.apply_path.split(".")
             obj = input
             for attr in attrs[:-1]:
                 obj = getattr(obj, attr)
             current_attr = getattr(obj, attrs[-1])
-            assert current_attr is not None, (
-                f"{self.__class__.__name__} transform requires {self.input_path} to be present in the sample."
-            )
+            if current_attr is None:
+                # If the attribute is None, we cannot apply the transformation
+                # and should raise an error or handle it gracefully.
+                raise ValueError(
+                    f"You must provide a valid input for '{self.apply_path}' to apply the transformation '{self.name}'."
+                    f"'{current_attr}' in object {obj}"
+                )
             setattr(obj, attrs[-1], self._apply_transforms(current_attr))
             return input
         else:
