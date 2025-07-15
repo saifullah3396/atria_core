@@ -17,9 +17,8 @@ Version: 1.0.0
 License: MIT
 """
 
-from rich.pretty import RichReprResult, pretty_repr
-
 from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
+from rich.pretty import RichReprResult, pretty_repr
 
 
 class RepresentationMixin:
@@ -40,7 +39,7 @@ class RepresentationMixin:
         """
         return self.__class__.__name__
 
-    def __rich_repr__(self) -> RichReprResult:
+    def __rich_repr__(self) -> RichReprResult:  # type: ignore
         """
         Generates a rich representation of the object.
 

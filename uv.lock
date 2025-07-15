@@ -2,15 +2,15 @@ version = 1
 revision = 2
 requires-python = "==3.11.*"
 resolution-markers = [
-    "(platform_machine != 'aarch64' and extra != 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu') or (sys_platform != 'linux' and extra != 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu')",
-    "platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu'",
-    "(platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-10-atria-core-torch-cpu' and extra != 'extra-10-atria-core-torch-gpu') or (sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-10-atria-core-torch-cpu' and extra != 'extra-10-atria-core-torch-gpu')",
-    "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-10-atria-core-torch-cpu' and extra != 'extra-10-atria-core-torch-gpu') or (sys_platform == 'darwin' and extra == 'extra-10-atria-core-torch-cpu' and extra != 'extra-10-atria-core-torch-gpu')",
-    "extra != 'extra-10-atria-core-torch-cpu' and extra != 'extra-10-atria-core-torch-gpu'",
+    "(platform_machine != 'aarch64' and extra != 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu') or (sys_platform != 'linux' and extra != 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu')",
+    "platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu'",
+    "(platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-atria-core-torch-cpu' and extra != 'group-10-atria-core-torch-gpu') or (sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-atria-core-torch-cpu' and extra != 'group-10-atria-core-torch-gpu')",
+    "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'group-10-atria-core-torch-cpu' and extra != 'group-10-atria-core-torch-gpu') or (sys_platform == 'darwin' and extra == 'group-10-atria-core-torch-cpu' and extra != 'group-10-atria-core-torch-gpu')",
+    "extra != 'group-10-atria-core-torch-cpu' and extra != 'group-10-atria-core-torch-gpu'",
 ]
 conflicts = [[
-    { package = "atria-core", extra = "torch-cpu" },
-    { package = "atria-core", extra = "torch-gpu" },
+    { package = "atria-core", group = "torch-cpu" },
+    { package = "atria-core", group = "torch-gpu" },
 ]]
 
 [[package]]
@@ -49,16 +49,18 @@ dependencies = [
 test = [
     { name = "coverage" },
 ]
+
+[package.dev-dependencies]
 torch-cpu = [
-    { name = "torch", version = "2.1.2", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-10-atria-core-torch-cpu') or (platform_machine != 'aarch64' and extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu') or (sys_platform == 'darwin' and extra == 'extra-10-atria-core-torch-cpu') or (sys_platform != 'linux' and extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu')" },
-    { name = "torch", version = "2.1.2+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-10-atria-core-torch-cpu') or (sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-10-atria-core-torch-cpu') or (sys_platform == 'darwin' and extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu') or (sys_platform == 'linux' and extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu')" },
-    { name = "torchvision", version = "0.16.2", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-10-atria-core-torch-cpu') or (platform_machine != 'aarch64' and extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu') or (sys_platform == 'darwin' and extra == 'extra-10-atria-core-torch-cpu') or (sys_platform != 'linux' and extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu')" },
-    { name = "torchvision", version = "0.16.2+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'extra-10-atria-core-torch-cpu') or (sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'extra-10-atria-core-torch-cpu') or (sys_platform == 'darwin' and extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu') or (sys_platform == 'linux' and extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu')" },
+    { name = "torch", version = "2.1.2", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'group-10-atria-core-torch-cpu') or (platform_machine != 'aarch64' and extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu') or (sys_platform == 'darwin' and extra == 'group-10-atria-core-torch-cpu') or (sys_platform != 'linux' and extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu')" },
+    { name = "torch", version = "2.1.2+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-atria-core-torch-cpu') or (sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-atria-core-torch-cpu') or (sys_platform == 'darwin' and extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu') or (sys_platform == 'linux' and extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu')" },
+    { name = "torchvision", version = "0.16.2", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'group-10-atria-core-torch-cpu') or (platform_machine != 'aarch64' and extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu') or (sys_platform == 'darwin' and extra == 'group-10-atria-core-torch-cpu') or (sys_platform != 'linux' and extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu')" },
+    { name = "torchvision", version = "0.16.2+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-atria-core-torch-cpu') or (sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-atria-core-torch-cpu') or (sys_platform == 'darwin' and extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu') or (sys_platform == 'linux' and extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu')" },
 ]
 torch-gpu = [
     { name = "torch", version = "2.1.2+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" } },
-    { name = "torchvision", version = "0.16.2", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-10-atria-core-torch-gpu') or (platform_machine != 'aarch64' and extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu') or (sys_platform != 'linux' and extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu')" },
-    { name = "torchvision", version = "0.16.2+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "(platform_machine != 'aarch64' and extra == 'extra-10-atria-core-torch-gpu') or (sys_platform != 'linux' and extra == 'extra-10-atria-core-torch-gpu') or (extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu')" },
+    { name = "torchvision", version = "0.16.2", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'group-10-atria-core-torch-gpu') or (platform_machine != 'aarch64' and extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu') or (sys_platform != 'linux' and extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu')" },
+    { name = "torchvision", version = "0.16.2+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "(platform_machine != 'aarch64' and extra == 'group-10-atria-core-torch-gpu') or (sys_platform != 'linux' and extra == 'group-10-atria-core-torch-gpu') or (extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu')" },
 ]
 
 [package.metadata]
@@ -74,15 +76,19 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=20.0.0" },
     { name = "pydantic", specifier = ">=2.11.7" },
     { name = "rich", specifier = "==14.0.0" },
-    { name = "torch", marker = "extra == 'torch-cpu'", specifier = "==2.1.2", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "atria-core", extra = "torch-cpu" } },
-    { name = "torch", marker = "extra == 'torch-gpu'", specifier = "==2.1.2", index = "https://download.pytorch.org/whl/cu121", conflict = { package = "atria-core", extra = "torch-gpu" } },
-    { name = "torchvision", marker = "extra == 'torch-cpu'", specifier = "==0.16.2", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "atria-core", extra = "torch-cpu" } },
-    { name = "torchvision", marker = "extra == 'torch-gpu'", specifier = "==0.16.2", index = "https://download.pytorch.org/whl/cu121", conflict = { package = "atria-core", extra = "torch-gpu" } },
 ]
-provides-extras = ["torch-cpu", "torch-gpu", "test"]
+provides-extras = ["test"]
 
 [package.metadata.requires-dev]
 dev = []
+torch-cpu = [
+    { name = "torch", specifier = "==2.1.2", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "atria-core", group = "torch-cpu" } },
+    { name = "torchvision", specifier = "==0.16.2", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "atria-core", group = "torch-cpu" } },
+]
+torch-gpu = [
+    { name = "torch", specifier = "==2.1.2", index = "https://download.pytorch.org/whl/cu121", conflict = { package = "atria-core", group = "torch-gpu" } },
+    { name = "torchvision", specifier = "==0.16.2", index = "https://download.pytorch.org/whl/cu121", conflict = { package = "atria-core", group = "torch-gpu" } },
+]
 
 [[package]]
 name = "beautifulsoup4"
@@ -183,7 +189,7 @@ name = "humanfriendly"
 version = "10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyreadline3", marker = "sys_platform == 'win32' or (extra == 'extra-10-atria-core-torch-cpu' and extra == 'extra-10-atria-core-torch-gpu')" },
+    { name = "pyreadline3", marker = "sys_platform == 'win32' or (extra == 'group-10-atria-core-torch-cpu' and extra == 'group-10-atria-core-torch-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cc/3f/2c29224acb2e2df4d2046e4c73ee2662023c58ff5b113c4c1adac0886c43/humanfriendly-10.0.tar.gz", hash = "sha256:6b0b831ce8f15f7300721aa49829fc4e83921a9a301cc7f606be6686a2288ddc", size = 360702, upload_time = "2021-09-17T21:40:43.31Z" }
 wheels = [
@@ -635,7 +641,7 @@ name = "triton"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "filelock", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "filelock" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5c/c1/54fffb2eb13d293d9a429fead3646752ea190de0229bcf3d591ba2481263/triton-2.1.0-0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:919b06453f0033ea52c13eaf7833de0e57db3178d23d4e04f9fc71c4f2c32bf8", size = 89234153, upload_time = "2023-09-01T07:26:20.161Z" },

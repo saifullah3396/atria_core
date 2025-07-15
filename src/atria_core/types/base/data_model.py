@@ -2,6 +2,7 @@ import types
 from typing import Any, Union, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict
+from rich.repr import RichReprResult
 
 from atria_core.logger.logger import get_logger
 from atria_core.types.base._mixins._loadable import Loadable
@@ -63,53 +64,19 @@ class BaseDataModel(  # type: ignore[misc]
         cls.model_rebuild(force=True)
 
     def model_dump(self, *args, **kwargs):
-        if self._is_tensor:
-            self.to_raw()
+        self.to_raw()
         return super().model_dump(*args, round_trip=True, **kwargs)
 
     def model_dump_json(self, *args, **kwargs):
-        if self._is_tensor:
-            self.to_raw()
+        self.to_raw()
         return super().model_dump_json(*args, round_trip=True, **kwargs)
 
-    def __repr__(self) -> str:
-        """Custom repr to include device information."""
+    def __rich_repr__(self) -> RichReprResult:  # type: ignore
+        """
+        Generates a rich representation of the object.
 
-        if self._is_tensor:
-            import torch
-
-            from atria_core.constants import _TORCH_PRINT_OPTIONS_PROFILE
-
-            # Set the print options for tensors
-            torch.set_printoptions(profile=_TORCH_PRINT_OPTIONS_PROFILE)
-
-            base_repr = super().__repr__()
-            device_info = f" (device: {getattr(self, '_device', 'unknown')})"
-
-            # Insert device info before the closing parenthesis
-            if base_repr.endswith(")"):
-                return base_repr[:-1] + device_info + ")"
-            else:
-                return base_repr + device_info
-        else:
-            return super().__repr__()
-
-    def __str__(self) -> str:
-        """Custom str to include device information."""
-        if self._is_tensor:
-            import torch
-
-            from atria_core.constants import _TORCH_PRINT_OPTIONS_PROFILE
-
-            torch.set_printoptions(profile=_TORCH_PRINT_OPTIONS_PROFILE)
-
-            base_str = super().__str__()
-            device_info = f" (device: {getattr(self, '_device', 'unknown')})"
-
-            # Insert device info before the closing parenthesis
-            if base_str.endswith(")"):
-                return base_str[:-1] + device_info + ")"
-            else:
-                return base_str + device_info
-        else:
-            return super().__str__()
+        Yields:
+            RichReprResult: A generator of key-value pairs or values for the object's attributes.
+        """
+        yield from super().__rich_repr__()
+        yield "device", getattr(self, "_device", "cpu")

@@ -1,6 +1,6 @@
 from typing import Self
 
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel
 
 
 class TensorConvertible(BaseModel):
@@ -8,21 +8,11 @@ class TensorConvertible(BaseModel):
     A mixin class for converting models to their tensor data representation and back.
     """
 
-    _is_tensor = PrivateAttr(default=False)
-
     def to_tensor(self):
-        from atria_core.types.typing.imports import TORCH_AVAILABLE
-
-        assert TORCH_AVAILABLE, "Torch is not available. Cannot convert to tensor."
-        if not self._is_tensor:
-            self._to_tensor()
-            self._is_tensor = True
+        self._to_tensor()
         return self
 
     def _to_tensor(self) -> None:
-        from atria_core.types.typing.imports import TORCH_AVAILABLE
-
-        assert TORCH_AVAILABLE, "Torch is not available. Cannot convert to tensor."
         from atria_core.utilities.tensors import _convert_to_tensor
 
         for field_name in self.__class__.model_fields:
@@ -46,9 +36,7 @@ class TensorConvertible(BaseModel):
                 ) from e
 
     def to_raw(self) -> Self:
-        if self._is_tensor:
-            self._to_raw()
-            self._is_tensor = False
+        self._to_raw()
         return self
 
     def _to_raw(self) -> None:

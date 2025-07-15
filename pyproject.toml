@@ -28,14 +28,6 @@ dependencies = [
 allow-direct-references = true
 
 [project.optional-dependencies]
-torch-cpu = [
-  "torch==2.1.2",
-  "torchvision==0.16.2",
-]
-torch-gpu = [
-  "torch==2.1.2",
-  "torchvision==0.16.2",
-]
 test = ["coverage"]
 
 [tool.coverage.report]
@@ -116,20 +108,21 @@ xfail_strict = true         # Treat tests that are marked as xfail but pass as t
 
 [tool.uv]
 managed = true
+default-groups = ["torch-cpu"]
 conflicts = [
   [
-    { extra = "torch-cpu" },
-    { extra = "torch-gpu" },
+    { group = "torch-cpu" },
+    { group = "torch-gpu" },
   ],
 ]
 [tool.uv.sources]
 torch = [
-  { index = "pytorch-cpu", extra = "torch-cpu"},
-  { index = "pytorch-cu121", extra = "torch-gpu" },
+  { index = "pytorch-cpu", group = "torch-cpu"},
+  { index = "pytorch-cu121", group = "torch-gpu" },
 ]
 torchvision = [
-  { index = "pytorch-cpu", extra = "torch-cpu"},
-  { index = "pytorch-cu121", extra = "torch-gpu" },
+  { index = "pytorch-cpu", group = "torch-cpu"},
+  { index = "pytorch-cu121", group = "torch-gpu" },
 ]
 
 [[tool.uv.index]]
@@ -165,6 +158,14 @@ dev = [
     # "ipykernel>=6.29.5",
     # "factory-boy>=3.3.3",
     # "bs4>=0.0.2",
+]
+torch-cpu = [
+  "torch==2.1.2",
+  "torchvision==0.16.2",
+]
+torch-gpu = [
+  "torch==2.1.2",
+  "torchvision==0.16.2",
 ]
 
 [tool.mypy]

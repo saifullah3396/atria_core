@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Self, Union
 
 from pydantic import model_validator
+from rich.repr import RichReprResult
 
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import BaseDataModel
@@ -20,6 +21,14 @@ class Image(BaseDataModel):
     source_width: OptIntField = None
     source_height: OptIntField = None
 
+    @property
+    def width(self) -> int:
+        return self.size[0] if self.size else None
+
+    @property
+    def height(self) -> int:
+        return self.size[1] if self.size else None
+
     @model_validator(mode="after")
     def _validate_dims(self):
         if self.source_width is None or self.source_height is None:
@@ -36,10 +45,12 @@ class Image(BaseDataModel):
 
     @property
     def dtype(self) -> "torch.dtype":
+        import torch
+
         assert self.content is not None, (
             "Image content is not loaded. Call load() first or assign content directly."
         )
-        if self._is_tensor:
+        if isinstance(self.content, torch.Tensor):
             import torch
 
             assert isinstance(self.content, torch.Tensor), (
@@ -51,10 +62,12 @@ class Image(BaseDataModel):
 
     @property
     def size(self) -> tuple[int, int] | None:
+        import torch
+
         assert self.content is not None, (
             "Image content is not loaded. Call load() first or assign content directly."
         )
-        if self._is_tensor:
+        if isinstance(self.content, torch.Tensor):
             import torch
 
             assert isinstance(self.content, torch.Tensor), (
@@ -62,18 +75,20 @@ class Image(BaseDataModel):
             )
             return (self.content.shape[-1], self.content.shape[-2])
         else:
-            return (
-                (self.source_width, self.source_height)
-                if self.source_width is not None and self.source_height is not None
-                else None
-            )
+            if self._is_batched:
+                raise ValueError(
+                    "Size is not defined for batched images. Use size instead."
+                )
+            return self.content.size
 
     @property
     def shape(self) -> Union[tuple[int, ...], "torch.Size"]:
+        import torch
+
         assert self.content is not None, (
             "Image content is not loaded. Call load() first or assign content directly."
         )
-        if self._is_tensor:
+        if isinstance(self.content, torch.Tensor):
             import torch
 
             assert isinstance(self.content, torch.Tensor), (
@@ -81,14 +96,20 @@ class Image(BaseDataModel):
             )
             return self.content.shape
         else:
+            if self._is_batched:
+                raise ValueError(
+                    "Shape is not defined for batched images. Use size instead."
+                )
             return (len(self.content.getbands()), *self.content.size)
 
     @property
     def channels(self) -> int | list[int]:
+        import torch
+
         assert self.content is not None, (
             "Image content is not loaded. Call load() first or assign content directly."
         )
-        if self._is_tensor:
+        if isinstance(self.content, torch.Tensor):
             import torch
 
             assert isinstance(self.content, torch.Tensor), (
@@ -137,7 +158,7 @@ class Image(BaseDataModel):
         import torch
         from torchvision.transforms.functional import to_tensor
 
-        if self.content is not None:
+        if self.content is not None and not isinstance(self.content, torch.Tensor):
             if self._is_batched:
                 assert isinstance(self.content, list) and len(self.content) > 0, (
                     "Expected a list of PIL Images for batched images."
@@ -162,10 +183,12 @@ class Image(BaseDataModel):
             self.content = to_pil_image(self.content)
 
     def to_rgb(self) -> Self:
+        import torch
+
         assert self.content is not None, (
             "Image content is not loaded. Call load() first."
         )
-        if self._is_tensor:
+        if isinstance(self.content, torch.Tensor):
             repeats = (1, 3, 1, 1) if self._is_batched else (3, 1, 1)
             self.content = self.content.repeat(*repeats)
         else:
@@ -177,10 +200,12 @@ class Image(BaseDataModel):
         return self
 
     def to_grayscale(self) -> Self:
+        import torch
+
         assert self.content is not None, (
             "Image content is not loaded. Call load() first."
         )
-        if self._is_tensor:
+        if isinstance(self.content, torch.Tensor):
             from torchvision.transforms.functional import rgb_to_grayscale
 
             self.content = rgb_to_grayscale(self.content, num_output_channels=1)
@@ -193,10 +218,12 @@ class Image(BaseDataModel):
         return self
 
     def resize(self, width: int, height: int) -> Self:
+        import torch
+
         assert self.content is not None, (
             "Image content is not loaded. Call load() first."
         )
-        if self._is_tensor:
+        if isinstance(self.content, torch.Tensor):
             from torchvision.transforms.functional import InterpolationMode, resize
 
             self.content = resize(
@@ -224,10 +251,12 @@ class Image(BaseDataModel):
     def normalize(
         self, mean: float | tuple[float, ...], std: float | tuple[float, ...]
     ) -> Self:
+        import torch
+
         assert self.content is not None, (
             "Image content is not loaded. Call load() first."
         )
-        assert self._is_tensor, (
+        assert isinstance(self.content, torch.Tensor), (
             "Normalization is only supported for tensor images. "
             "Convert the image to tensor first using `to_tensor()`."
         )
@@ -237,3 +266,15 @@ class Image(BaseDataModel):
         std_list = list(std) if isinstance(std, tuple) else [std]
         self.content = normalize(self.content, mean=mean_list, std=std_list)
         return self
+
+    def __rich_repr__(self) -> RichReprResult:  # type: ignore
+        """
+        Generates a rich representation of the object.
+
+        Yields:
+            RichReprResult: A generator of key-value pairs or values for the object's attributes.
+        """
+        yield from super().__rich_repr__()
+        yield "width", self.width
+        yield "height", self.height
+        yield "channels", self.channels

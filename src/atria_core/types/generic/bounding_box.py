@@ -24,8 +24,10 @@ class BoundingBox(BaseDataModel):
     )
 
     def switch_mode(self):
+        import torch
+
         assert not self._is_batched, "Cannot switch mode for batched bounding boxes."
-        if self._is_tensor:
+        if isinstance(self.value, torch.Tensor):
             if self.mode == BoundingBoxMode.XYXY:
                 self.value[..., 2], self.value[..., 3] = self.width, self.height
                 self.mode = BoundingBoxMode.XYWH
@@ -59,7 +61,9 @@ class BoundingBox(BaseDataModel):
         )
 
     def shape(self) -> "torch.Size":
-        if self._is_tensor:
+        import torch
+
+        if isinstance(self.value, torch.Tensor):
             return self.value.shape
         else:
             return (len(self.value),)
@@ -70,84 +74,108 @@ class BoundingBox(BaseDataModel):
 
     @property
     def x1(self) -> Union[float, "torch.Tensor"]:
-        idx = (..., 0) if self._is_tensor else 0
+        import torch
+
+        idx = (..., 0) if isinstance(self.value, torch.Tensor) else 0
         return self.value[idx]
 
     @x1.setter
     def x1(self, value: Union[float, "torch.Tensor"]):
-        idx = (..., 0) if self._is_tensor else 0
+        import torch
+
+        idx = (..., 0) if isinstance(self.value, torch.Tensor) else 0
         self.value[idx] = value
 
     @property
     def y1(self) -> Union[float, "torch.Tensor"]:
-        idx = (..., 1) if self._is_tensor else 1
+        import torch
+
+        idx = (..., 1) if isinstance(self.value, torch.Tensor) else 1
         return self.value[idx]
 
     @y1.setter
     def y1(self, value: Union[float, "torch.Tensor"]):
-        idx = (..., 1) if self._is_tensor else 1
+        import torch
+
+        idx = (..., 1) if isinstance(self.value, torch.Tensor) else 1
         self.value[idx] = value
 
     @property
     def x2(self) -> Union[float, "torch.Tensor"]:
+        import torch
+
         if self.mode == BoundingBoxMode.XYWH:
             return self.x1 + self.width
         else:
-            idx = (..., 2) if self._is_tensor else 2
+            idx = (..., 2) if isinstance(self.value, torch.Tensor) else 2
             return self.value[idx]
 
     @x2.setter
     def x2(self, value: Union[float, "torch.Tensor"]):
+        import torch
+
         if self.mode == BoundingBoxMode.XYWH:
             raise ValueError("Cannot set x2 directly in XYWH mode. Use width instead.")
         else:
-            idx = (..., 2) if self._is_tensor else 2
+            idx = (..., 2) if isinstance(self.value, torch.Tensor) else 2
             self.value[idx] = value
 
     @property
     def y2(self) -> Union[float, "torch.Tensor"]:
+        import torch
+
         if self.mode == BoundingBoxMode.XYWH:
             return self.y1 + self.height
         else:
-            idx = (..., 3) if self._is_tensor else 3
+            idx = (..., 3) if isinstance(self.value, torch.Tensor) else 3
             return self.value[idx]
 
     @y2.setter
     def y2(self, value: Union[float, "torch.Tensor"]):
+        import torch
+
         if self.mode == BoundingBoxMode.XYWH:
             raise ValueError("Cannot set x2 directly in XYWH mode. Use width instead.")
         else:
-            idx = (..., 3) if self._is_tensor else 3
+            idx = (..., 3) if isinstance(self.value, torch.Tensor) else 3
             self.value[idx] = value
 
     @property
     def width(self) -> Union[float, "torch.Tensor"]:
+        import torch
+
         if self.mode == BoundingBoxMode.XYWH:
-            idx = (..., 2) if self._is_tensor else 2
+            idx = (..., 2) if isinstance(self.value, torch.Tensor) else 2
             return self.value[idx]
         else:
             return self.x2 - self.x1
 
     @width.setter
     def width(self, value: Union[float, "torch.Tensor"]):
+        import torch
+
         if self.mode == BoundingBoxMode.XYWH:
-            idx = (..., 2) if self._is_tensor else 2
+            idx = (..., 2) if isinstance(self.value, torch.Tensor) else 2
             self.value[idx] = value
         else:
             raise ValueError("Cannot set width directly in XYXY mode. Use x2 instead.")
 
     @property
     def height(self) -> Union[float, "torch.Tensor"]:
+        import torch
+
         if self.mode == BoundingBoxMode.XYWH:
-            idx = (..., 3) if self._is_tensor else 3
+            idx = (..., 3) if isinstance(self.value, torch.Tensor) else 3
             return self.value[idx]
         else:
             return self.y2 - self.y1
 
     @height.setter
     def height(self, value: Union[float, "torch.Tensor"]):
+        import torch
+
         if self.mode == BoundingBoxMode.XYWH:
-            idx = (..., 3) if self._is_tensor else 3
+            idx = (..., 3) if isinstance(self.value, torch.Tensor) else 3
             self.value[idx] = value
         else:
             raise ValueError("Cannot set height directly in XYXY mode. Use y2 instead.")

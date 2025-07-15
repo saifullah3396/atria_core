@@ -38,7 +38,6 @@ from .generic.label import Label
 from .generic.ocr import OCR
 from .generic.question_answer_pair import (
     QuestionAnswerPair,
-    TokenizedQuestionAnswerPair,
 )
 
 __all__ = [
@@ -82,5 +81,4 @@ __all__ = [
     "VisualQuestionAnswerGT",
     "AnnotatedObject",
     "QuestionAnswerPair",
-    "TokenizedQuestionAnswerPair",
 ]
