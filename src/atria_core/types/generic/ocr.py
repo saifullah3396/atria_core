@@ -1,6 +1,6 @@
 import ast
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar
+from typing import Annotated, Any, ClassVar
 
 import pyarrow as pa
 from pydantic import field_serializer, field_validator
@@ -8,9 +8,6 @@ from pydantic import field_serializer, field_validator
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.common import OCRType
 from atria_core.types.typing.common import OptStrField, TableSchemaMetadata
-
-if TYPE_CHECKING:
-    from atria_core.types.generic._tensor.ocr import TensorOCR  # noqa
 
 
 class OCR(BaseDataModel):

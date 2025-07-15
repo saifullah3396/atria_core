@@ -9,7 +9,6 @@ from atria_core.types.typing.common import OptIntField, OptStrField
 from atria_core.utilities.encoding import ValidatedPILImage
 
 if TYPE_CHECKING:
-    from atria_core.types.generic._tensor.image import TensorImage  # noqa
     import torch
 
 logger = get_logger(__name__)

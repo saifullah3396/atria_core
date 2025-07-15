@@ -4,6 +4,9 @@ from faker import Faker
 from atria_core.types.common import OCRType
 from atria_core.types.data_instance.document_instance import DocumentInstance
 from atria_core.types.data_instance.image_instance import ImageInstance
+from atria_core.types.data_instance.tokenized_document_instance import (
+    TokenizedDocumentInstance,
+)
 from atria_core.types.generic.annotated_object import (
     AnnotatedObject,
     AnnotatedObjectList,
@@ -297,30 +300,30 @@ class DocumentInstanceFactory(factory.Factory):
     gt = factory.SubFactory(GroundTruthFactory)
 
 
-# class TokenizedObjectInstanceFactory(factory.Factory):
-#     class Meta:
-#         model = TokenizedDocumentInstance
+class TokenizedDocumentInstanceFactory(factory.Factory):
+    class Meta:
+        model = TokenizedDocumentInstance
 
-#     token_ids = factory.LazyFunction(
-#         lambda: [fake.random_int(min=0, max=1000) for _ in range(16)]
-#     )
-#     word_ids = factory.LazyFunction(
-#         lambda: [fake.random_int(min=0, max=1000) for _ in range(16)]
-#     )
-#     token_labels = factory.LazyFunction(
-#         lambda: [fake.random_int(min=0, max=10) for _ in range(16)]
-#     )
-#     token_type_ids = factory.LazyFunction(
-#         lambda: [fake.random_int(min=0, max=1) for _ in range(16)]
-#     )
-#     attention_mask = factory.LazyFunction(
-#         lambda: [fake.random_int(min=0, max=1) for _ in range(16)]
-#     )
-#     token_bboxes = factory.LazyFunction(
-#         lambda: [[fake.random_int(min=0, max=100) for _ in range(4)] for _ in range(16)]
-#     )
-#     sequence_ids = factory.LazyFunction(
-#         lambda: [fake.random_int(min=0, max=5) for _ in range(16)]
-#     )
-#     image = factory.SubFactory(ImageFactory)
-#     label = factory.SubFactory(LabelFactory)
+    token_ids = factory.LazyFunction(
+        lambda: [fake.random_int(min=0, max=1000) for _ in range(16)]
+    )
+    word_ids = factory.LazyFunction(
+        lambda: [fake.random_int(min=0, max=1000) for _ in range(16)]
+    )
+    token_labels = factory.LazyFunction(
+        lambda: [fake.random_int(min=0, max=10) for _ in range(16)]
+    )
+    token_type_ids = factory.LazyFunction(
+        lambda: [fake.random_int(min=0, max=1) for _ in range(16)]
+    )
+    attention_mask = factory.LazyFunction(
+        lambda: [fake.random_int(min=0, max=1) for _ in range(16)]
+    )
+    token_bboxes = factory.LazyFunction(
+        lambda: [[fake.random_int(min=0, max=100) for _ in range(4)] for _ in range(16)]
+    )
+    sequence_ids = factory.LazyFunction(
+        lambda: [fake.random_int(min=0, max=5) for _ in range(16)]
+    )
+    image = factory.SubFactory(ImageFactory)
+    label = factory.SubFactory(LabelFactory)
