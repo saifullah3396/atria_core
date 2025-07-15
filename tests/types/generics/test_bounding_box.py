@@ -2,7 +2,7 @@ import pyarrow as pa
 import pytest
 
 from atria_core.types.factory import BoundingBoxFactory
-from atria_core.types.generic._raw.bounding_box import BoundingBox
+from atria_core.types.generic.bounding_box import BoundingBox
 from tests.types.data_model_test_base import DataModelTestBase
 from tests.utilities.common import _assert_values_equal
 
@@ -16,14 +16,14 @@ class TestBoundingBox(DataModelTestBase):
 
     def expected_table_schema(self) -> dict[str, pa.DataType]:
         """
-        Expected table schema for the RawDataModel.
+        Expected table schema for the BaseDataModel.
         This should be overridden by child classes to provide specific schemas.
         """
         return {"value": pa.list_(pa.float64()), "mode": pa.string()}
 
     def expected_table_schema_flattened(self) -> dict[str, pa.DataType]:
         """
-        Expected flattened table schema for the RawDataModel.
+        Expected flattened table schema for the BaseDataModel.
         This should be overridden by child classes to provide specific schemas.
         """
         return {"value": pa.list_(pa.float64()), "mode": pa.string()}

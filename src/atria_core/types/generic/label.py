@@ -1,4 +1,4 @@
-from atria_core.types.base.data_model import RawDataModel
+from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import (
     IntField,
     ListIntField,
@@ -7,12 +7,12 @@ from atria_core.types.typing.common import (
 )
 
 
-class Label(RawDataModel):
+class Label(BaseDataModel):
     value: IntField
     name: StrField
 
 
-class LabelList(RawDataModel):
+class LabelList(BaseDataModel):
     value: ListIntField
     name: ListStrField
 

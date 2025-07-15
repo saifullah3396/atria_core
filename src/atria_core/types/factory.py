@@ -2,14 +2,14 @@ import factory
 from faker import Faker
 
 from atria_core.types.common import OCRType
-from atria_core.types.data_instance._raw.document_instance import DocumentInstance
-from atria_core.types.data_instance._raw.image_instance import ImageInstance
-from atria_core.types.generic._raw.annotated_object import (
+from atria_core.types.data_instance.document_instance import DocumentInstance
+from atria_core.types.data_instance.image_instance import ImageInstance
+from atria_core.types.generic.annotated_object import (
     AnnotatedObject,
     AnnotatedObjectList,
 )
-from atria_core.types.generic._raw.bounding_box import BoundingBox, BoundingBoxList
-from atria_core.types.generic._raw.ground_truth import (
+from atria_core.types.generic.bounding_box import BoundingBox, BoundingBoxList
+from atria_core.types.generic.ground_truth import (
     OCRGT,
     SERGT,
     ClassificationGT,
@@ -18,10 +18,10 @@ from atria_core.types.generic._raw.ground_truth import (
     QuestionAnswerGT,
     VisualQuestionAnswerGT,
 )
-from atria_core.types.generic._raw.image import Image
-from atria_core.types.generic._raw.label import Label, LabelList
-from atria_core.types.generic._raw.ocr import OCR
-from atria_core.types.generic._raw.question_answer_pair import (
+from atria_core.types.generic.image import Image
+from atria_core.types.generic.label import Label, LabelList
+from atria_core.types.generic.ocr import OCR
+from atria_core.types.generic.question_answer_pair import (
     QuestionAnswerPair,
     TokenizedQuestionAnswerPair,
 )

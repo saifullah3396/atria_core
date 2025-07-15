@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import model_validator
 
-from atria_core.types.base.data_model import RawDataModel
+from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import (
     IntField,
     ListIntField,
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     )
 
 
-class QuestionAnswerPair(RawDataModel):
+class QuestionAnswerPair(BaseDataModel):
     id: IntField
     question_text: StrField
     answer_start: ListIntField
@@ -35,7 +35,7 @@ class QuestionAnswerPair(RawDataModel):
         return self
 
 
-class TokenizedQuestionAnswerPair(RawDataModel):
+class TokenizedQuestionAnswerPair(BaseDataModel):
     answer_starts: ListIntField
     answer_ends: ListIntField
 

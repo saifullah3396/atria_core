@@ -154,6 +154,7 @@ def _apply_to_type(
     x: Any | Sequence | Mapping | str | bytes,
     input_type: type | tuple[type[Any], Any],
     func: Callable,
+    strict: bool = True,
 ) -> Any | Sequence | Mapping | str | bytes:
     """Apply a function on an object of `input_type` or mapping, or sequence of objects of `input_type`.
 
@@ -178,7 +179,9 @@ def _apply_to_type(
         return cast(Callable, type(x))(
             [_apply_to_type(sample, input_type, func) for sample in x]
         )
-    raise TypeError(f"x must contain {input_type}, dicts or lists; found {type(x)}")
+    if strict:
+        raise TypeError(f"x must contain {input_type}, dicts or lists; found {type(x)}")
+    return x
 
 
 def _convert_to_device(
@@ -195,9 +198,7 @@ def _convert_to_device(
     """
     import torch
 
-    return _apply_to_type(
-        x, torch.Tensor, lambda t: t.to(device) if isinstance(t, torch.Tensor) else t
-    )
+    return _apply_to_type(x, torch.Tensor, lambda t: t.to(device), strict=False)
 
 
 def _validate_tensor(self):

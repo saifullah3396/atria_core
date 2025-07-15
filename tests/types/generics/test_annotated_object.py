@@ -13,7 +13,7 @@ class TestAnnotatedObject(DataModelTestBase):
 
     def expected_table_schema(self) -> dict[str, pa.DataType]:
         """
-        Expected table schema for the RawDataModel.
+        Expected table schema for the BaseDataModel.
         This should be overridden by child classes to provide specific schemas.
         """
         return {
@@ -25,7 +25,7 @@ class TestAnnotatedObject(DataModelTestBase):
 
     def expected_table_schema_flattened(self) -> dict[str, pa.DataType]:
         """
-        Expected flattened table schema for the RawDataModel.
+        Expected flattened table schema for the BaseDataModel.
         This should be overridden by child classes to provide specific schemas.
         """
         return {

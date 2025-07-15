@@ -3,7 +3,7 @@ import pyarrow as pa
 import pytest
 
 from atria_core.logger.logger import get_logger
-from atria_core.types.base.data_model import RawDataModel, TensorDataModel
+from atria_core.types.base.data_model import BaseDataModel
 from tests.utilities.common import _assert_values_equal, _validate_batched_values
 
 logger = get_logger(__name__)
@@ -23,21 +23,21 @@ class DataModelTestBase:
         )
 
     @pytest.fixture(params=list(range(1)))
-    def model_instance(self) -> RawDataModel:
+    def model_instance(self) -> BaseDataModel:
         """
-        Fixture to provide an instance of the RawDataModel for testing.
+        Fixture to provide an instance of the BaseDataModel for testing.
         """
         return self.factory.build()
 
-    def test_initialize(self, model_instance: RawDataModel) -> None:
+    def test_initialize(self, model_instance: BaseDataModel) -> None:
         """
         Test the initialization of the model instance.
         """
-        assert isinstance(model_instance, RawDataModel), (
-            "Model instance is not a RawDataModel"
+        assert isinstance(model_instance, BaseDataModel), (
+            "Model instance is not a BaseDataModel"
         )
 
-    def test_load_unload(self, model_instance: RawDataModel) -> None:
+    def test_load_unload(self, model_instance: BaseDataModel) -> None:
         """
         Test the load method of the model instance.
         """
@@ -47,19 +47,19 @@ class DataModelTestBase:
         model_instance.unload()
         assert not model_instance._is_loaded, "Model instance should be unloaded again"
 
-    def test_to_from_row(self, model_instance: RawDataModel) -> None:
+    def test_to_from_row(self, model_instance: BaseDataModel) -> None:
         """
         Test the conversion to and from a row representation.
         """
         row = model_instance.to_row()
         assert isinstance(row, dict), "Row representation should be a dictionary"
         new_instance = model_instance.from_row(row)
-        assert isinstance(new_instance, RawDataModel), (
-            "New instance should be a RawDataModel"
+        assert isinstance(new_instance, BaseDataModel), (
+            "New instance should be a BaseDataModel"
         )
         assert new_instance == model_instance, "New instance does not match original"
 
-    def test_schema(self, model_instance: RawDataModel) -> None:
+    def test_schema(self, model_instance: BaseDataModel) -> None:
         """
         Test the schema generation of the model instance.
         """
@@ -69,7 +69,7 @@ class DataModelTestBase:
             f"Expected: {self.expected_table_schema()}, Got: {schema}"
         )
 
-    def test_schema_flattened(self, model_instance: RawDataModel) -> None:
+    def test_schema_flattened(self, model_instance: BaseDataModel) -> None:
         """
         Test the schema generation of the model instance.
         """
@@ -79,19 +79,16 @@ class DataModelTestBase:
             f"Expected: {self.expected_table_schema_flattened()}, Got: {schema}"
         )
 
-    def test_to_from_tensor(self, model_instance: RawDataModel) -> None:
+    def test_to_from_tensor(self, model_instance: BaseDataModel) -> None:
         """
         Test the conversion of the model instance to a tensor.
         """
         model_instance.load()
         tensor_model = model_instance.to_tensor()
         assert tensor_model is not None, "Tensor conversion returned None"
-        assert isinstance(tensor_model, model_instance.tensor_data_model()), (
-            "Tensor conversion did not return the expected tensor model type"
-        )
         roundtrip_model = tensor_model.to_raw()
         assert isinstance(roundtrip_model, model_instance.__class__), (
-            "Raw conversion did not return a RawDataModel"
+            "Raw conversion did not return a BaseDataModel"
         )
 
         _assert_values_equal(roundtrip_model, model_instance)
@@ -103,6 +100,8 @@ class DataModelTestBase:
         import torch
 
         def validate_device(device: str | torch.device):
+            print(" model_instance.load()", model_instance.load())
+            print(" model_instance.load()", model_instance.load().to_tensor())
             instance = model_instance.load().to_tensor().to_device(device)
             for key, value in instance.__dict__.items():
                 if isinstance(value, torch.Tensor):
@@ -128,17 +127,15 @@ class DataModelTestBase:
             model_instance.load().to_tensor(),
             model_instance.load().to_tensor(),
         ]
-        batched_instances = instances[0].batched(instances)
-        assert isinstance(batched_instances, TensorDataModel), (
-            "Batched instances should be a TensorDataModel"
-        )
-        assert batched_instances._is_batched, (
+        model_instance = instances[0].batched(instances)
+        assert model_instance._is_batched, (
             "Batched instances should be marked as batched"
         )
 
         for key, value in model_instance.__dict__.items():
             if isinstance(value, torch.Tensor):
+                print("value.shape", value)
                 assert value.shape[0] == len(instances)
                 for i in range(1, len(instances)):
                     _assert_values_equal(value[i], getattr(instances[i], key))
-        _validate_batched_values(batched_instances, instances)
+        _validate_batched_values(model_instance, instances)

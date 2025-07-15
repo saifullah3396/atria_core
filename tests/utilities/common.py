@@ -1,5 +1,5 @@
 from atria_core.logger import get_logger
-from atria_core.types.base.data_model import TensorDataModel
+from atria_core.types.base.data_model import BaseDataModel
 
 logger = get_logger(__name__)
 
@@ -127,7 +127,7 @@ def _validate_batched_values(batched_instances, instances):
             batched_value[0], torch.Tensor
         ):
             continue
-        if isinstance(batched_value, TensorDataModel):
+        if isinstance(batched_value, BaseDataModel):
             child_instances = [  # the test checks at most 1 level deep lists of models
                 [getattr(k, attr_name) for k in instance]
                 if isinstance(instance, list)

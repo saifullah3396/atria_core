@@ -123,10 +123,10 @@ print(f"Confidence scores: {ocr_result.word_confs}")
 from typing import Annotated
 import torch
 import pyarrow as pa
-from atria_core.types.base.data_model import RawDataModel
+from atria_core.types.base.data_model import BaseDataModel
 from atria_core.utilities.encoding import TableSchemaMetadata
 
-class CustomModel(RawDataModel):
+class CustomModel(BaseDataModel):
     name: Annotated[str, TableSchemaMetadata(pyarrow=pa.string())]
     features: torch.Tensor
     confidence: Annotated[float, TableSchemaMetadata(pyarrow=pa.float32())]

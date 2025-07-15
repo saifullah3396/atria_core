@@ -233,7 +233,6 @@ class TableSerializable(BaseModel):
         """
         try:
             schema = self.table_schema_flattened()
-            print("schema", schema)
             data = _flatten_dict(self.model_dump())
 
             if include_none:

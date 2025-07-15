@@ -4,7 +4,7 @@ import torch
 from pydantic import ValidationError
 
 from atria_core.types.factory import LabelFactory
-from atria_core.types.generic._raw.label import Label
+from atria_core.types.generic.label import Label
 from tests.types.data_model_test_base import DataModelTestBase
 
 
@@ -17,14 +17,14 @@ class TestLabel(DataModelTestBase):
 
     def expected_table_schema(self) -> dict[str, pa.DataType]:
         """
-        Expected table schema for the RawDataModel.
+        Expected table schema for the BaseDataModel.
         This should be overridden by child classes to provide specific schemas.
         """
         return {"name": pa.string(), "value": pa.int64()}
 
     def expected_table_schema_flattened(self) -> dict[str, pa.DataType]:
         """
-        Expected flattened table schema for the RawDataModel.
+        Expected flattened table schema for the BaseDataModel.
         This should be overridden by child classes to provide specific schemas.
         """
         return {"name": pa.string(), "value": pa.int64()}
@@ -65,7 +65,7 @@ def test_to_tensor(valid_label: Label) -> None:
 @pytest.fixture
 def scalar_tensor_label() -> Label:
     """Fixture providing a valid Label with scalar tensor value."""
-    return Label(value=torch.tensor(1), name="SingleLabel")
+    return Label(value=1, name="SingleLabel").to_tensor()
 
 
 def test_tensor_label_creates_valid_scalar_instance(scalar_tensor_label: Label) -> None:
@@ -113,9 +113,9 @@ def test_tensor_label_rejects_empty_tensors() -> None:
 
 def test_tensor_label_equality_comparison() -> None:
     """Test equality comparison between Label instances based on value and name."""
-    label1 = Label(value=torch.tensor(1), name="Label1")
-    label2 = Label(value=torch.tensor(1), name="Label1")  # Same as label1
-    label3 = Label(value=torch.tensor(3), name="Label3")  # Different value
+    label1 = Label(value=1, name="Label1").to_tensor()
+    label2 = Label(value=1, name="Label1").to_tensor()  # Same as label1
+    label3 = Label(value=3, name="Label3").to_tensor()  # Different value
 
     # Labels with same value and name should have equal components
     assert torch.equal(label1.value, label2.value)
@@ -127,7 +127,7 @@ def test_tensor_label_equality_comparison() -> None:
 
 def test_tensor_label_batching_functionality() -> None:
     """Test that Label can be batched into a 1D tensor with repeated values."""
-    label = Label(value=torch.tensor(10), name="Label1")
+    label = Label(value=10, name="Label1").to_tensor()
     batch_size = 10
 
     # Create batched version with 10 copies of the same label

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Self, Union
 from pydantic import model_validator
 
 from atria_core.logger.logger import get_logger
-from atria_core.types.base.data_model import RawDataModel
+from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import OptIntField, OptStrField
 from atria_core.utilities.encoding import ValidatedPILImage
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Image(RawDataModel):
+class Image(BaseDataModel):
     file_path: OptStrField = None
     content: ValidatedPILImage = None
     source_width: OptIntField = None
@@ -25,14 +25,14 @@ class Image(RawDataModel):
     def _validate_dims(self):
         if self.source_width is None or self.source_height is None:
             if self.content is not None:
-                self._set_skip_validation("width", self.content.size[0])
-                self._set_skip_validation("height", self.content.size[1])
+                self.source_width = self.content.size[0]
+                self.source_height = self.content.size[1]
             elif self.file_path is not None and Path(self.file_path).exists():
                 import imagesize
 
                 size = imagesize.get(self.file_path)
-                self._set_skip_validation("width", size[0])
-                self._set_skip_validation("height", size[1])
+                self.source_width = size[0]
+                self.source_height = size[1]
         return self
 
     @property
@@ -134,7 +134,7 @@ class Image(RawDataModel):
     def _unload(self) -> None:
         self.content = None
 
-    def _to_tensor(self) -> Self:
+    def _to_tensor(self) -> None:
         import torch
         from torchvision.transforms.functional import to_tensor
 
@@ -154,14 +154,13 @@ class Image(RawDataModel):
                     "Image content is not a PIL Image. Cannot convert to tensor."
                 )
                 self.content = to_tensor(self.content)
-        return self
 
-    def to_raw(self) -> Self:
+    def _to_raw(self) -> None:
+        import torch
         from torchvision.transforms.functional import to_pil_image
 
         if self.content is not None and isinstance(self.content, torch.Tensor):
             self.content = to_pil_image(self.content)
-        return self
 
     def to_rgb(self) -> Self:
         assert self.content is not None, (

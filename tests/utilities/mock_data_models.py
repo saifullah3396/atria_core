@@ -1,9 +1,8 @@
 import factory
-import torch
 from pydantic import Field
 
 from atria_core.logger.logger import get_logger
-from atria_core.types.base.data_model import RawDataModel, TensorDataModel
+from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import (
     FloatField,
     IntField,
@@ -16,7 +15,7 @@ from atria_core.types.typing.common import (
 logger = get_logger(__name__)
 
 
-class MockRawDataModel(RawDataModel):
+class MockBaseDataModel(BaseDataModel):
     required_integer_attribute: IntField
     required_integer_list_attribute: ListIntField
     integer_attribute: IntField = 0
@@ -27,58 +26,18 @@ class MockRawDataModel(RawDataModel):
     float_list_attribute: ListFloatField = Field(default_factory=ListFloatField)
     string_list_attribute: ListStrField = Field(default_factory=ListStrField)
 
-    @classmethod
-    def tensor_data_model(cls):
-        return MockTensorDataModel
+
+class MockDataModelChild(MockBaseDataModel):
+    pass
 
 
-class MockDataModelChild(MockRawDataModel):
-    @classmethod
-    def tensor_data_model(cls):
-        return MockTensorDataModelChild
-
-
-class MockDataModelParent(MockRawDataModel):
+class MockDataModelParent(MockBaseDataModel):
     example_data_model_child: MockDataModelChild
 
-    @classmethod
-    def tensor_data_model(cls):
-        return MockTensorDataModelParent
 
-
-class MockTensorDataModel(TensorDataModel):
-    required_integer_attribute: torch.Tensor
-    required_integer_list_attribute: torch.Tensor
-    integer_attribute: torch.Tensor = 0
-    float_attribute: torch.Tensor = 0.0
-    string_attribute: str = ""
-    list_attribute: torch.Tensor
-    integer_list_attribute: torch.Tensor
-    float_list_attribute: torch.Tensor
-    string_list_attribute: list[str]
-
-    @classmethod
-    def raw_data_model(cls) -> type[RawDataModel]:
-        return MockRawDataModel
-
-
-class MockTensorDataModelChild(MockTensorDataModel):
-    @classmethod
-    def raw_data_model(cls) -> type[RawDataModel]:
-        return MockDataModelChild
-
-
-class MockTensorDataModelParent(MockTensorDataModel):
-    example_data_model_child: MockTensorDataModelChild
-
-    @classmethod
-    def raw_data_model(cls) -> type[RawDataModel]:
-        return MockDataModelParent
-
-
-class MockRawDataModelFactory(factory.Factory):
+class MockBaseDataModelFactory(factory.Factory):
     class Meta:
-        model = MockRawDataModel
+        model = MockBaseDataModel
 
     required_integer_attribute = factory.Faker("random_int", min=1, max=100)
     required_integer_list_attribute = factory.List(
@@ -99,12 +58,12 @@ class MockRawDataModelFactory(factory.Factory):
     string_list_attribute = factory.List([factory.Faker("word") for _ in range(2)])
 
 
-class MockDataModelChildFactory(MockRawDataModelFactory):
+class MockDataModelChildFactory(MockBaseDataModelFactory):
     class Meta:
         model = MockDataModelChild
 
 
-class MockDataModelParentFactory(MockRawDataModelFactory):
+class MockDataModelParentFactory(MockBaseDataModelFactory):
     class Meta:
         model = MockDataModelParent
 

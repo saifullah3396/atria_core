@@ -4,51 +4,51 @@ from typing import Annotated
 import pyarrow as pa
 from pydantic import field_serializer, field_validator
 
-from atria_core.types.base.data_model import RawDataModel
-from atria_core.types.generic._raw.annotated_object import AnnotatedObjectList
-from atria_core.types.generic._raw.bounding_box import BoundingBoxList
-from atria_core.types.generic._raw.label import Label, LabelList
-from atria_core.types.generic._raw.question_answer_pair import QuestionAnswerPair
+from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.generic.annotated_object import AnnotatedObjectList
+from atria_core.types.generic.bounding_box import BoundingBoxList
+from atria_core.types.generic.label import Label, LabelList
+from atria_core.types.generic.question_answer_pair import QuestionAnswerPair
 from atria_core.types.typing.common import TableSchemaMetadata
 
 
-class ClassificationGT(RawDataModel):
+class ClassificationGT(BaseDataModel):
     label: Label
 
 
-class OCRGT(RawDataModel):
+class OCRGT(BaseDataModel):
     words: list[str] | None = None
     word_bboxes: BoundingBoxList | None = None
     word_confs: list[float] | None = None
     word_angles: list[float] | None = None
 
 
-class SERGT(RawDataModel):
+class SERGT(BaseDataModel):
     words: list[str] | None = None
     word_bboxes: BoundingBoxList | None = None
     word_labels: LabelList | None = None
     segment_level_bboxes: BoundingBoxList | None = None
 
 
-class QuestionAnswerGT(RawDataModel):
+class QuestionAnswerGT(BaseDataModel):
     qa_pair: QuestionAnswerPair
     words: list[str]
 
 
-class VisualQuestionAnswerGT(RawDataModel):
+class VisualQuestionAnswerGT(BaseDataModel):
     qa_pair: QuestionAnswerPair
     words: list[str]
     word_bboxes: BoundingBoxList
     segment_level_bboxes: BoundingBoxList
 
 
-class LayoutAnalysisGT(RawDataModel):
+class LayoutAnalysisGT(BaseDataModel):
     annotated_objects: AnnotatedObjectList | None = None
     words: list[str] | None = None
     word_bboxes: BoundingBoxList | None = None
 
 
-class GroundTruth(RawDataModel):
+class GroundTruth(BaseDataModel):
     classification: Annotated[
         ClassificationGT | None, TableSchemaMetadata(pyarrow=pa.string())
     ] = None

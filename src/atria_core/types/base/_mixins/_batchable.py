@@ -108,6 +108,12 @@ class Batchable(BaseModel):
 
         # Create the batched instance and mark it as batched
         batched_instance = cls.model_construct(**batched_fields)
+        for private_attr in batched_instance.__private_attributes__:
+            setattr(
+                batched_instance,
+                private_attr,
+                getattr(model_instances[0], private_attr, None),
+            )
         batched_instance._is_batched = True
         batched_instance._batch_size = len(model_instances)
         return batched_instance

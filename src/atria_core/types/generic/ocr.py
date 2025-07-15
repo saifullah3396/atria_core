@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Annotated, Any, ClassVar
 import pyarrow as pa
 from pydantic import field_serializer, field_validator
 
-from atria_core.types.base.data_model import RawDataModel
+from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.common import OCRType
 from atria_core.types.typing.common import OptStrField, TableSchemaMetadata
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from atria_core.types.generic._tensor.ocr import TensorOCR  # noqa
 
 
-class OCR(RawDataModel):
+class OCR(BaseDataModel):
     _batch_merge_fields: ClassVar[list[str] | None] = ["type"]
     file_path: OptStrField = None
     type: Annotated[OCRType | None, TableSchemaMetadata(pyarrow=pa.string())] = None

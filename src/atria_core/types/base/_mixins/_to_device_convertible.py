@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import BaseModel, PrivateAttr
 
@@ -33,7 +33,7 @@ class ToDeviceConvertible(BaseModel):
         ```
     """
 
-    _device: "torch.device | str" = PrivateAttr(default="cpu")
+    _device: Any = PrivateAttr(default="cpu")
 
     @property
     def device(self) -> "torch.device | str":
@@ -71,13 +71,37 @@ class ToDeviceConvertible(BaseModel):
             assert gpu_model.device.type == "cuda"
             ```
         """
+        import torch
+
+        if self._device != device:
+            self._to_device(device=device)
+            self._device = torch.device(device) if isinstance(device, str) else device
+        return self
+
+    def _to_device(self, device: "torch.device | str" = "cpu") -> None:
         from atria_core.utilities.tensors import _convert_to_device
 
         for field_name in self.__class__.model_fields:
-            field_value = getattr(self, field_name)
-            setattr(self, field_name, _convert_to_device(field_value, device))
-        self._device = device
-        return self
+            try:
+                field_value = getattr(self, field_name)
+                if isinstance(field_value, ToDeviceConvertible):
+                    field_value.to_device(device=device)
+                elif (
+                    isinstance(field_value, list)
+                    and len(field_value) > 0
+                    and isinstance(field_value[0], ToDeviceConvertible)
+                ):
+                    raise RuntimeError(
+                        f"Field '{field_name}' contains list of ToDeviceConvertible, which is not supported."
+                    )
+                else:
+                    setattr(
+                        self, field_name, _convert_to_device(field_value, device=device)
+                    )
+            except Exception as e:
+                raise RuntimeError(
+                    f"Error converting field '{field_name}' to tensor"
+                ) from e
 
     def to_gpu(self, gpu_id: int = 0) -> Self:
         """

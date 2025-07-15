@@ -3,9 +3,9 @@ from typing import Annotated, Any
 import pyarrow as pa
 from pydantic import field_validator
 
-from atria_core.types.base.data_model import RawDataModel
-from atria_core.types.generic._raw.bounding_box import BoundingBox, BoundingBoxList
-from atria_core.types.generic._raw.label import Label, LabelList
+from atria_core.types.base.data_model import BaseDataModel
+from atria_core.types.generic.bounding_box import BoundingBox, BoundingBoxList
+from atria_core.types.generic.label import Label, LabelList
 from atria_core.types.typing.common import BoolField, ListBoolField, TableSchemaMetadata
 
 
@@ -20,7 +20,7 @@ def _validate_segmentation_field(v) -> list[list[float]] | None:
     return v
 
 
-class AnnotatedObject(RawDataModel):
+class AnnotatedObject(BaseDataModel):
     label: Label
     bbox: BoundingBox
     segmentation: Annotated[
@@ -38,7 +38,7 @@ class AnnotatedObject(RawDataModel):
         return _validate_segmentation_field(value)
 
 
-class AnnotatedObjectList(RawDataModel):
+class AnnotatedObjectList(BaseDataModel):
     label: LabelList
     bbox: BoundingBoxList
     segmentation: Annotated[

@@ -1,8 +1,8 @@
 import bs4
 
-from atria_core.types.generic._raw.bounding_box import BoundingBox
-from atria_core.types.generic._raw.ground_truth import OCRGT
-from atria_core.types.generic._raw.ocr import OCRType
+from atria_core.types.generic.bounding_box import BoundingBox
+from atria_core.types.generic.ground_truth import OCRGT
+from atria_core.types.generic.ocr import OCRType
 
 
 class OCRProcessor:
