@@ -108,7 +108,7 @@ xfail_strict = true         # Treat tests that are marked as xfail but pass as t
 
 [tool.uv]
 managed = true
-default-groups = ["torch-cpu"]
+default-groups = ["torch-gpu"]
 conflicts = [
   [
     { group = "torch-cpu" },

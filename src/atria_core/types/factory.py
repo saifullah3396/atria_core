@@ -168,7 +168,7 @@ class ImageFactory(factory.Factory):
         model = Image
 
     # These are internal-use only — not passed to model
-    _backend = factory.LazyFunction(lambda: "pil_file")
+    _backend = factory.LazyFunction(lambda: "pil")
     _image_size = factory.LazyFunction(lambda: (32, 32))
 
     @factory.lazy_attribute
@@ -200,7 +200,7 @@ class ImageFactory(factory.Factory):
 
         from PIL import Image as PILImage
 
-        if self._backend == "pil_file":
+        if self._backend in ["pil_file", "pil"]:
             temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
             PILImage.new("RGB", self._image_size, color="white").save(temp_file.name)
             temp_file.close()

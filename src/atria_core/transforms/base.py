@@ -1,13 +1,14 @@
 from abc import abstractmethod
-from collections import OrderedDict
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
+from atria_core.utilities.auto_config import auto_config
 from atria_core.utilities.repr import RepresentationMixin
 
 
+@auto_config()
 class DataTransform(RepresentationMixin):
     def __init__(self, apply_path: str | None = None):
         self.apply_path = apply_path
@@ -23,10 +24,11 @@ class DataTransform(RepresentationMixin):
         )
 
     def _validate_and_apply_transforms(
-        self, input: Any | Mapping[str, Any]
+        self, input: Any | Mapping[str, Any], apply_path_override: str | None = None
     ) -> Mapping[str, Any]:
-        if self.apply_path is not None:
-            attrs = self.apply_path.split(".")
+        apply_path = apply_path_override or self.apply_path
+        if apply_path is not None:
+            attrs = apply_path.split(".")
             obj = input
             for attr in attrs[:-1]:
                 obj = getattr(obj, attr)
@@ -35,7 +37,7 @@ class DataTransform(RepresentationMixin):
                 # If the attribute is None, we cannot apply the transformation
                 # and should raise an error or handle it gracefully.
                 raise ValueError(
-                    f"You must provide a valid input for '{self.apply_path}' to apply the transformation '{self.name}'."
+                    f"You must provide a valid input for '{apply_path}' to apply the transformation '{self.name}'."
                     f"'{current_attr}' in object {obj}"
                 )
             setattr(obj, attrs[-1], self._apply_transforms(current_attr))
@@ -44,11 +46,15 @@ class DataTransform(RepresentationMixin):
             return self._apply_transforms(input)
 
     def __call__(
-        self, input: Any | Mapping[str, Any] | list[Mapping[str, Any]]
+        self,
+        input: Any | Mapping[str, Any] | list[Mapping[str, Any]],
+        apply_path: str | None = None,
     ) -> Any | Mapping[str, Any] | list[Mapping[str, Any]]:
         if isinstance(input, list):
-            return [self(s) for s in input]
-        return self._validate_and_apply_transforms(input)
+            return [self(s, apply_path=apply_path) for s in input]
+        return self._validate_and_apply_transforms(
+            input, apply_path_override=apply_path
+        )
 
 
 class DataTransformsDict(BaseModel):
@@ -56,20 +62,8 @@ class DataTransformsDict(BaseModel):
         arbitrary_types_allowed=True, validate_assignment=False, extra="forbid"
     )
 
-    train: DataTransform | OrderedDict[str, DataTransform] | None = None
-    evaluation: DataTransform | OrderedDict[str, DataTransform] | None = None
-
-    def compose(self, type: str) -> DataTransform | Callable:
-        from torchvision.transforms import Compose  # type: ignore
-
-        tf = getattr(self, type, None)
-        if tf is None:
-            raise ValueError(
-                f"Transformations for type '{type}' are not defined in {self.__class__.__name__}."
-            )
-        if isinstance(tf, dict):
-            return Compose(list(tf.values()))
-        return tf
+    train: DataTransform | None = None
+    evaluation: DataTransform | None = None
 
 
 class Compose(RepresentationMixin):

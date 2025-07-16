@@ -100,7 +100,7 @@ class ToDeviceConvertible(BaseModel):
                     )
             except Exception as e:
                 raise RuntimeError(
-                    f"Error converting field '{field_name}' to tensor"
+                    f"Error converting field '{field_name}' to device {device}: {e}"
                 ) from e
 
     def to_gpu(self, gpu_id: int = 0) -> Self:

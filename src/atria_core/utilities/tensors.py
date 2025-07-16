@@ -197,9 +197,9 @@ def _convert_to_device(
         The converted object, mapping, or sequence.
     """
     import torch
-
-    return _apply_to_type(x, torch.Tensor, lambda t: t.to(device), strict=False)
-
+    if isinstance(x, torch.Tensor):
+        return x.to(device)
+    return x 
 
 def _validate_tensor(self):
     import torch

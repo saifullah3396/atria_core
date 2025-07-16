@@ -1,13 +1,12 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, Self, Union
 
-from pydantic import model_validator
-from rich.repr import RichReprResult
-
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import OptIntField, OptStrField
 from atria_core.utilities.encoding import ValidatedPILImage
+from pydantic import model_validator
+from rich.repr import RichReprResult
 
 if TYPE_CHECKING:
     import torch
@@ -127,9 +126,8 @@ class Image(BaseDataModel):
 
     def _load(self):
         if self.content is None:
-            from PIL import Image as PILImageModule
-
             from atria_core.utilities.encoding import _bytes_to_image
+            from PIL import Image as PILImageModule
 
             if self.file_path is None:
                 raise ValueError(
@@ -275,6 +273,7 @@ class Image(BaseDataModel):
             RichReprResult: A generator of key-value pairs or values for the object's attributes.
         """
         yield from super().__rich_repr__()
-        yield "width", self.width
-        yield "height", self.height
-        yield "channels", self.channels
+        if self.content is not None:
+            yield "width", self.width
+            yield "height", self.height
+            yield "channels", self.channels

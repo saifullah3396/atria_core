@@ -82,7 +82,6 @@ def _extract_pyarrow_schema(model_cls: type[BaseModel]) -> dict[str, type | dict
     import torch  # noqa: F401
 
     type_hints = get_type_hints(model_cls, include_extras=True)
-    print("type_hints", type_hints)
     for field_name, annotated_type in type_hints.items():
         try:
             origin = get_origin(annotated_type)
@@ -184,7 +183,7 @@ class TableSerializable(BaseModel):
         return _extract_pyarrow_schema(cls)
 
     @classmethod
-    @lru_cache(maxsize=128)
+    @lru_cache(maxsize=1)
     def table_schema_flattened(cls) -> dict[str, Any]:
         """
         Get the flattened table schema for this model class.
@@ -195,7 +194,7 @@ class TableSerializable(BaseModel):
         return _flatten_dict(cls.table_schema())
 
     @classmethod
-    @lru_cache(maxsize=128)
+    @lru_cache(maxsize=1)
     def pa_schema(cls) -> pa.Schema:
         """
         Get the PyArrow schema for this model class.
