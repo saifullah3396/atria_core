@@ -30,10 +30,12 @@ License: MIT
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import pyarrow as pa
+import torch
 from pydantic import (
+    AfterValidator,
     SerializerFunctionWrapHandler,
     ValidatorFunctionWrapHandler,
     WrapSerializer,
@@ -104,84 +106,152 @@ PydanticFilePath = Annotated[
 ]
 
 
+def _tensor_validator(ndim: int) -> WrapValidator:
+    """
+    Creates a validator for tensor sizes.
+
+    Args:
+        ndim (int): The expected number of dimensions for the tensor.
+
+    Returns:
+        WrapValidator: A Pydantic validator that checks the tensor size.
+    """
+
+    def _wrapped(value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+        """
+        Validates a file path, ensuring it exists and is a file.
+
+        Args:
+            value (str): The file path to validate.
+            handler (ValidatorFunctionWrapHandler): The validation handler.
+
+        Returns:
+            Path: The validated file path.
+
+        Raises:
+            FileNotFoundError: If the file path does not exist.
+            ValueError: If the path is not a file.
+        """
+        if isinstance(value, torch.Tensor):
+            if value.ndim != ndim:
+                raise ValueError(
+                    f"Expected a tensor with {ndim} dimensions, got {value.ndim}D tensor"
+                )
+            return value
+        return value
+
+    return AfterValidator(_wrapped)
+
+
 """
 A type annotation for file paths.
 
 Supports both `str` and `Path` types, with validation to ensure the path exists and is a file.
 """
 
-IntField = Annotated[int, TableSchemaMetadata(pyarrow=pa.int64())]
+IntField = Annotated[
+    int | torch.Tensor, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.int64())
+]
 """
 An integer field type annotation with PyArrow metadata.
 """
 
-BoolField = Annotated[bool, TableSchemaMetadata(pyarrow=pa.bool_())]
+BoolField = Annotated[
+    bool | torch.Tensor, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.bool_())
+]
 """
-An integer field type annotation with PyArrow metadata.
-"""
-
-FloatField = Annotated[float, TableSchemaMetadata(pyarrow=pa.float64())]
-"""
-A float field type annotation with PyArrow metadata.
+A boolean field type annotation with PyArrow metadata and tensor support.
 """
 
-ListIntField = Annotated[list[int], TableSchemaMetadata(pyarrow=pa.list_(pa.int64()))]
+FloatField = Annotated[
+    float | torch.Tensor,
+    _tensor_validator(0),
+    TableSchemaMetadata(pyarrow=pa.float64()),
+]
 """
-A list of integers field type annotation with PyArrow metadata.
+A float field type annotation with PyArrow metadata and tensor support.
+"""
+
+ListIntField = Annotated[
+    list[int] | torch.Tensor,
+    _tensor_validator(1),
+    TableSchemaMetadata(pyarrow=pa.list_(pa.int64())),
+]
+"""
+A list of integers field type annotation with PyArrow metadata and tensor support.
 """
 
 ListFloatField = Annotated[
-    list[float], TableSchemaMetadata(pyarrow=pa.list_(pa.float64()))
+    list[float] | torch.Tensor,
+    _tensor_validator(1),
+    TableSchemaMetadata(pyarrow=pa.list_(pa.float64())),
 ]
 """
-A list of floats field type annotation with PyArrow metadata.
+A list of floats field type annotation with PyArrow metadata and tensor support.
 """
 
 StrField = Annotated[str, TableSchemaMetadata(pyarrow=pa.string())]
-"""A list of strings field type annotation with PyArrow metadata.
+"""A string field type annotation with PyArrow metadata.
 """
 
 ListStrField = Annotated[list[str], TableSchemaMetadata(pyarrow=pa.list_(pa.string()))]
 """A list of strings field type annotation with PyArrow metadata.
 """
-ListBoolField = Annotated[list[bool], TableSchemaMetadata(pyarrow=pa.list_(pa.bool_()))]
-"""A list of booleans field type annotation with PyArrow metadata.
+
+ListBoolField = Annotated[
+    list[bool] | torch.Tensor,
+    _tensor_validator(1),
+    TableSchemaMetadata(pyarrow=pa.list_(pa.bool_())),
+]
+"""A list of booleans field type annotation with PyArrow metadata and tensor support.
 """
 
 ###
 # Optional fields
 ###
 
-OptIntField = Annotated[int | None, TableSchemaMetadata(pyarrow=pa.int64())]
+OptIntField = Annotated[
+    int | torch.Tensor | None,
+    _tensor_validator(0),
+    TableSchemaMetadata(pyarrow=pa.int64()),
+]
 """
-An integer field type annotation with PyArrow metadata.
+An optional integer field type annotation with PyArrow metadata and tensor support.
 """
 
-OptFloatField = Annotated[float | None, TableSchemaMetadata(pyarrow=pa.float64())]
+OptFloatField = Annotated[
+    float | torch.Tensor | None,
+    _tensor_validator(0),
+    TableSchemaMetadata(pyarrow=pa.float64()),
+]
 """
-A float field type annotation with PyArrow metadata.
+An optional float field type annotation with PyArrow metadata and tensor support.
 """
 
 OptListIntField = Annotated[
-    list[int] | None, TableSchemaMetadata(pyarrow=pa.list_(pa.int64()))
+    list[int] | torch.Tensor | None,
+    _tensor_validator(1),
+    TableSchemaMetadata(pyarrow=pa.list_(pa.int64())),
 ]
 """
-A list of integers field type annotation with PyArrow metadata.
+An optional list of integers field type annotation with PyArrow metadata and tensor support.
 """
 
 OptListFloatField = Annotated[
-    list[float] | None, TableSchemaMetadata(pyarrow=pa.list_(pa.float64()))
+    list[float] | torch.Tensor | None,
+    _tensor_validator(1),
+    TableSchemaMetadata(pyarrow=pa.list_(pa.float64())),
 ]
 """
-A list of floats field type annotation with PyArrow metadata.
+An optional list of floats field type annotation with PyArrow metadata and tensor support.
 """
 
 OptStrField = Annotated[str | None, TableSchemaMetadata(pyarrow=pa.string())]
-"""A list of strings field type annotation with PyArrow metadata.
+"""An optional string field type annotation with PyArrow metadata.
 """
 
 OptListStrField = Annotated[
     list[str] | None, TableSchemaMetadata(pyarrow=pa.list_(pa.string()))
 ]
-"""A list of strings field type annotation with PyArrow metadata.
+"""An optional list of strings field type annotation with PyArrow metadata.
 """

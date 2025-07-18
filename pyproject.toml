@@ -21,6 +21,11 @@ dependencies = [
     "imagesize>=1.4.1",
     "pyarrow>=20.0.0",
     "pydantic>=2.11.7",
+    "faker",
+    "factory-boy",
+    "coverage",
+    "pytest",
+    "torchtyping>=0.1.5",
 ]
 
 
@@ -28,7 +33,9 @@ dependencies = [
 allow-direct-references = true
 
 [project.optional-dependencies]
-test = ["coverage"]
+test = [
+  "coverage", 
+  ]
 
 [tool.coverage.report]
 skip_covered = true
@@ -137,27 +144,10 @@ explicit = true
 
 [dependency-groups]
 dev = [
-    # "codename==1.1",
-    # "coloredlogs==15.0.1",
-    # "gotrue==2.12.0",
-    # "lazy_loader==0.4",
-    # "numpy==1.26.4",
-    # "omegaconf==2.3.0",
-    # "Pillow==10.0.0",
-    # "polyfactory>=2.21.0",
-    # "pytorch_ignite==0.5.0.post2",
-    # "rich==14.0.0",
-    # "torch==2.1.2",
-    # "torchvision==0.16.2",
-    # "beautifulsoup4==4.12.2",
-    # "supabase>=2.7.4",
-    # "imagesize>=1.4.1",
-    # "ipykernel>=6.29.5",
-    # "pyarrow>=20.0.0",
-    # "ruff>=0.12.2",
-    # "ipykernel>=6.29.5",
-    # "factory-boy>=3.3.3",
-    # "bs4>=0.0.2",
+    "pyarrow>=20.0.0",
+    "ruff>=0.12.2",
+    "ipykernel>=6.29.5",
+    "factory-boy>=3.3.3",
 ]
 torch-cpu = [
   "torch==2.1.2",

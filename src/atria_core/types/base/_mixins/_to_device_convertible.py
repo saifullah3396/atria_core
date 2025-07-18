@@ -73,10 +73,18 @@ class ToDeviceConvertible(BaseModel):
         """
         import torch
 
-        if self._device != device:
-            self._to_device(device=device)
-            self._device = torch.device(device) if isinstance(device, str) else device
+        self._to_device(device=device)
+        self._device = torch.device(device) if isinstance(device, str) else device
         return self
+
+    def _set_skip_validation(self, name: str, value: Any) -> None:
+        """Workaround to be able to set fields without validation."""
+        attr = getattr(self.__class__, name, None)
+        if isinstance(attr, property):
+            attr.__set__(self, value)
+        else:
+            self.__dict__[name] = value
+            self.__pydantic_fields_set__.add(name)
 
     def _to_device(self, device: "torch.device | str" = "cpu") -> None:
         from atria_core.utilities.tensors import _convert_to_device
@@ -95,8 +103,8 @@ class ToDeviceConvertible(BaseModel):
                         f"Field '{field_name}' contains list of ToDeviceConvertible, which is not supported."
                     )
                 else:
-                    setattr(
-                        self, field_name, _convert_to_device(field_value, device=device)
+                    self._set_skip_validation(
+                        field_name, _convert_to_device(field_value, device=device)
                     )
             except Exception as e:
                 raise RuntimeError(

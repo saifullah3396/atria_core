@@ -131,7 +131,7 @@ def test_tensor_label_batching_functionality() -> None:
     batch_size = 10
 
     # Create batched version with 10 copies of the same label
-    batched_label = label.batched([label] * batch_size)
+    batched_label = label.batched([label] * batch_size).to_device()
 
     # Batched result should be 1D tensor with repeated values
     assert batched_label.value.ndim == 1

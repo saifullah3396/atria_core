@@ -57,7 +57,9 @@ class DataModelTestBase:
         assert isinstance(new_instance, BaseDataModel), (
             "New instance should be a BaseDataModel"
         )
-        assert new_instance == model_instance, "New instance does not match original"
+        assert new_instance.model_dump() == model_instance.model_dump(), (
+            "New instance does not match original"
+        )
 
     def test_schema(self, model_instance: BaseDataModel) -> None:
         """

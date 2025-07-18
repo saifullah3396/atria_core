@@ -9,7 +9,12 @@ from atria_core.types.generic.annotated_object import AnnotatedObjectList
 from atria_core.types.generic.bounding_box import BoundingBoxList
 from atria_core.types.generic.label import Label, LabelList
 from atria_core.types.generic.question_answer_pair import QuestionAnswerPair
-from atria_core.types.typing.common import TableSchemaMetadata
+from atria_core.types.typing.common import (
+    ListStrField,
+    OptListFloatField,
+    OptListStrField,
+    TableSchemaMetadata,
+)
 
 
 class ClassificationGT(BaseDataModel):
@@ -17,14 +22,14 @@ class ClassificationGT(BaseDataModel):
 
 
 class OCRGT(BaseDataModel):
-    words: list[str] | None = None
+    words: OptListStrField = None
     word_bboxes: BoundingBoxList | None = None
-    word_confs: list[float] | None = None
-    word_angles: list[float] | None = None
+    word_confs: OptListFloatField = None
+    word_angles: OptListFloatField = None
 
 
 class SERGT(BaseDataModel):
-    words: list[str] | None = None
+    words: OptListStrField = None
     word_bboxes: BoundingBoxList | None = None
     word_labels: LabelList | None = None
     segment_level_bboxes: BoundingBoxList | None = None
@@ -32,19 +37,19 @@ class SERGT(BaseDataModel):
 
 class QuestionAnswerGT(BaseDataModel):
     qa_pair: QuestionAnswerPair
-    words: list[str]
+    words: ListStrField
 
 
 class VisualQuestionAnswerGT(BaseDataModel):
     qa_pair: QuestionAnswerPair
-    words: list[str]
+    words: ListStrField
     word_bboxes: BoundingBoxList
     segment_level_bboxes: BoundingBoxList
 
 
 class LayoutAnalysisGT(BaseDataModel):
     annotated_objects: AnnotatedObjectList | None = None
-    words: list[str] | None = None
+    words: OptListStrField = None
     word_bboxes: BoundingBoxList | None = None
 
 

@@ -1,12 +1,13 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, Self, Union
 
+from pydantic import model_validator
+from rich.repr import RichReprResult
+
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import OptIntField, OptStrField
 from atria_core.utilities.encoding import ValidatedPILImage
-from pydantic import model_validator
-from rich.repr import RichReprResult
 
 if TYPE_CHECKING:
     import torch
@@ -32,14 +33,14 @@ class Image(BaseDataModel):
     def _validate_dims(self):
         if self.source_width is None or self.source_height is None:
             if self.content is not None:
-                self.source_width = self.content.size[0]
-                self.source_height = self.content.size[1]
+                self._set_skip_validation("source_width", self.content.size[0])
+                self._set_skip_validation("source_height", self.content.size[1])
             elif self.file_path is not None and Path(self.file_path).exists():
                 import imagesize
 
                 size = imagesize.get(self.file_path)
-                self.source_width = size[0]
-                self.source_height = size[1]
+                self._set_skip_validation("source_width", size[0])
+                self._set_skip_validation("source_height", size[1])
         return self
 
     @property
@@ -126,8 +127,9 @@ class Image(BaseDataModel):
 
     def _load(self):
         if self.content is None:
-            from atria_core.utilities.encoding import _bytes_to_image
             from PIL import Image as PILImageModule
+
+            from atria_core.utilities.encoding import _bytes_to_image
 
             if self.file_path is None:
                 raise ValueError(

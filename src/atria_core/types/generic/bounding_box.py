@@ -1,14 +1,12 @@
 import enum
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Union
+from typing import Annotated, Any, ClassVar, Union
 
 import pyarrow as pa
+import torch
 from pydantic import field_validator
 
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import ListFloatField, TableSchemaMetadata
-
-if TYPE_CHECKING:
-    import torch
 
 
 class BoundingBoxMode(str, enum.Enum):
@@ -42,6 +40,13 @@ class BoundingBox(BaseDataModel):
                 self.value = [self.x1, self.y1, self.x2, self.y2]
                 self.mode = BoundingBoxMode.XYXY
         return self
+
+    @field_validator("mode", mode="before")
+    @classmethod
+    def validate_mode(cls, value: Any) -> BoundingBoxMode:
+        if isinstance(value, str):
+            return BoundingBoxMode(value)
+        return value
 
     @field_validator("value", mode="after")
     @classmethod
@@ -215,11 +220,19 @@ class BoundingBox(BaseDataModel):
 
 class BoundingBoxList(BaseDataModel):
     value: Annotated[
-        list[list[float]], TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64())))
+        list[list[float]] | torch.Tensor,
+        TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64()))),
     ]
     mode: Annotated[BoundingBoxMode, TableSchemaMetadata(pyarrow=pa.string())] = (
         BoundingBoxMode.XYXY
     )
+
+    @field_validator("mode", mode="before")
+    @classmethod
+    def validate_mode(cls, value: Any) -> BoundingBoxMode:
+        if isinstance(value, str):
+            return BoundingBoxMode(value)
+        return value
 
     @classmethod
     def from_list(cls, bboxes: list[BoundingBox]) -> "BoundingBoxList":
@@ -234,9 +247,14 @@ class BoundingBoxList(BaseDataModel):
     @field_validator("value", mode="after")
     @classmethod
     def validate_value(cls, value: Any) -> list[float]:
-        assert isinstance(value, list), "Expected a list of bounding boxes."
-        assert len(value) > 0, "BoundingBoxList cannot be empty."
-        assert all(isinstance(bbox, list) for bbox in value), (
-            "Expected a 1D list of shape (4,) for bounding boxes."
-        )
+        if isinstance(value, list):
+            assert isinstance(value, list), "Expected a list of bounding boxes."
+            assert len(value) > 0, "BoundingBoxList cannot be empty."
+            assert all(isinstance(bbox, list) for bbox in value), (
+                "Expected a 1D list of shape (4,) for bounding boxes."
+            )
+        elif isinstance(value, torch.Tensor):
+            assert value.ndim == 2 and value.shape[1] == 4, (
+                "Expected a 2D tensor with shape (N, 4) for bounding boxes."
+            )
         return value

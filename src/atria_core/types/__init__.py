@@ -36,9 +36,7 @@ from .generic.ground_truth import (
 from .generic.image import Image
 from .generic.label import Label
 from .generic.ocr import OCR
-from .generic.question_answer_pair import (
-    QuestionAnswerPair,
-)
+from .generic.question_answer_pair import QuestionAnswerPair
 
 __all__ = [
     # datasets config
