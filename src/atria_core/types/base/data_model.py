@@ -88,7 +88,18 @@ class BaseDataModel(  # type: ignore[misc]
         Generates a rich representation of the object.
 
         Yields:
-            RichReprResult: A generator of key-value pairs or values for the object's attributes.
+            RichReprResult: A generator of key-value pairs for the specified fields only.
         """
-        yield from super().__rich_repr__()
-        yield "device", getattr(self, "_device", "cpu")
+        for field_name in self.__class__.model_fields:
+            if not hasattr(self, field_name):
+                continue
+
+            value = getattr(self, field_name)
+
+            # Safely represent bound methods, functions, or other callables
+            if isinstance(value, types.MethodType):
+                safe_value = value.__func__
+            else:
+                safe_value = value
+            if safe_value is not None:
+                yield field_name, safe_value

@@ -5,7 +5,7 @@ from hydra_zen import builds
 from omegaconf import OmegaConf
 
 
-def auto_config(attr_name="config"):
+def auto_config(attr_name="config", exclude: set[str] | None = None):
     def decorator(cls):
         original_init = cls.__init__
 
@@ -16,13 +16,16 @@ def auto_config(attr_name="config"):
                 bound = sig.bind(self, *args, **kwargs)
                 bound.apply_defaults()
                 config = {k: v for k, v in bound.arguments.items() if k != "self"}
-                setattr(
-                    self,
-                    attr_name,
-                    OmegaConf.create(
-                        builds(cls, populate_full_signature=True, **config)
-                    ),
+                if "kwargs" in config:
+                    config.update(config.pop("kwargs", {}))
+                config = OmegaConf.create(
+                    builds(cls, populate_full_signature=True, **config)
                 )
+                if exclude is not None:
+                    config = OmegaConf.to_container(config)
+                    config = {k: v for k, v in config.items() if k not in exclude}
+                    config = OmegaConf.create(config)
+                setattr(self, attr_name, config)
             original_init(self, *args, **kwargs)
 
         cls.__init__ = wrapped_init
