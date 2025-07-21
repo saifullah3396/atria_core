@@ -102,8 +102,6 @@ class DataModelTestBase:
         import torch
 
         def validate_device(device: str | torch.device):
-            print(" model_instance.load()", model_instance.load())
-            print(" model_instance.load()", model_instance.load().to_tensor())
             instance = model_instance.load().to_tensor().to_device(device)
             for key, value in instance.__dict__.items():
                 if isinstance(value, torch.Tensor):
@@ -136,7 +134,6 @@ class DataModelTestBase:
 
         for key, value in model_instance.__dict__.items():
             if isinstance(value, torch.Tensor):
-                print("value.shape", value)
                 assert value.shape[0] == len(instances)
                 for i in range(1, len(instances)):
                     _assert_values_equal(value[i], getattr(instances[i], key))

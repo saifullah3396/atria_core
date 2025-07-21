@@ -25,7 +25,6 @@ class LabelList(BaseDataModel):
         """
         Create a LabelList from a list of Label objects.
         """
-        print([label.value for label in labels])
         return cls(
             value=[label.value for label in labels],
             name=[label.name for label in labels],

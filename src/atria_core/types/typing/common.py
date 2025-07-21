@@ -28,24 +28,32 @@ Version: 1.0.0
 License: MIT
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any
 
 import pyarrow as pa
-import torch
+from PIL.Image import Image as PILImage
 from pydantic import (
-    AfterValidator,
+    PlainSerializer,
     SerializerFunctionWrapHandler,
     ValidatorFunctionWrapHandler,
     WrapSerializer,
     WrapValidator,
 )
 
+from atria_core.utilities.encoding import (
+    _base64_to_image,
+    _bytes_to_image,
+    _image_to_bytes,
+)
+
 
 @dataclass
 class TableSchemaMetadata:
-    pyarrow: "pa.DataType"
+    pyarrow: pa.DataType
 
 
 def _path_serializer(value: str, nxt: SerializerFunctionWrapHandler) -> str:
@@ -106,6 +114,23 @@ PydanticFilePath = Annotated[
 ]
 
 
+def _is_tensor_type(value: Any) -> bool:
+    """
+    Check if the value is a tensor-like object.
+
+    Args:
+        value (Any): The value to check.
+
+    Returns:
+        bool: True if the value is a tensor-like object, False otherwise.
+    """
+    if hasattr(value, "__class__") and "torch" in value.__class__.__module__:
+        import torch
+
+        return isinstance(value, torch.Tensor)
+    return False
+
+
 def _tensor_validator(ndim: int) -> WrapValidator:
     """
     Creates a validator for tensor sizes.
@@ -119,28 +144,84 @@ def _tensor_validator(ndim: int) -> WrapValidator:
 
     def _wrapped(value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
         """
-        Validates a file path, ensuring it exists and is a file.
+        Validates a tensor, ensuring it has the correct dimensions.
 
         Args:
-            value (str): The file path to validate.
+            value: The value to validate.
             handler (ValidatorFunctionWrapHandler): The validation handler.
 
         Returns:
-            Path: The validated file path.
+            Any: The validated value.
 
         Raises:
-            FileNotFoundError: If the file path does not exist.
-            ValueError: If the path is not a file.
+            ValueError: If the tensor doesn't have the expected dimensions.
         """
-        if isinstance(value, torch.Tensor):
-            if value.ndim != ndim:
-                raise ValueError(
-                    f"Expected a tensor with {ndim} dimensions, got {value.ndim}D tensor"
-                )
-            return value
-        return value
+        # Then check if it's a tensor-like object without importing torch
+        if _is_tensor_type(value):
+            import torch
 
-    return AfterValidator(_wrapped)
+            if isinstance(value, torch.Tensor):
+                if value.ndim != ndim:
+                    raise ValueError(
+                        f"Expected a tensor with {ndim} dimensions, got {value.ndim}D tensor"
+                    )
+                return value
+
+        return handler(value)
+
+    return WrapValidator(_wrapped)
+
+
+def _image_validator(value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+    """
+    Validates an image value, supporting various input types including tensors.
+
+    Args:
+        value (Any): The value to validate.
+        handler (ValidatorFunctionWrapHandler): The validation handler.
+
+    Returns:
+        Any: The validated image value.
+
+    Raises:
+        ValueError: If the value type is not supported for image conversion.
+    """
+    import numpy as np
+    import PIL.Image as PILImageModule
+
+    if value is None:
+        return None
+
+    # First check if it's a tensor-like object without importing torch
+    if _is_tensor_type(value):
+        import torch
+
+        if isinstance(value, torch.Tensor):
+            assert value.ndim in (2, 3, 4), "Tensor must be 2D, 3D or 4D."
+            return value
+
+    if isinstance(value, bytes):
+        return _bytes_to_image(value)
+    elif isinstance(value, str):
+        return _base64_to_image(value)
+    elif isinstance(value, np.ndarray):
+        return PILImageModule.fromarray(value)
+    elif isinstance(value, PILImage):
+        return value
+    else:
+        raise ValueError(
+            "Unsupported type for image conversion. Supported types are: str, bytes, np.ndarray, PIL.Image, torch.Tensor."
+        )
+
+
+def _image_serializer(value: PILImage | None) -> bytes | None:
+    if value is None:
+        return None
+    if _is_tensor_type(value):
+        from torchvision.transforms.functional import to_pil_image
+
+        value = to_pil_image(value)
+    return _image_to_bytes(value)
 
 
 """
@@ -149,40 +230,34 @@ A type annotation for file paths.
 Supports both `str` and `Path` types, with validation to ensure the path exists and is a file.
 """
 
-IntField = Annotated[
-    int | torch.Tensor, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.int64())
-]
+IntField = Annotated[int, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.int64())]
 """
 An integer field type annotation with PyArrow metadata.
 """
 
 BoolField = Annotated[
-    bool | torch.Tensor, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.bool_())
+    bool, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.bool_())
 ]
 """
 A boolean field type annotation with PyArrow metadata and tensor support.
 """
 
 FloatField = Annotated[
-    float | torch.Tensor,
-    _tensor_validator(0),
-    TableSchemaMetadata(pyarrow=pa.float64()),
+    float, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.float64())
 ]
 """
 A float field type annotation with PyArrow metadata and tensor support.
 """
 
 ListIntField = Annotated[
-    list[int] | torch.Tensor,
-    _tensor_validator(1),
-    TableSchemaMetadata(pyarrow=pa.list_(pa.int64())),
+    list[int], _tensor_validator(1), TableSchemaMetadata(pyarrow=pa.list_(pa.int64()))
 ]
 """
 A list of integers field type annotation with PyArrow metadata and tensor support.
 """
 
 ListFloatField = Annotated[
-    list[float] | torch.Tensor,
+    list[float],
     _tensor_validator(1),
     TableSchemaMetadata(pyarrow=pa.list_(pa.float64())),
 ]
@@ -199,9 +274,7 @@ ListStrField = Annotated[list[str], TableSchemaMetadata(pyarrow=pa.list_(pa.stri
 """
 
 ListBoolField = Annotated[
-    list[bool] | torch.Tensor,
-    _tensor_validator(1),
-    TableSchemaMetadata(pyarrow=pa.list_(pa.bool_())),
+    list[bool], _tensor_validator(1), TableSchemaMetadata(pyarrow=pa.list_(pa.bool_()))
 ]
 """A list of booleans field type annotation with PyArrow metadata and tensor support.
 """
@@ -211,25 +284,21 @@ ListBoolField = Annotated[
 ###
 
 OptIntField = Annotated[
-    int | torch.Tensor | None,
-    _tensor_validator(0),
-    TableSchemaMetadata(pyarrow=pa.int64()),
+    int | None, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.int64())
 ]
 """
 An optional integer field type annotation with PyArrow metadata and tensor support.
 """
 
 OptFloatField = Annotated[
-    float | torch.Tensor | None,
-    _tensor_validator(0),
-    TableSchemaMetadata(pyarrow=pa.float64()),
+    float | None, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.float64())
 ]
 """
 An optional float field type annotation with PyArrow metadata and tensor support.
 """
 
 OptListIntField = Annotated[
-    list[int] | torch.Tensor | None,
+    list[int] | None,
     _tensor_validator(1),
     TableSchemaMetadata(pyarrow=pa.list_(pa.int64())),
 ]
@@ -238,7 +307,7 @@ An optional list of integers field type annotation with PyArrow metadata and ten
 """
 
 OptListFloatField = Annotated[
-    list[float] | torch.Tensor | None,
+    list[float] | None,
     _tensor_validator(1),
     TableSchemaMetadata(pyarrow=pa.list_(pa.float64())),
 ]
@@ -255,3 +324,10 @@ OptListStrField = Annotated[
 ]
 """An optional list of strings field type annotation with PyArrow metadata.
 """
+
+ValidatedPILImage = Annotated[
+    PILImage | None,
+    WrapValidator(_image_validator),
+    PlainSerializer(_image_serializer),
+    TableSchemaMetadata(pyarrow=pa.binary()),
+]

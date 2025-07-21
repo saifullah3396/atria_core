@@ -1,7 +1,6 @@
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, Union
 
 import pyarrow as pa
-import torch
 from pydantic import field_validator
 
 from atria_core.types.base.data_model import BaseDataModel
@@ -11,11 +10,15 @@ from atria_core.types.typing.common import (
     BoolField,
     ListBoolField,
     TableSchemaMetadata,
+    _is_tensor_type,
     _tensor_validator,
 )
 
+if TYPE_CHECKING:
+    import torch
 
-def _validate_segmentation_field(v) -> list[list[float]] | torch.Tensor | None:
+
+def _validate_segmentation_field(v) -> Union[list[list[float]], "torch.Tensor", None]:
     if isinstance(v, dict) and "counts" in v and "size" in v:
         return v["counts"]
     elif isinstance(v, list):
@@ -23,7 +26,7 @@ def _validate_segmentation_field(v) -> list[list[float]] | torch.Tensor | None:
             "Polygon segmentation must be of shape (N, 2M), where M is the number of points."
         )
         return v
-    elif isinstance(v, torch.Tensor):
+    elif _is_tensor_type(v):
         assert v.ndim in (2, 3) and v.shape[-1] % 2 == 0, (
             "Segmentation tensor must be of shape (N, 2M), where M is the number of points."
         )
@@ -35,7 +38,7 @@ class AnnotatedObject(BaseDataModel):
     label: Label
     bbox: BoundingBox
     segmentation: Annotated[
-        list[list[float]] | torch.Tensor | None,
+        list[list[float]] | None,
         _tensor_validator(2),
         TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64()))),
     ] = None
@@ -46,7 +49,7 @@ class AnnotatedObject(BaseDataModel):
     @classmethod
     def validate_and_convert_segmentation(
         cls, value: Any
-    ) -> list[list[float]] | torch.Tensor | None:
+    ) -> Union[list[list[float]], "torch.Tensor", None]:
         return _validate_segmentation_field(value)
 
 
@@ -54,7 +57,8 @@ class AnnotatedObjectList(BaseDataModel):
     label: LabelList
     bbox: BoundingBoxList
     segmentation: Annotated[
-        list[list[list[float]]] | torch.Tensor | None,
+        list[list[list[float]]] | None,
+        _tensor_validator(3),
         TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64()))),
     ] = None
     iscrowd: ListBoolField
@@ -64,7 +68,7 @@ class AnnotatedObjectList(BaseDataModel):
     @classmethod
     def validate_and_convert_segmentation(
         cls, value: Any
-    ) -> list[list[list[float]]] | torch.Tensor | None:
+    ) -> Union[list[list[list[float]]], "torch.Tensor", None]:
         if isinstance(value, list):
             return [_validate_segmentation_field(v) for v in value]
         return _validate_segmentation_field(value)

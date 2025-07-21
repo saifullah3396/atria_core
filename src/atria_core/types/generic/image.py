@@ -1,16 +1,17 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Self, Union
+from typing import Any, Self
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from rich.repr import RichReprResult
 
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import BaseDataModel
-from atria_core.types.typing.common import OptIntField, OptStrField
-from atria_core.utilities.encoding import ValidatedPILImage
-
-if TYPE_CHECKING:
-    import torch
+from atria_core.types.typing.common import (
+    OptIntField,
+    OptStrField,
+    ValidatedPILImage,
+    _is_tensor_type,
+)
 
 logger = get_logger(__name__)
 
@@ -29,6 +30,13 @@ class Image(BaseDataModel):
     def height(self) -> int:
         return self.size[1] if self.size else None
 
+    @field_validator("file_path", mode="before")
+    @classmethod
+    def _validate_file_path(cls, value: Any) -> str | None:
+        if isinstance(value, Path):
+            return str(value)
+        return value
+
     @model_validator(mode="after")
     def _validate_dims(self):
         if self.source_width is None or self.source_height is None:
@@ -44,56 +52,39 @@ class Image(BaseDataModel):
         return self
 
     @property
-    def dtype(self) -> "torch.dtype":
-        import torch
-
+    def dtype(self):
         assert self.content is not None, (
             "Image content is not loaded. Call load() first or assign content directly."
         )
-        if isinstance(self.content, torch.Tensor):
-            import torch
-
-            assert isinstance(self.content, torch.Tensor), (
-                "Image content is not a tensor. Cannot get dtype."
-            )
+        if _is_tensor_type(self.content):
             return self.content.dtype
         else:
             raise ValueError("Image content is not a tensor. Cannot get dtype.")
 
     @property
     def size(self) -> tuple[int, int] | None:
-        import torch
-
-        assert self.content is not None, (
-            "Image content is not loaded. Call load() first or assign content directly."
-        )
-        if isinstance(self.content, torch.Tensor):
-            import torch
-
-            assert isinstance(self.content, torch.Tensor), (
-                "Image content is not a tensor. Cannot get dtype."
-            )
-            return (self.content.shape[-1], self.content.shape[-2])
+        if self.content is not None:
+            if _is_tensor_type(self.content):
+                return (self.content.shape[-1], self.content.shape[-2])
+            else:
+                if self._is_batched:
+                    raise ValueError(
+                        "Size is not defined for batched images. Use size instead."
+                    )
+                return self.content.size
         else:
-            if self._is_batched:
-                raise ValueError(
-                    "Size is not defined for batched images. Use size instead."
-                )
-            return self.content.size
+            return (
+                (self.source_width, self.source_height)
+                if self.source_width and self.source_height
+                else None
+            )
 
     @property
-    def shape(self) -> Union[tuple[int, ...], "torch.Size"]:
-        import torch
-
+    def shape(self) -> tuple[int, ...]:
         assert self.content is not None, (
             "Image content is not loaded. Call load() first or assign content directly."
         )
-        if isinstance(self.content, torch.Tensor):
-            import torch
-
-            assert isinstance(self.content, torch.Tensor), (
-                "Image content is not a tensor. Cannot get shape."
-            )
+        if _is_tensor_type(self.content):
             return self.content.shape
         else:
             if self._is_batched:
@@ -104,17 +95,10 @@ class Image(BaseDataModel):
 
     @property
     def channels(self) -> int | list[int]:
-        import torch
-
         assert self.content is not None, (
             "Image content is not loaded. Call load() first or assign content directly."
         )
-        if isinstance(self.content, torch.Tensor):
-            import torch
-
-            assert isinstance(self.content, torch.Tensor), (
-                "Image content is not a tensor. Cannot get channels."
-            )
+        if _is_tensor_type(self.content):
             return self.content.shape[1] if self._is_batched else self.content.shape[0]
         else:
             if self._is_batched:
@@ -155,10 +139,10 @@ class Image(BaseDataModel):
         self.content = None
 
     def _to_tensor(self) -> None:
-        import torch
-        from torchvision.transforms.functional import to_tensor
+        if self.content is not None and not _is_tensor_type(self.content):
+            import torch
+            from torchvision.transforms.functional import to_tensor
 
-        if self.content is not None and not isinstance(self.content, torch.Tensor):
             if self._is_batched:
                 assert isinstance(self.content, list) and len(self.content) > 0, (
                     "Expected a list of PIL Images for batched images."
@@ -168,27 +152,19 @@ class Image(BaseDataModel):
                 except Exception:
                     self.content = [to_tensor(img) for img in self.content]
             else:
-                import PIL
-
-                assert isinstance(self.content, PIL.Image.Image), (
-                    "Image content is not a PIL Image. Cannot convert to tensor."
-                )
                 self.content = to_tensor(self.content)
 
     def _to_raw(self) -> None:
-        import torch
-        from torchvision.transforms.functional import to_pil_image
+        if self.content is not None and _is_tensor_type(self.content):
+            from torchvision.transforms.functional import to_pil_image
 
-        if self.content is not None and isinstance(self.content, torch.Tensor):
             self.content = to_pil_image(self.content)
 
     def to_rgb(self) -> Self:
-        import torch
-
         assert self.content is not None, (
             "Image content is not loaded. Call load() first."
         )
-        if isinstance(self.content, torch.Tensor):
+        if _is_tensor_type(self.content):
             repeats = (1, 3, 1, 1) if self._is_batched else (3, 1, 1)
             self.content = self.content.repeat(*repeats)
         else:
@@ -200,12 +176,10 @@ class Image(BaseDataModel):
         return self
 
     def to_grayscale(self) -> Self:
-        import torch
-
         assert self.content is not None, (
             "Image content is not loaded. Call load() first."
         )
-        if isinstance(self.content, torch.Tensor):
+        if _is_tensor_type(self.content):
             from torchvision.transforms.functional import rgb_to_grayscale
 
             self.content = rgb_to_grayscale(self.content, num_output_channels=1)
@@ -218,12 +192,10 @@ class Image(BaseDataModel):
         return self
 
     def resize(self, width: int, height: int) -> Self:
-        import torch
-
         assert self.content is not None, (
             "Image content is not loaded. Call load() first."
         )
-        if isinstance(self.content, torch.Tensor):
+        if _is_tensor_type(self.content):
             from torchvision.transforms.functional import InterpolationMode, resize
 
             self.content = resize(
@@ -251,12 +223,10 @@ class Image(BaseDataModel):
     def normalize(
         self, mean: float | tuple[float, ...], std: float | tuple[float, ...]
     ) -> Self:
-        import torch
-
         assert self.content is not None, (
             "Image content is not loaded. Call load() first."
         )
-        assert isinstance(self.content, torch.Tensor), (
+        assert _is_tensor_type(self.content), (
             "Normalization is only supported for tensor images. "
             "Convert the image to tensor first using `to_tensor()`."
         )
@@ -275,7 +245,8 @@ class Image(BaseDataModel):
             RichReprResult: A generator of key-value pairs or values for the object's attributes.
         """
         yield from super().__rich_repr__()
-        if self.content is not None:
-            yield "width", self.width
-            yield "height", self.height
-            yield "channels", self.channels
+        if not self._is_batched:
+            if self.content is not None:
+                yield "width", self.width
+                yield "height", self.height
+                yield "channels", self.channels

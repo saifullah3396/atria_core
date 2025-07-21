@@ -1,12 +1,19 @@
 import enum
-from typing import Annotated, Any, ClassVar, Union
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Union
 
 import pyarrow as pa
-import torch
 from pydantic import field_validator
 
 from atria_core.types.base.data_model import BaseDataModel
-from atria_core.types.typing.common import ListFloatField, TableSchemaMetadata
+from atria_core.types.typing.common import (
+    ListFloatField,
+    TableSchemaMetadata,
+    _is_tensor_type,
+    _tensor_validator,
+)
+
+if TYPE_CHECKING:
+    import torch
 
 
 class BoundingBoxMode(str, enum.Enum):
@@ -22,10 +29,8 @@ class BoundingBox(BaseDataModel):
     )
 
     def switch_mode(self):
-        import torch
-
         assert not self._is_batched, "Cannot switch mode for batched bounding boxes."
-        if isinstance(self.value, torch.Tensor):
+        if _is_tensor_type(self.value):
             if self.mode == BoundingBoxMode.XYXY:
                 self.value[..., 2], self.value[..., 3] = self.width, self.height
                 self.mode = BoundingBoxMode.XYWH
@@ -66,9 +71,7 @@ class BoundingBox(BaseDataModel):
         )
 
     def shape(self) -> "torch.Size":
-        import torch
-
-        if isinstance(self.value, torch.Tensor):
+        if _is_tensor_type(self.value):
             return self.value.shape
         else:
             return (len(self.value),)
@@ -79,108 +82,84 @@ class BoundingBox(BaseDataModel):
 
     @property
     def x1(self) -> Union[float, "torch.Tensor"]:
-        import torch
-
-        idx = (..., 0) if isinstance(self.value, torch.Tensor) else 0
+        idx = (..., 0) if _is_tensor_type(self.value) else 0
         return self.value[idx]
 
     @x1.setter
     def x1(self, value: Union[float, "torch.Tensor"]):
-        import torch
-
-        idx = (..., 0) if isinstance(self.value, torch.Tensor) else 0
+        idx = (..., 0) if _is_tensor_type(self.value) else 0
         self.value[idx] = value
 
     @property
     def y1(self) -> Union[float, "torch.Tensor"]:
-        import torch
-
-        idx = (..., 1) if isinstance(self.value, torch.Tensor) else 1
+        idx = (..., 1) if _is_tensor_type(self.value) else 1
         return self.value[idx]
 
     @y1.setter
     def y1(self, value: Union[float, "torch.Tensor"]):
-        import torch
-
-        idx = (..., 1) if isinstance(self.value, torch.Tensor) else 1
+        idx = (..., 1) if _is_tensor_type(self.value) else 1
         self.value[idx] = value
 
     @property
     def x2(self) -> Union[float, "torch.Tensor"]:
-        import torch
-
         if self.mode == BoundingBoxMode.XYWH:
             return self.x1 + self.width
         else:
-            idx = (..., 2) if isinstance(self.value, torch.Tensor) else 2
+            idx = (..., 2) if _is_tensor_type(self.value) else 2
             return self.value[idx]
 
     @x2.setter
     def x2(self, value: Union[float, "torch.Tensor"]):
-        import torch
-
         if self.mode == BoundingBoxMode.XYWH:
             raise ValueError("Cannot set x2 directly in XYWH mode. Use width instead.")
         else:
-            idx = (..., 2) if isinstance(self.value, torch.Tensor) else 2
+            idx = (..., 2) if _is_tensor_type(self.value) else 2
             self.value[idx] = value
 
     @property
     def y2(self) -> Union[float, "torch.Tensor"]:
-        import torch
-
         if self.mode == BoundingBoxMode.XYWH:
             return self.y1 + self.height
         else:
-            idx = (..., 3) if isinstance(self.value, torch.Tensor) else 3
+            idx = (..., 3) if _is_tensor_type(self.value) else 3
             return self.value[idx]
 
     @y2.setter
     def y2(self, value: Union[float, "torch.Tensor"]):
-        import torch
-
         if self.mode == BoundingBoxMode.XYWH:
             raise ValueError("Cannot set x2 directly in XYWH mode. Use width instead.")
         else:
-            idx = (..., 3) if isinstance(self.value, torch.Tensor) else 3
+            idx = (..., 3) if _is_tensor_type(self.value) else 3
             self.value[idx] = value
 
     @property
     def width(self) -> Union[float, "torch.Tensor"]:
-        import torch
-
         if self.mode == BoundingBoxMode.XYWH:
-            idx = (..., 2) if isinstance(self.value, torch.Tensor) else 2
+            idx = (..., 2) if _is_tensor_type(self.value) else 2
             return self.value[idx]
         else:
             return self.x2 - self.x1
 
     @width.setter
     def width(self, value: Union[float, "torch.Tensor"]):
-        import torch
-
         if self.mode == BoundingBoxMode.XYWH:
-            idx = (..., 2) if isinstance(self.value, torch.Tensor) else 2
+            idx = (..., 2) if _is_tensor_type(self.value) else 2
             self.value[idx] = value
         else:
             raise ValueError("Cannot set width directly in XYXY mode. Use x2 instead.")
 
     @property
     def height(self) -> Union[float, "torch.Tensor"]:
-        import torch
-
         if self.mode == BoundingBoxMode.XYWH:
-            idx = (..., 3) if isinstance(self.value, torch.Tensor) else 3
+            idx = (..., 3) if _is_tensor_type(self.value) else 3
             return self.value[idx]
         else:
             return self.y2 - self.y1
 
     @height.setter
     def height(self, value: Union[float, "torch.Tensor"]):
-        import torch
-
         if self.mode == BoundingBoxMode.XYWH:
-            idx = (..., 3) if isinstance(self.value, torch.Tensor) else 3
+            idx = (..., 3) if _is_tensor_type(self.value) else 3
             self.value[idx] = value
         else:
             raise ValueError("Cannot set height directly in XYXY mode. Use y2 instead.")
@@ -220,7 +199,8 @@ class BoundingBox(BaseDataModel):
 
 class BoundingBoxList(BaseDataModel):
     value: Annotated[
-        list[list[float]] | torch.Tensor,
+        list[list[float]],
+        _tensor_validator(2),
         TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64()))),
     ]
     mode: Annotated[BoundingBoxMode, TableSchemaMetadata(pyarrow=pa.string())] = (
@@ -249,11 +229,11 @@ class BoundingBoxList(BaseDataModel):
     def validate_value(cls, value: Any) -> list[float]:
         if isinstance(value, list):
             assert isinstance(value, list), "Expected a list of bounding boxes."
-            assert len(value) > 0, "BoundingBoxList cannot be empty."
-            assert all(isinstance(bbox, list) for bbox in value), (
-                "Expected a 1D list of shape (4,) for bounding boxes."
-            )
-        elif isinstance(value, torch.Tensor):
+            if len(value) > 0:
+                assert all(isinstance(bbox, list) for bbox in value), (
+                    "Expected a 1D list of shape (4,) for bounding boxes."
+                )
+        elif _is_tensor_type(value):
             assert value.ndim == 2 and value.shape[1] == 4, (
                 "Expected a 2D tensor with shape (N, 4) for bounding boxes."
             )

@@ -18,6 +18,6 @@ Version: 1.0.0
 License: MIT
 """
 
-from atria_core.logger.logger import get_logger
+from atria_core.logger.logger import LoggerBase, get_logger
 
-__all__ = ["get_logger"]
+__all__ = ["get_logger", "LoggerBase"]

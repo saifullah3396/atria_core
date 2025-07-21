@@ -59,5 +59,5 @@ class TensorConvertible(BaseModel):
                     setattr(self, field_name, _convert_from_tensor(field_value))
             except Exception as e:
                 raise RuntimeError(
-                    f"Error converting field '{field_name}' to tensor"
+                    f"Error converting field '{field_name}' to raw format"
                 ) from e

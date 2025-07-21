@@ -24,6 +24,7 @@ License: MIT
 
 import re
 
+import codename
 from omegaconf import OmegaConf
 
 
@@ -68,9 +69,27 @@ def _resolve_tuple(*args) -> tuple:
     return tuple(args)
 
 
+def _resovle_experiment_name(name: str) -> str:
+    """
+    Resolves the experiment name by sanitizing it.
+
+    Args:
+        name (str): The experiment name to resolve.
+
+    Returns:
+        str: The sanitized experiment name.
+    """
+    if name == "":
+        return codename.codename().replace(" ", "-")
+    return _sanitize_string(name)
+
+
 if not OmegaConf.has_resolver("resolve_dir_name"):
     OmegaConf.register_new_resolver("resolve_dir_name", _resolve_dir_name)
 
 
 if not OmegaConf.has_resolver("as_tuple"):
     OmegaConf.register_new_resolver("as_tuple", _resolve_tuple)
+
+if not OmegaConf.has_resolver("resolve_experiment_name"):
+    OmegaConf.register_new_resolver("resolve_experiment_name", _resovle_experiment_name)

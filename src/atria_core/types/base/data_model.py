@@ -2,7 +2,6 @@ import types
 from typing import Any, Union, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict
-from rich.repr import RichReprResult
 
 from atria_core.logger.logger import get_logger
 from atria_core.types.base._mixins._loadable import Loadable
@@ -73,8 +72,6 @@ class BaseDataModel(  # type: ignore[misc]
         for _, field in cls.model_fields.items():
             cls._verify_types(field.annotation)
 
-        cls.model_rebuild(force=True)
-
     def model_dump(self, *args, **kwargs):
         self.to_raw()
         return super().model_dump(*args, round_trip=True, **kwargs)
@@ -82,24 +79,3 @@ class BaseDataModel(  # type: ignore[misc]
     def model_dump_json(self, *args, **kwargs):
         self.to_raw()
         return super().model_dump_json(*args, round_trip=True, **kwargs)
-
-    def __rich_repr__(self) -> RichReprResult:  # type: ignore
-        """
-        Generates a rich representation of the object.
-
-        Yields:
-            RichReprResult: A generator of key-value pairs for the specified fields only.
-        """
-        for field_name in self.__class__.model_fields:
-            if not hasattr(self, field_name):
-                continue
-
-            value = getattr(self, field_name)
-
-            # Safely represent bound methods, functions, or other callables
-            if isinstance(value, types.MethodType):
-                safe_value = value.__func__
-            else:
-                safe_value = value
-            if safe_value is not None:
-                yield field_name, safe_value

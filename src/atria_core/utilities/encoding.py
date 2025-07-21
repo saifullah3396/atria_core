@@ -31,19 +31,15 @@ Version: 1.0.0
 License: MIT
 """
 
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
+from typing import TYPE_CHECKING, Union
 
-import pyarrow as pa
-import torch
 from PIL.Image import Image as PILImage
-from pydantic import BeforeValidator, PlainSerializer
-
-from atria_core.types.typing.common import TableSchemaMetadata
 
 if TYPE_CHECKING:
     import numpy as np
     import PIL
     import PIL.Image
+    import torch
 
 
 def _pil_image_to_bytes(image: "PILImage", format: str = "PNG") -> bytes:
@@ -217,44 +213,3 @@ def _decode_string(input: str | bytes) -> str:
         except gzip.BadGzipFile:
             return input.decode("utf-8")
     return input
-
-
-def _image_validator(value: Any) -> "PILImage":
-    import numpy as np
-    import PIL.Image as PILImageModule
-
-    if value is None:
-        return None
-    if isinstance(value, bytes):
-        return _bytes_to_image(value)
-    elif isinstance(value, str):
-        return _base64_to_image(value)
-    elif isinstance(value, np.ndarray):
-        return PILImageModule.fromarray(value)
-    elif isinstance(value, PILImage):
-        return value
-    elif isinstance(value, torch.Tensor):
-        assert value.ndim in (2, 3, 4), "Tensor must be 2D, 3D or 4D."
-        return value
-    else:
-        raise ValueError(
-            "Unsupported type for image conversion. Supported types are: str, np.ndarray, PIL.Image."
-        )
-
-
-def _image_serializer(value: Optional["PILImage"]) -> bytes | None:
-    if value is None:
-        return None
-    if isinstance(value, torch.Tensor):
-        from torchvision.transforms.functional import to_pil_image
-
-        value = to_pil_image(value)
-    return _image_to_bytes(value)
-
-
-ValidatedPILImage = Annotated[
-    PILImage | torch.Tensor | None,
-    BeforeValidator(_image_validator),
-    PlainSerializer(_image_serializer),
-    TableSchemaMetadata(pyarrow=pa.binary()),
-]

@@ -24,7 +24,6 @@ def auto_config(attr_name="config", exclude: set[str] | None = None):
                 if exclude is not None:
                     config = OmegaConf.to_container(config)
                     config = {k: v for k, v in config.items() if k not in exclude}
-                    config = OmegaConf.create(config)
                 setattr(self, attr_name, config)
             original_init(self, *args, **kwargs)
 

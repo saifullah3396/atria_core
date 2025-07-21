@@ -4,6 +4,7 @@ from pydantic import PrivateAttr
 
 from atria_core.logger.logger import get_logger
 from atria_core.types.base._mixins._batchable import Batchable
+from atria_core.types.typing.common import _is_tensor_type
 
 if TYPE_CHECKING:
     pass
@@ -157,7 +158,7 @@ class Repeatable(Batchable):
                 for _ in range(count)
             ]
 
-        elif isinstance(field_value, torch.Tensor):
+        elif _is_tensor_type(field_value):
             if field_value.size(0) != len(repeat_indices):
                 raise ValueError(
                     f"Tensor batch size ({field_value.size(0)}) doesn't match repeat_indices length ({len(repeat_indices)})"
@@ -213,7 +214,7 @@ class Repeatable(Batchable):
                 return field_value
             grouped = _ungroup_by_repeats(field_value, repeat_indices)
             return [group[0] if group else None for group in grouped]
-        elif isinstance(field_value, torch.Tensor):
+        elif _is_tensor_type(field_value):
             if field_value.size(0) != sum(repeat_indices):
                 raise ValueError(
                     f"Tensor size ({field_value.size(0)}) doesn't match sum of repeat_indices ({sum(repeat_indices)})"

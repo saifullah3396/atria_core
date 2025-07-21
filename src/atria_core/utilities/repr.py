@@ -19,9 +19,8 @@ License: MIT
 
 import types
 
-from rich.pretty import RichReprResult, pretty_repr
-
 from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
+from rich.pretty import RichReprResult, pretty_repr
 
 
 class RepresentationMixin:
@@ -54,6 +53,8 @@ class RepresentationMixin:
             RichReprResult: A generator of key-value pairs for the specified fields only.
         """
         repr_fields = getattr(self.__class__, "__repr_fields__", set())
+        if len(repr_fields) == 0:
+            repr_fields = self.__dict__.keys()
 
         for field_name in repr_fields:
             if not hasattr(self, field_name):
@@ -78,7 +79,7 @@ class RepresentationMixin:
         """
 
         return pretty_repr(
-            self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=128, max_depth=4
+            self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=64, max_depth=8
         )
 
     def __str__(self) -> str:
@@ -89,5 +90,5 @@ class RepresentationMixin:
             str: A human-readable string representation of the object.
         """
         return pretty_repr(
-            self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=128, max_depth=4
+            self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=64, max_depth=8
         )

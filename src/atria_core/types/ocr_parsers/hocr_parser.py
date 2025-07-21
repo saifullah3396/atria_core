@@ -1,6 +1,5 @@
 import bs4
-
-from atria_core.types.generic.bounding_box import BoundingBox
+from atria_core.types.generic.bounding_box import BoundingBox, BoundingBoxList
 from atria_core.types.generic.ground_truth import OCRGT
 from atria_core.types.generic.ocr import OCRType
 
@@ -60,7 +59,7 @@ class HOCRProcessor:
 
         return OCRGT(
             words=words,
-            word_bboxes=word_bboxes,
+            word_bboxes=BoundingBoxList.from_list(word_bboxes),
             word_angles=word_angles,
             word_confs=word_confs,
         )

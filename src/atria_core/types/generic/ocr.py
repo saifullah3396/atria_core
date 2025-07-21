@@ -16,6 +16,20 @@ class OCR(BaseDataModel):
     type: Annotated[OCRType | None, TableSchemaMetadata(pyarrow=pa.string())] = None
     content: Annotated[str | None, TableSchemaMetadata(pyarrow=pa.binary())] = None
 
+    @field_validator("file_path", mode="before")
+    @classmethod
+    def _validate_file_path(cls, value: Any) -> str | None:
+        if isinstance(value, Path):
+            return str(value)
+        return value
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def _validate_type(cls, value: Any) -> str | None:
+        if isinstance(value, str):
+            return OCRType(value)
+        return value
+
     def _load(self):
         if self.content is None:
             if self.file_path is None:

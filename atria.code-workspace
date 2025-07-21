@@ -9,16 +9,6 @@
     },
     "python.analysis.indexing": true,
     "python.analysis.autoImportCompletions": true,
-    "emeraldwalk.runonsave": {
-        "commands": [
-            {
-                "match": "\\.py$",
-                "isAsync": true,
-                // Use the full path from above in case it can't find it
-                "cmd": "autoflake --in-place --remove-all-unused-imports \"${file}\""
-            },
-        ]
-    },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.formatOnSave": true,

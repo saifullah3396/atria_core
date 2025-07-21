@@ -4,10 +4,9 @@ from types import NoneType
 from typing import Any, Self, Union, get_args, get_origin, get_type_hints
 
 import pyarrow as pa
-from pydantic import BaseModel
-
 from atria_core.logger.logger import get_logger
 from atria_core.types.typing.common import TableSchemaMetadata
+from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
@@ -45,11 +44,13 @@ def _unflatten_dict(flat: dict[str, Any], schema: dict[str, Any]) -> dict[str, A
 
     for key, sub_schema in schema.items():
         if isinstance(sub_schema, dict):
-            # Look for all keys in flat_dict that start with f"{key}_"
             nested = {
                 k[len(key) + 1 :]: v for k, v in flat.items() if k.startswith(f"{key}_")
             }
-            result[key] = _unflatten_dict(nested, sub_schema)
+            if all(value is None for value in nested.values()):
+                result[key] = None
+            else:
+                result[key] = _unflatten_dict(nested, sub_schema)
         else:
             # Primitive value
             if key in flat:

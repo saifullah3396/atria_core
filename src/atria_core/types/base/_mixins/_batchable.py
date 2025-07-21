@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Self
 from pydantic import BaseModel, PrivateAttr
 
 from atria_core.logger.logger import get_logger
+from atria_core.types.typing.common import _is_tensor_type
 
 if TYPE_CHECKING:
     import torch
@@ -135,7 +136,6 @@ class Batchable(BaseModel):
         Returns:
             Any: The batched value for this field.
         """
-        import torch
 
         # If all values are None, return None
         if any(v is None for v in values):
@@ -164,7 +164,7 @@ class Batchable(BaseModel):
             return cls._handle_nested_list_of_batchables(values)
 
         # Handle torch tensors
-        if isinstance(first_value, torch.Tensor):
+        if _is_tensor_type(first_value):
             return cls._handle_tensor_field(field_name, values)
 
         # Fallback: return list of raw values

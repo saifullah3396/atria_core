@@ -11,6 +11,8 @@ requires-python = "==3.11.*"
 license = { file = "LICENSE.txt" }
 authors = [{ name = "Saifullah", email = "saifullah.saifullah@dfki.de" }]
 dependencies = [
+    "torch==2.1.2",
+    "torchvision==0.16.2",
     "coloredlogs==15.0.1",
     "lazy_loader==0.4",
     "numpy==1.26.4",
@@ -26,6 +28,9 @@ dependencies = [
     "coverage",
     "pytest",
     "torchtyping>=0.1.5",
+    "codename>=1.1",
+    "lazy-imports>=1.0.0",
+    "lxml>=6.0.0",
 ]
 
 
@@ -115,32 +120,6 @@ xfail_strict = true         # Treat tests that are marked as xfail but pass as t
 
 [tool.uv]
 managed = true
-default-groups = ["torch-gpu"]
-conflicts = [
-  [
-    { group = "torch-cpu" },
-    { group = "torch-gpu" },
-  ],
-]
-[tool.uv.sources]
-torch = [
-  { index = "pytorch-cpu", group = "torch-cpu"},
-  { index = "pytorch-cu121", group = "torch-gpu" },
-]
-torchvision = [
-  { index = "pytorch-cpu", group = "torch-cpu"},
-  { index = "pytorch-cu121", group = "torch-gpu" },
-]
-
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[[tool.uv.index]]
-name = "pytorch-cu121"
-url = "https://download.pytorch.org/whl/cu121"
-explicit = true
 
 [dependency-groups]
 dev = [
@@ -148,14 +127,6 @@ dev = [
     "ruff>=0.12.2",
     "ipykernel>=6.29.5",
     "factory-boy>=3.3.3",
-]
-torch-cpu = [
-  "torch==2.1.2",
-  "torchvision==0.16.2",
-]
-torch-gpu = [
-  "torch==2.1.2",
-  "torchvision==0.16.2",
 ]
 
 [tool.mypy]
