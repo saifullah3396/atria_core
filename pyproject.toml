@@ -11,14 +11,6 @@ requires-python = "==3.11.*"
 license = { file = "LICENSE.txt" }
 authors = [{ name = "Saifullah", email = "saifullah.saifullah@dfki.de" }]
 dependencies = [
-]
-
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[project.optional-dependencies]
-no-torch = [
     "coloredlogs==15.0.1",
     "lazy_loader==0.4",
     "numpy==1.26.4",
@@ -37,9 +29,19 @@ no-torch = [
     "lazy-imports>=1.0.0",
     "lxml>=6.0.0",
 ]
+
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[project.optional-dependencies]
 test = [
-  "coverage", 
-  ]
+    "coverage", 
+]
+with-torch = [
+    "torch==2.1.2",
+    "torchvision==0.16.2",
+]
 
 [tool.coverage.report]
 skip_covered = true
@@ -119,31 +121,9 @@ xfail_strict = true         # Treat tests that are marked as xfail but pass as t
 
 [tool.uv]
 managed = true
-default-groups = ["with-torch"]
 
 
 [dependency-groups]
-with-torch = [
-    "torch==2.1.2",
-    "torchvision==0.16.2",
-    "coloredlogs==15.0.1",
-    "lazy_loader==0.4",
-    "numpy==1.26.4",
-    "omegaconf==2.3.0",
-    "Pillow==10.0.0",
-    "rich==14.0.0",
-    "beautifulsoup4==4.12.2",
-    "imagesize>=1.4.1",
-    "pyarrow>=20.0.0",
-    "pydantic>=2.11.7",
-    "faker",
-    "factory-boy",
-    "coverage",
-    "pytest",
-    "codename>=1.1",
-    "lazy-imports>=1.0.0",
-    "lxml>=6.0.0",
-]
 dev = [
     "pyarrow>=20.0.0",
     "ruff>=0.12.2",
