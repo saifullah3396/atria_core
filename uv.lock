@@ -39,10 +39,33 @@ wheels = [
 name = "atria-core"
 version = "0.0.0"
 source = { editable = "." }
+dependencies = [
+    { name = "beautifulsoup4" },
+    { name = "codename" },
+    { name = "coloredlogs" },
+    { name = "coverage" },
+    { name = "factory-boy" },
+    { name = "faker" },
+    { name = "imagesize" },
+    { name = "lazy-imports" },
+    { name = "lazy-loader" },
+    { name = "lxml" },
+    { name = "numpy" },
+    { name = "omegaconf" },
+    { name = "pillow" },
+    { name = "pyarrow" },
+    { name = "pydantic" },
+    { name = "pytest" },
+    { name = "rich" },
+]
 
 [package.optional-dependencies]
 test = [
     { name = "coverage" },
+]
+with-torch = [
+    { name = "torch" },
+    { name = "torchvision" },
 ]
 
 [package.dev-dependencies]
@@ -52,50 +75,31 @@ dev = [
     { name = "pyarrow" },
     { name = "ruff" },
 ]
-simple = [
-    { name = "beautifulsoup4" },
-    { name = "codename" },
-    { name = "coloredlogs" },
-    { name = "coverage" },
-    { name = "factory-boy" },
-    { name = "faker" },
-    { name = "imagesize" },
-    { name = "lazy-imports" },
-    { name = "lazy-loader" },
-    { name = "lxml" },
-    { name = "numpy" },
-    { name = "omegaconf" },
-    { name = "pillow" },
-    { name = "pyarrow" },
-    { name = "pydantic" },
-    { name = "pytest" },
-    { name = "rich" },
-]
-torch = [
-    { name = "beautifulsoup4" },
-    { name = "codename" },
-    { name = "coloredlogs" },
-    { name = "coverage" },
-    { name = "factory-boy" },
-    { name = "faker" },
-    { name = "imagesize" },
-    { name = "lazy-imports" },
-    { name = "lazy-loader" },
-    { name = "lxml" },
-    { name = "numpy" },
-    { name = "omegaconf" },
-    { name = "pillow" },
-    { name = "pyarrow" },
-    { name = "pydantic" },
-    { name = "pytest" },
-    { name = "rich" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
 
 [package.metadata]
-requires-dist = [{ name = "coverage", marker = "extra == 'test'" }]
-provides-extras = ["test"]
+requires-dist = [
+    { name = "beautifulsoup4", specifier = "==4.12.2" },
+    { name = "codename", specifier = ">=1.1" },
+    { name = "coloredlogs", specifier = "==15.0.1" },
+    { name = "coverage" },
+    { name = "coverage", marker = "extra == 'test'" },
+    { name = "factory-boy" },
+    { name = "faker" },
+    { name = "imagesize", specifier = ">=1.4.1" },
+    { name = "lazy-imports", specifier = ">=1.0.0" },
+    { name = "lazy-loader", specifier = "==0.4" },
+    { name = "lxml", specifier = ">=6.0.0" },
+    { name = "numpy", specifier = "==1.26.4" },
+    { name = "omegaconf", specifier = "==2.3.0" },
+    { name = "pillow", specifier = "==10.0.0" },
+    { name = "pyarrow", specifier = ">=20.0.0" },
+    { name = "pydantic", specifier = ">=2.11.7" },
+    { name = "pytest" },
+    { name = "rich", specifier = "==14.0.0" },
+    { name = "torch", marker = "extra == 'with-torch'", specifier = "==2.1.2" },
+    { name = "torchvision", marker = "extra == 'with-torch'", specifier = "==0.16.2" },
+]
+provides-extras = ["test", "with-torch"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -103,46 +107,6 @@ dev = [
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "pyarrow", specifier = ">=20.0.0" },
     { name = "ruff", specifier = ">=0.12.2" },
-]
-simple = [
-    { name = "beautifulsoup4", specifier = "==4.12.2" },
-    { name = "codename", specifier = ">=1.1" },
-    { name = "coloredlogs", specifier = "==15.0.1" },
-    { name = "coverage" },
-    { name = "factory-boy" },
-    { name = "faker" },
-    { name = "imagesize", specifier = ">=1.4.1" },
-    { name = "lazy-imports", specifier = ">=1.0.0" },
-    { name = "lazy-loader", specifier = "==0.4" },
-    { name = "lxml", specifier = ">=6.0.0" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "omegaconf", specifier = "==2.3.0" },
-    { name = "pillow", specifier = "==10.0.0" },
-    { name = "pyarrow", specifier = ">=20.0.0" },
-    { name = "pydantic", specifier = ">=2.11.7" },
-    { name = "pytest" },
-    { name = "rich", specifier = "==14.0.0" },
-]
-torch = [
-    { name = "beautifulsoup4", specifier = "==4.12.2" },
-    { name = "codename", specifier = ">=1.1" },
-    { name = "coloredlogs", specifier = "==15.0.1" },
-    { name = "coverage" },
-    { name = "factory-boy" },
-    { name = "faker" },
-    { name = "imagesize", specifier = ">=1.4.1" },
-    { name = "lazy-imports", specifier = ">=1.0.0" },
-    { name = "lazy-loader", specifier = "==0.4" },
-    { name = "lxml", specifier = ">=6.0.0" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "omegaconf", specifier = "==2.3.0" },
-    { name = "pillow", specifier = "==10.0.0" },
-    { name = "pyarrow", specifier = ">=20.0.0" },
-    { name = "pydantic", specifier = ">=2.11.7" },
-    { name = "pytest" },
-    { name = "rich", specifier = "==14.0.0" },
-    { name = "torch", specifier = "==2.1.2" },
-    { name = "torchvision", specifier = "==0.16.2" },
 ]
 
 [[package]]

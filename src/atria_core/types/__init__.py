@@ -18,11 +18,6 @@ if TYPE_CHECKING:
     from .data_instance.base import BaseDataInstance
     from .data_instance.document_instance import DocumentInstance
     from .data_instance.image_instance import ImageInstance
-    from .datasets.config import (
-        AtriaDatasetConfig,
-        AtriaHubDatasetConfig,
-        AtriaHuggingfaceDatasetConfig,
-    )
     from .datasets.metadata import (
         DatasetLabels,
         DatasetMetadata,
@@ -61,11 +56,6 @@ __getattr__, __dir__, __all__ = lazy.attach(
         "data_instance.base": ["BaseDataInstance"],
         "data_instance.document_instance": ["DocumentInstance"],
         "data_instance.image_instance": ["ImageInstance"],
-        "datasets.config": [
-            "AtriaDatasetConfig",
-            "AtriaHubDatasetConfig",
-            "AtriaHuggingfaceDatasetConfig",
-        ],
         "datasets.metadata": [
             "DatasetLabels",
             "DatasetMetadata",

@@ -1,8 +1,4 @@
 import functools
-import inspect
-
-from hydra_zen import builds
-from omegaconf import OmegaConf
 
 
 class AutoConfig:
@@ -13,6 +9,11 @@ class AutoConfig:
 
         @functools.wraps(original_init)
         def wrapped_init(self, *args, **kwargs):
+            import inspect
+
+            from hydra_zen import builds
+            from omegaconf import OmegaConf
+
             original_init(self, *args, **kwargs)
 
             # Generate config after initialization

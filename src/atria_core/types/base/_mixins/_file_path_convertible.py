@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from pydantic import BaseModel
 
 from atria_core.logger.logger import get_logger
@@ -9,6 +7,8 @@ logger = get_logger(__name__)
 
 class FilePathConvertible(BaseModel):
     def to_relative_file_paths(self, data_dir: str) -> None:
+        from pathlib import Path
+
         for field_name in self.__class__.model_fields:
             try:
                 field_value = getattr(self, field_name)
@@ -26,6 +26,8 @@ class FilePathConvertible(BaseModel):
         return self
 
     def to_absolute_file_paths(self, data_dir: str) -> None:
+        from pathlib import Path
+
         for field_name in self.__class__.model_fields:
             try:
                 field_value = getattr(self, field_name)

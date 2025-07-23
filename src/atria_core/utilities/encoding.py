@@ -33,13 +33,12 @@ License: MIT
 
 from typing import TYPE_CHECKING, Union
 
-from PIL.Image import Image as PILImage
-
 if TYPE_CHECKING:
     import numpy as np
     import PIL
     import PIL.Image
     import torch
+    from PIL.Image import Image as PILImage
 
 
 def _pil_image_to_bytes(image: "PILImage", format: str = "PNG") -> bytes:
@@ -186,9 +185,12 @@ def _decompress_string(input: bytes) -> str:
     import gzip
     import io
 
-    with io.BytesIO(input) as buffer:
-        with gzip.GzipFile(fileobj=buffer, mode="rb") as f:
-            return f.read().decode("utf-8")
+    try:
+        with io.BytesIO(input) as buffer:
+            with gzip.GzipFile(fileobj=buffer, mode="rb") as f:
+                return f.read().decode("utf-8")
+    except gzip.BadGzipFile:
+        return input.decode("utf-8") if isinstance(input, bytes) else input
 
 
 def _decode_string(input: str | bytes) -> str:
@@ -205,11 +207,7 @@ def _decode_string(input: str | bytes) -> str:
         gzip.BadGzipFile: If the input is not a valid gzip-compressed string.
     """
     import base64
-    import gzip
 
     if isinstance(input, bytes):
-        try:
-            return _decompress_string(base64.b64decode(input))
-        except gzip.BadGzipFile:
-            return input.decode("utf-8")
+        return _decompress_string(base64.b64decode(input))
     return input

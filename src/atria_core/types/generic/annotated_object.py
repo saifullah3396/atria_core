@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Annotated, Any, Union
 
-import pyarrow as pa
 from pydantic import field_validator
 
 from atria_core.types.base.data_model import BaseDataModel
@@ -40,7 +39,7 @@ class AnnotatedObject(BaseDataModel):
     segmentation: Annotated[
         list[list[float]] | None,
         _tensor_validator(2),
-        TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64()))),
+        TableSchemaMetadata(pa_type="list<list<float64>>"),
     ] = None
     iscrowd: BoolField = False
 
@@ -59,7 +58,7 @@ class AnnotatedObjectList(BaseDataModel):
     segmentation: Annotated[
         list[list[list[float]]] | None,
         _tensor_validator(3),
-        TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64()))),
+        TableSchemaMetadata(pa_type="list<list<float64>>"),
     ] = None
     iscrowd: ListBoolField
 

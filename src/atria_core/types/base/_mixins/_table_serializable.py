@@ -1,13 +1,15 @@
 import types
 from functools import lru_cache
 from types import NoneType
-from typing import Any, Self, Union, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Any, Self, Union, get_args, get_origin, get_type_hints
 
-import pyarrow as pa
 from pydantic import BaseModel
 
 from atria_core.logger.logger import get_logger
-from atria_core.types.typing.common import TableSchemaMetadata
+
+if TYPE_CHECKING:
+    import pyarrow as pa
+
 
 logger = get_logger(__name__)
 
@@ -73,6 +75,8 @@ def _extract_pyarrow_schema(model_cls: type[BaseModel]) -> dict[str, type | dict
     Raises:
         TypeError: If model_cls is not a valid TableSerializable class
     """
+    from atria_core.types.typing.common import TableSchemaMetadata
+
     if not issubclass(model_cls, BaseModel) or not issubclass(
         model_cls, TableSerializable
     ):
@@ -81,7 +85,6 @@ def _extract_pyarrow_schema(model_cls: type[BaseModel]) -> dict[str, type | dict
         )
 
     schema: dict[str, type | dict] = {}
-    import torch  # noqa: F401
 
     type_hints = get_type_hints(model_cls, include_extras=True)
     for field_name, annotated_type in type_hints.items():
@@ -119,7 +122,7 @@ def _extract_pyarrow_schema(model_cls: type[BaseModel]) -> dict[str, type | dict
                     # Search for TableSchemaMetadata in metadata
                     for meta in metadata:
                         if isinstance(meta, TableSchemaMetadata):
-                            schema[field_name] = meta.pyarrow
+                            schema[field_name] = meta.get_type()
                             break
                     else:
                         logger.debug(
@@ -197,7 +200,7 @@ class TableSerializable(BaseModel):
 
     @classmethod
     @lru_cache(maxsize=1)
-    def pa_schema(cls) -> pa.Schema:
+    def pa_schema(cls) -> "pa.Schema":
         """
         Get the PyArrow schema for this model class.
 
@@ -208,6 +211,8 @@ class TableSerializable(BaseModel):
             ValueError: If schema contains invalid PyArrow types
         """
         try:
+            import pyarrow as pa
+
             schema_items = list(cls.table_schema_flattened().items())
             return pa.schema(schema_items)
         except Exception as e:

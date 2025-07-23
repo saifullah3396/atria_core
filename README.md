@@ -127,9 +127,9 @@ from atria_core.types.base.data_model import BaseDataModel
 from atria_core.utilities.encoding import TableSchemaMetadata
 
 class CustomModel(BaseDataModel):
-    name: Annotated[str, TableSchemaMetadata(pyarrow=pa.string())]
+    name: Annotated[str, TableSchemaMetadata(pa_type='string')]
     features: torch.Tensor
-    confidence: Annotated[float, TableSchemaMetadata(pyarrow=pa.float32())]
+    confidence: Annotated[float, TableSchemaMetadata(pa_type='float32')]
 
 # Use all the built-in functionality
 model = CustomModel(name="example", features=torch.randn(10), confidence=0.95)

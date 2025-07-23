@@ -111,29 +111,15 @@ class Image(BaseDataModel):
 
     def _load(self):
         if self.content is None:
-            from PIL import Image as PILImageModule
-
             from atria_core.utilities.encoding import _bytes_to_image
+            from atria_core.utilities.file import _load_bytes_from_uri
 
             if self.file_path is None:
                 raise ValueError(
-                    "Image file path is not set. Please set the file_path before loading the image."
+                    "Image file path is not set. Please set file_path before loading."
                 )
-            if self.file_path.startswith(("http", "https")):
-                import requests
 
-                response = requests.get(self.file_path)
-                if response.status_code != 200:
-                    raise ValueError(f"Failed to load image from URL: {self.file_path}")
-                self.content = _bytes_to_image(response.content)
-            else:
-                if not Path(self.file_path).exists():
-                    raise FileNotFoundError(f"Image file not found: {self.file_path}")
-                if not Path(self.file_path).is_file():
-                    raise ValueError(
-                        f"Provided file path is not a file: {self.file_path}"
-                    )
-                self.content = PILImageModule.open(self.file_path)
+            self.content = _bytes_to_image(_load_bytes_from_uri(self.file_path))
 
     def _unload(self) -> None:
         self.content = None

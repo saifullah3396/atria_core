@@ -2,19 +2,19 @@ import ast
 from pathlib import Path
 from typing import Annotated, Any, ClassVar
 
-import pyarrow as pa
 from pydantic import field_serializer, field_validator
 
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.common import OCRType
 from atria_core.types.typing.common import OptStrField, TableSchemaMetadata
+from atria_core.utilities.file import _load_bytes_from_uri
 
 
 class OCR(BaseDataModel):
     _batch_merge_fields: ClassVar[list[str] | None] = ["type"]
     file_path: OptStrField = None
-    type: Annotated[OCRType | None, TableSchemaMetadata(pyarrow=pa.string())] = None
-    content: Annotated[str | None, TableSchemaMetadata(pyarrow=pa.binary())] = None
+    type: Annotated[OCRType | None, TableSchemaMetadata(pa_type="string")] = None
+    content: Annotated[str | None, TableSchemaMetadata(pa_type="binary")] = None
 
     @field_validator("file_path", mode="before")
     @classmethod
@@ -34,25 +34,10 @@ class OCR(BaseDataModel):
         if self.content is None:
             if self.file_path is None:
                 raise ValueError("Either file_path or content must be provided.")
-            if self.file_path.startswith(("http", "https")):
-                import requests
 
-                response = requests.get(self.file_path)
-                if response.status_code != 200:
-                    raise ValueError(f"Failed to load image from URL: {self.file_path}")
-                self.content = response.content.decode("utf-8")
-            else:
-                if not Path(self.file_path).exists():
-                    raise FileNotFoundError(f"Image file not found: {self.file_path}")
-                if not Path(self.file_path).is_file():
-                    raise ValueError(
-                        f"Provided file path is not a file: {self.file_path}"
-                    )
-                with open(self.file_path, encoding="utf-8") as f:
-                    self.content = f.read()
-                    if self.content.startswith("b'"):
-                        self.content = ast.literal_eval(self.content).decode("utf-8")
-                    assert len(self.content) > 0, "OCR content is empty."
+            self.content = _load_bytes_from_uri(self.file_path)
+            if self.content.startswith("b'"):
+                self.content = ast.literal_eval(self.content).decode("utf-8")
 
     def _unload(self):
         self.content = None

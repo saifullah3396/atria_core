@@ -1,7 +1,6 @@
 import json
 from typing import Annotated
 
-import pyarrow as pa
 from pydantic import field_serializer, field_validator
 
 from atria_core.types.base.data_model import BaseDataModel
@@ -55,18 +54,16 @@ class LayoutAnalysisGT(BaseDataModel):
 
 class GroundTruth(BaseDataModel):
     classification: Annotated[
-        ClassificationGT | None, TableSchemaMetadata(pyarrow=pa.string())
+        ClassificationGT | None, TableSchemaMetadata(pa_type="string")
     ] = None
-    ser: Annotated[SERGT | None, TableSchemaMetadata(pyarrow=pa.string())] = None
-    ocr: Annotated[OCRGT | None, TableSchemaMetadata(pyarrow=pa.string())] = None
-    qa: Annotated[QuestionAnswerGT | None, TableSchemaMetadata(pyarrow=pa.string())] = (
-        None
-    )
+    ser: Annotated[SERGT | None, TableSchemaMetadata(pa_type="string")] = None
+    ocr: Annotated[OCRGT | None, TableSchemaMetadata(pa_type="string")] = None
+    qa: Annotated[QuestionAnswerGT | None, TableSchemaMetadata(pa_type="string")] = None
     vqa: Annotated[
-        VisualQuestionAnswerGT | None, TableSchemaMetadata(pyarrow=pa.string())
+        VisualQuestionAnswerGT | None, TableSchemaMetadata(pa_type="string")
     ] = None
     layout: Annotated[
-        LayoutAnalysisGT | None, TableSchemaMetadata(pyarrow=pa.string())
+        LayoutAnalysisGT | None, TableSchemaMetadata(pa_type="string")
     ] = None
 
     @field_validator(

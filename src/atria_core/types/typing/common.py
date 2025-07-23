@@ -32,10 +32,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
-import pyarrow as pa
-from PIL.Image import Image as PILImage
 from pydantic import (
     PlainSerializer,
     SerializerFunctionWrapHandler,
@@ -50,10 +48,56 @@ from atria_core.utilities.encoding import (
     _image_to_bytes,
 )
 
+if TYPE_CHECKING:
+    import pyarrow as pa
+    from PIL.Image import Image as PILImage
+
 
 @dataclass
 class TableSchemaMetadata:
-    pyarrow: pa.DataType
+    pa_type: str
+
+    def get_type(self) -> pa.DataType:
+        """
+        Converts the string representation of a PyArrow data type to a PyArrow DataType object.
+        """
+        return _resolve_pyarrow_type(self.pa_type)
+
+
+def _resolve_pyarrow_type(type_str: str) -> pa.DataType:
+    """
+    Lazily resolve string identifiers to actual pyarrow types.
+    """
+    import pyarrow as pa
+
+    if not isinstance(type_str, str):
+        raise TypeError(f"Expected str, got {type(type_str)}")
+
+    if type_str.startswith("list<") and type_str.endswith(">"):
+        inner = type_str[5:-1]
+        return pa.list_(_resolve_pyarrow_type(inner))
+
+    mapping = {
+        "int64": pa.int64(),
+        "int32": pa.int32(),
+        "int16": pa.int16(),
+        "int8": pa.int8(),
+        "uint64": pa.uint64(),
+        "uint32": pa.uint32(),
+        "uint16": pa.uint16(),
+        "uint8": pa.uint8(),
+        "float64": pa.float64(),
+        "float32": pa.float32(),
+        "float16": pa.float16(),
+        "bool": pa.bool_(),
+        "string": pa.string(),
+        "binary": pa.binary(),
+    }
+
+    try:
+        return mapping[type_str]
+    except KeyError:
+        raise ValueError(f"Unsupported pyarrow type string: '{type_str}'")
 
 
 def _path_serializer(value: str, nxt: SerializerFunctionWrapHandler) -> str:
@@ -110,7 +154,7 @@ PydanticFilePath = Annotated[
     str | Path | None,
     WrapSerializer(_path_serializer),
     WrapValidator(_path_validator),
-    TableSchemaMetadata(pyarrow=pa.string()),
+    TableSchemaMetadata(pa_type="string"),
 ]
 
 
@@ -188,6 +232,7 @@ def _image_validator(value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
     """
     import numpy as np
     import PIL.Image as PILImageModule
+    from PIL.Image import Image as PILImage
 
     if value is None:
         return None
@@ -230,51 +275,47 @@ A type annotation for file paths.
 Supports both `str` and `Path` types, with validation to ensure the path exists and is a file.
 """
 
-IntField = Annotated[int, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.int64())]
+IntField = Annotated[int, _tensor_validator(0), TableSchemaMetadata(pa_type="int64")]
 """
 An integer field type annotation with PyArrow metadata.
 """
 
-BoolField = Annotated[
-    bool, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.bool_())
-]
+BoolField = Annotated[bool, _tensor_validator(0), TableSchemaMetadata(pa_type="bool")]
 """
 A boolean field type annotation with PyArrow metadata and tensor support.
 """
 
 FloatField = Annotated[
-    float, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.float64())
+    float, _tensor_validator(0), TableSchemaMetadata(pa_type="float64")
 ]
 """
 A float field type annotation with PyArrow metadata and tensor support.
 """
 
 ListIntField = Annotated[
-    list[int], _tensor_validator(1), TableSchemaMetadata(pyarrow=pa.list_(pa.int64()))
+    list[int], _tensor_validator(1), TableSchemaMetadata(pa_type="list<int64>")
 ]
 """
 A list of integers field type annotation with PyArrow metadata and tensor support.
 """
 
 ListFloatField = Annotated[
-    list[float],
-    _tensor_validator(1),
-    TableSchemaMetadata(pyarrow=pa.list_(pa.float64())),
+    list[float], _tensor_validator(1), TableSchemaMetadata(pa_type="list<float64>")
 ]
 """
 A list of floats field type annotation with PyArrow metadata and tensor support.
 """
 
-StrField = Annotated[str, TableSchemaMetadata(pyarrow=pa.string())]
+StrField = Annotated[str, TableSchemaMetadata(pa_type="string")]
 """A string field type annotation with PyArrow metadata.
 """
 
-ListStrField = Annotated[list[str], TableSchemaMetadata(pyarrow=pa.list_(pa.string()))]
+ListStrField = Annotated[list[str], TableSchemaMetadata(pa_type="list<string>")]
 """A list of strings field type annotation with PyArrow metadata.
 """
 
 ListBoolField = Annotated[
-    list[bool], _tensor_validator(1), TableSchemaMetadata(pyarrow=pa.list_(pa.bool_()))
+    list[bool], _tensor_validator(1), TableSchemaMetadata(pa_type="list<bool>")
 ]
 """A list of booleans field type annotation with PyArrow metadata and tensor support.
 """
@@ -284,23 +325,21 @@ ListBoolField = Annotated[
 ###
 
 OptIntField = Annotated[
-    int | None, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.int64())
+    int | None, _tensor_validator(0), TableSchemaMetadata(pa_type="int64")
 ]
 """
 An optional integer field type annotation with PyArrow metadata and tensor support.
 """
 
 OptFloatField = Annotated[
-    float | None, _tensor_validator(0), TableSchemaMetadata(pyarrow=pa.float64())
+    float | None, _tensor_validator(0), TableSchemaMetadata(pa_type="float64")
 ]
 """
 An optional float field type annotation with PyArrow metadata and tensor support.
 """
 
 OptListIntField = Annotated[
-    list[int] | None,
-    _tensor_validator(1),
-    TableSchemaMetadata(pyarrow=pa.list_(pa.int64())),
+    list[int] | None, _tensor_validator(1), TableSchemaMetadata(pa_type="list<int64>")
 ]
 """
 An optional list of integers field type annotation with PyArrow metadata and tensor support.
@@ -309,25 +348,25 @@ An optional list of integers field type annotation with PyArrow metadata and ten
 OptListFloatField = Annotated[
     list[float] | None,
     _tensor_validator(1),
-    TableSchemaMetadata(pyarrow=pa.list_(pa.float64())),
+    TableSchemaMetadata(pa_type="list<float64>"),
 ]
 """
 An optional list of floats field type annotation with PyArrow metadata and tensor support.
 """
 
-OptStrField = Annotated[str | None, TableSchemaMetadata(pyarrow=pa.string())]
+OptStrField = Annotated[str | None, TableSchemaMetadata(pa_type="string")]
 """An optional string field type annotation with PyArrow metadata.
 """
 
 OptListStrField = Annotated[
-    list[str] | None, TableSchemaMetadata(pyarrow=pa.list_(pa.string()))
+    list[str] | None, TableSchemaMetadata(pa_type="list<string>")
 ]
 """An optional list of strings field type annotation with PyArrow metadata.
 """
 
 ValidatedPILImage = Annotated[
-    PILImage | None,
+    Any | None,
     WrapValidator(_image_validator),
     PlainSerializer(_image_serializer),
-    TableSchemaMetadata(pyarrow=pa.binary()),
+    TableSchemaMetadata(pa_type="binary"),
 ]

@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from pydantic import BaseModel, PrivateAttr
 
 from atria_core.logger.logger import get_logger
-from atria_core.types.typing.common import _is_tensor_type
 
 if TYPE_CHECKING:
     import torch
@@ -136,6 +137,7 @@ class Batchable(BaseModel):
         Returns:
             Any: The batched value for this field.
         """
+        from atria_core.types.typing.common import _is_tensor_type
 
         # If all values are None, return None
         if any(v is None for v in values):
@@ -190,7 +192,7 @@ class Batchable(BaseModel):
         return values
 
     @classmethod
-    def _handle_nested_batchable(cls, values: list["Batchable"]) -> "Batchable":
+    def _handle_nested_batchable(cls, values: list[Batchable]) -> Batchable:
         """
         Handle batching of nested Batchable objects.
 
@@ -235,7 +237,7 @@ class Batchable(BaseModel):
             ) from e
 
     @classmethod
-    def _handle_tensor_field(cls, field_name: str, values: list["torch.Tensor"]) -> Any:
+    def _handle_tensor_field(cls, field_name: str, values: list[torch.Tensor]) -> Any:
         """
         Handle batching of PyTorch tensor fields.
 

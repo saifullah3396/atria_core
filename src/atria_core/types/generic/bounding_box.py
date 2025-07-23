@@ -1,7 +1,6 @@
 import enum
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Union
 
-import pyarrow as pa
 from pydantic import field_validator
 
 from atria_core.types.base.data_model import BaseDataModel
@@ -24,7 +23,7 @@ class BoundingBoxMode(str, enum.Enum):
 class BoundingBox(BaseDataModel):
     _batch_merge_fields: ClassVar[list[str]] = ["mode"]
     value: ListFloatField
-    mode: Annotated[BoundingBoxMode, TableSchemaMetadata(pyarrow=pa.string())] = (
+    mode: Annotated[BoundingBoxMode, TableSchemaMetadata(pa_type="string")] = (
         BoundingBoxMode.XYXY
     )
 
@@ -201,9 +200,9 @@ class BoundingBoxList(BaseDataModel):
     value: Annotated[
         list[list[float]],
         _tensor_validator(2),
-        TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64()))),
+        TableSchemaMetadata(pa_type="list<list<float64>>"),
     ]
-    mode: Annotated[BoundingBoxMode, TableSchemaMetadata(pyarrow=pa.string())] = (
+    mode: Annotated[BoundingBoxMode, TableSchemaMetadata(pa_type="string")] = (
         BoundingBoxMode.XYXY
     )
 
