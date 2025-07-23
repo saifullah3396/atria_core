@@ -1,6 +1,6 @@
+import factory
 from faker import Faker
 
-import factory
 from atria_core.types.common import OCRType
 from atria_core.types.data_instance.document_instance import DocumentInstance
 from atria_core.types.data_instance.image_instance import ImageInstance
@@ -21,9 +21,7 @@ from atria_core.types.generic.ground_truth import (
 from atria_core.types.generic.image import Image
 from atria_core.types.generic.label import Label, LabelList
 from atria_core.types.generic.ocr import OCR
-from atria_core.types.generic.question_answer_pair import (
-    QuestionAnswerPair,
-)
+from atria_core.types.generic.question_answer_pair import QuestionAnswerPair
 
 MOCK_HOCR_TESSERACT = """
 <html xmlns="http://www.w3.org/1999/xhtml">

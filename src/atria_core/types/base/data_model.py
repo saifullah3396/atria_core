@@ -4,6 +4,7 @@ from typing import Any, Union, get_args, get_origin
 from pydantic import BaseModel, ConfigDict
 
 from atria_core.logger.logger import get_logger
+from atria_core.types.base._mixins._file_path_convertible import FilePathConvertible
 from atria_core.types.base._mixins._loadable import Loadable
 from atria_core.types.base._mixins._repeatable import Repeatable
 from atria_core.types.base._mixins._table_serializable import TableSerializable
@@ -25,6 +26,7 @@ class BaseDataModel(  # type: ignore[misc]
     Repeatable,
     ToDeviceConvertible,
     TableSerializable,
+    FilePathConvertible,
 ):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

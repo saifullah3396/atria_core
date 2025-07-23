@@ -42,7 +42,7 @@ class AnnotatedObject(BaseDataModel):
         _tensor_validator(2),
         TableSchemaMetadata(pyarrow=pa.list_(pa.list_(pa.float64()))),
     ] = None
-    iscrowd: BoolField
+    iscrowd: BoolField = False
 
     @classmethod
     @field_validator("segmentation", mode="after")

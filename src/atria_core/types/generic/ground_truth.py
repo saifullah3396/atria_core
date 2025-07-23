@@ -2,6 +2,8 @@ import json
 from typing import Annotated
 
 import pyarrow as pa
+from pydantic import field_serializer, field_validator
+
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.generic.annotated_object import AnnotatedObjectList
 from atria_core.types.generic.bounding_box import BoundingBoxList
@@ -13,7 +15,6 @@ from atria_core.types.typing.common import (
     OptListStrField,
     TableSchemaMetadata,
 )
-from pydantic import field_serializer, field_validator
 
 
 class ClassificationGT(BaseDataModel):

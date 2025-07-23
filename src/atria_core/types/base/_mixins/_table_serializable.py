@@ -4,9 +4,10 @@ from types import NoneType
 from typing import Any, Self, Union, get_args, get_origin, get_type_hints
 
 import pyarrow as pa
+from pydantic import BaseModel
+
 from atria_core.logger.logger import get_logger
 from atria_core.types.typing.common import TableSchemaMetadata
-from pydantic import BaseModel
 
 logger = get_logger(__name__)
 

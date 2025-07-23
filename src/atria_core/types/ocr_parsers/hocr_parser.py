@@ -1,4 +1,5 @@
 import bs4
+
 from atria_core.types.generic.bounding_box import BoundingBox, BoundingBoxList
 from atria_core.types.generic.ground_truth import OCRGT
 from atria_core.types.generic.ocr import OCRType

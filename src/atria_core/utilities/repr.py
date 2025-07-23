@@ -19,8 +19,9 @@ License: MIT
 
 import types
 
-from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
 from rich.pretty import RichReprResult, pretty_repr
+
+from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
 
 
 class RepresentationMixin:
