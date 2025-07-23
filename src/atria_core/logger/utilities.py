@@ -23,8 +23,6 @@ License: MIT
 import logging
 from typing import TextIO
 
-import coloredlogs
-
 
 def enable_colored_logging(
     logger: logging.Logger,
@@ -48,6 +46,8 @@ def enable_colored_logging(
     Returns:
         None
     """
+    import coloredlogs
+
     coloredlogs.install(
         level=log_level, logger=logger, fmt=log_format, level_styles=styles
     )

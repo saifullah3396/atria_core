@@ -14,6 +14,5 @@ Version: 1.0.0
 License: MIT
 """
 
-import atria_core.utilities.yaml_resolvers  # noqa: F401
 
 __version__ = "0.1.0"
