@@ -45,7 +45,7 @@ class TaskType(str, enum.Enum):
     layout_entity_recognition = "layout_entity_recognition"
     question_answering = "question_answering"
     visual_question_answering = "visual_question_answering"
-    layout_analysis = "layout_analysis"
+    object_detection = "object_detection"
 
 
 class ModelType(str, enum.Enum):

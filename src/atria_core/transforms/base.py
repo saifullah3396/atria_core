@@ -1,26 +1,39 @@
 from abc import abstractmethod
 from collections.abc import Mapping
+from functools import cached_property
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
-from transformers import AutoConfig
 
 from atria_core.utilities.repr import RepresentationMixin
 
 
-class DataTransform(AutoConfig, RepresentationMixin):
-    def __init__(self, apply_path: str | None = None):
-        self.apply_path = apply_path
+class DataTransform(BaseModel, RepresentationMixin):
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True, validate_assignment=False, extra="forbid"
+    )
+
+    apply_path: str | None = None
 
     @property
     def name(self) -> str:
         return self.__class__.__name__
 
-    @abstractmethod
-    def _apply_transforms(self, input: Any) -> Any:
-        raise NotImplementedError(
-            f"{self.__class__.__name__} must implement the _apply_transforms method."
+    @cached_property
+    def config(self) -> dict:
+        return self.prepare_build_config()
+
+    def prepare_build_config(self):
+        from hydra_zen import builds
+        from omegaconf import OmegaConf
+
+        init_fields = {k: getattr(self, k) for k in self.__class__.model_fields}
+        cfg = builds(
+            self.__class__,
+            populate_full_signature=True,
+            **init_fields,
         )
+        return OmegaConf.to_container(OmegaConf.create(cfg), resolve=True)
 
     def _validate_and_apply_transforms(
         self, input: Any | Mapping[str, Any], apply_path_override: str | None = None
@@ -53,6 +66,12 @@ class DataTransform(AutoConfig, RepresentationMixin):
             return [self(s, apply_path=apply_path) for s in input]
         return self._validate_and_apply_transforms(
             input, apply_path_override=apply_path
+        )
+
+    @abstractmethod
+    def _apply_transforms(self, input: Any) -> Any:
+        raise NotImplementedError(
+            f"{self.__class__.__name__} must implement the _apply_transforms method."
         )
 
 
