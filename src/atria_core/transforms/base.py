@@ -33,7 +33,7 @@ class DataTransform(BaseModel, RepresentationMixin):
             populate_full_signature=True,
             **init_fields,
         )
-        return OmegaConf.to_container(OmegaConf.create(cfg), resolve=True)
+        return OmegaConf.to_container(OmegaConf.create(cfg))
 
     def _validate_and_apply_transforms(
         self, input: Any | Mapping[str, Any], apply_path_override: str | None = None
@@ -82,6 +82,22 @@ class DataTransformsDict(BaseModel):
 
     train: DataTransform | None = None
     evaluation: DataTransform | None = None
+
+    @property
+    def config(self) -> dict:
+        from hydra_zen import builds
+        from omegaconf import OmegaConf
+
+        return OmegaConf.to_container(
+            OmegaConf.create(
+                builds(
+                    self.__class__,
+                    populate_full_signature=True,
+                    train=self.train.config if self.train else None,
+                    evaluation=self.evaluation.config if self.evaluation else None,
+                )
+            )
+        )
 
 
 class Compose(RepresentationMixin):
