@@ -84,7 +84,7 @@ class DataTransformsDict(BaseModel):
     evaluation: DataTransform | None = None
 
     @property
-    def config(self) -> dict:
+    def build_config(self) -> dict:
         from hydra_zen import builds
         from omegaconf import OmegaConf
 
