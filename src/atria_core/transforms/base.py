@@ -3,13 +3,12 @@ from collections.abc import Mapping
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
+from transformers import AutoConfig
 
-from atria_core.utilities.auto_config import auto_config
 from atria_core.utilities.repr import RepresentationMixin
 
 
-@auto_config()
-class DataTransform(RepresentationMixin):
+class DataTransform(AutoConfig, RepresentationMixin):
     def __init__(self, apply_path: str | None = None):
         self.apply_path = apply_path
 
