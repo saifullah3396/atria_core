@@ -18,7 +18,7 @@ class DataTransform(BaseModel, RepresentationMixin):
     _is_initialized: bool = False
 
     @cached_property
-    def config(self) -> dict:
+    def build_config(self) -> dict:
         return self._prepare_build_config()
 
     def initialize(self) -> None:
@@ -35,8 +35,11 @@ class DataTransform(BaseModel, RepresentationMixin):
         from hydra_zen import builds
         from omegaconf import OmegaConf
 
-        init_fields = {k: getattr(self, k) for k in self.__class__.model_fields}
-        cfg = builds(self.__class__, populate_full_signature=True, **init_fields)
+        cfg = builds(
+            self.__class__,
+            populate_full_signature=True,
+            **{key: getattr(self, key) for key in self.model_fields_set},
+        )
         return OmegaConf.to_container(OmegaConf.create(cfg))
 
     def _lazy_post_init(self) -> None:
@@ -82,6 +85,7 @@ class DataTransformsDict(BaseModel):
         arbitrary_types_allowed=True, validate_assignment=False, extra="forbid"
     )
 
+    _compose: bool = False
     train: DataTransform | dict[str, DataTransform] | ComposedTransform | None = None
     evaluation: DataTransform | dict[str, DataTransform] | ComposedTransform | None = (
         None
@@ -92,6 +96,9 @@ class DataTransformsDict(BaseModel):
         Initializes all data transforms in the dictionary.
         This method should be called before applying any transformations.
         """
+        if self._compose:
+            return
+
         for key in ["train", "evaluation"]:
             transform = getattr(self, key)
             if isinstance(transform, DataTransform):
@@ -102,6 +109,8 @@ class DataTransformsDict(BaseModel):
             setattr(self, key, transform)
             logger.info(f"Initialized [{key}] data transforms: %s", transform)
 
+        self._compose = True
+
     @property
     def build_config(self) -> dict:
         from hydra_zen import builds
@@ -110,13 +119,18 @@ class DataTransformsDict(BaseModel):
         # Ensure transforms are composed before building config
         self.compose()
 
+        print(self.train)
+        print(self.train.build_config)
+
         return OmegaConf.to_container(
             OmegaConf.create(
                 builds(
                     self.__class__,
                     populate_full_signature=True,
-                    train=self.train.config if self.train else None,
-                    evaluation=self.evaluation.config if self.evaluation else None,
+                    train=self.train.build_config if self.train else None,
+                    evaluation=self.evaluation.build_config
+                    if self.evaluation
+                    else None,
                 )
             )
         )
