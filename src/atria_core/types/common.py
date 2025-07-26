@@ -41,8 +41,8 @@ class OCRType(str, enum.Enum):
 class TaskType(str, enum.Enum):
     image_classification = "image_classification"
     sequence_classification = "sequence_classification"
-    semantic_entity_recognition = "semantic_entity_recognition"
-    layout_entity_recognition = "layout_entity_recognition"
+    token_classification = "token_classification"
+    layout_token_classification = "layout_token_classification"
     layout_analysis = "layout_analysis"
     question_answering = "question_answering"
     visual_question_answering = "visual_question_answering"

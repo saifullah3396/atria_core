@@ -1,9 +1,6 @@
 from pathlib import Path
 from typing import Any, Self
 
-from pydantic import field_validator, model_validator
-from rich.repr import RichReprResult
-
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import (
@@ -12,6 +9,8 @@ from atria_core.types.typing.common import (
     ValidatedPILImage,
     _is_tensor_type,
 )
+from pydantic import field_validator, model_validator
+from rich.repr import RichReprResult
 
 logger = get_logger(__name__)
 
@@ -185,7 +184,10 @@ class Image(BaseDataModel):
             from torchvision.transforms.functional import InterpolationMode, resize
 
             self.content = resize(
-                self.content, [height, width], interpolation=InterpolationMode.BICUBIC
+                self.content,
+                [height, width],
+                interpolation=InterpolationMode.BICUBIC,
+                antialias=True,
             )
         else:
             from PIL.Image import Resampling
@@ -218,8 +220,8 @@ class Image(BaseDataModel):
         )
         from torchvision.transforms.functional import normalize
 
-        mean_list = list(mean) if isinstance(mean, tuple) else [mean]
-        std_list = list(std) if isinstance(std, tuple) else [std]
+        mean_list = list(mean) if isinstance(mean, tuple) else mean
+        std_list = list(std) if isinstance(std, tuple) else std
         self.content = normalize(self.content, mean=mean_list, std=std_list)
         return self
 

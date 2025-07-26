@@ -127,6 +127,8 @@ class DatasetLabels(BaseModel):
         layout (List[str] | None): The layout labels.
     """
 
+    model_config = ConfigDict(validate_assignment=True, extra="forbid")
+
     classification: list[str] | None = None
     ser: list[str] | None = None
     layout: list[str] | None = None

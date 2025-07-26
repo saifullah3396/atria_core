@@ -78,6 +78,9 @@ class ComposedTransform(DataTransform, RepresentationMixin):
             input = t(input)
         return input
 
+    def _prepare_build_config(self):
+        return {"transforms": [t.build_config for t in self.transforms]}
+
 
 class DataTransformsDict(BaseModel):
     model_config = ConfigDict(

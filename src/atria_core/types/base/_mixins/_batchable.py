@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
-from pydantic import BaseModel, PrivateAttr
-
 from atria_core.logger.logger import get_logger
+from pydantic import BaseModel, PrivateAttr
 
 if TYPE_CHECKING:
     import torch

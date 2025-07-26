@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Self
 
-from pydantic import PrivateAttr
-
 from atria_core.logger.logger import get_logger
 from atria_core.types.base._mixins._batchable import Batchable
+from pydantic import PrivateAttr
 
 if TYPE_CHECKING:
     pass
@@ -93,6 +92,15 @@ class Repeatable(Batchable):
         """
         return self._is_repeated
 
+    def _set_skip_validation(self, name: str, value: Any) -> None:
+        """Workaround to be able to set fields without validation."""
+        attr = getattr(self.__class__, name, None)
+        if isinstance(attr, property):
+            attr.__set__(self, value)
+        else:
+            self.__dict__[name] = value
+            self.__pydantic_fields_set__.add(name)
+
     def repeat(
         self, repeat_indices: list[int], exclude_fields: set[str] | None = None
     ) -> Self:
@@ -113,8 +121,7 @@ class Repeatable(Batchable):
                 # Recurse into nested model
                 if exclude_fields is None or field_name not in exclude_fields:
                     # Apply the function recursively
-                    setattr(
-                        self,
+                    self._set_skip_validation(
                         field_name,
                         field_value.repeat(
                             repeat_indices, exclude_fields=exclude_fields
@@ -130,8 +137,7 @@ class Repeatable(Batchable):
                 )
             else:
                 if exclude_fields is None or field_name not in exclude_fields:
-                    setattr(
-                        self,
+                    self._set_skip_validation(
                         field_name,
                         self._repeat_field(field_value, repeat_indices),
                     )
@@ -186,7 +192,7 @@ class Repeatable(Batchable):
                     or field_name not in self._exclude_fields
                 ):
                     # Apply the function recursively
-                    setattr(self, field_name, field_value.undo_repeat())
+                    self._set_skip_validation(field_name, field_value.undo_repeat())
             elif (
                 isinstance(field_value, list)
                 and len(field_value) > 0
@@ -200,8 +206,7 @@ class Repeatable(Batchable):
                     self._exclude_fields is None
                     or field_name not in self._exclude_fields
                 ):
-                    setattr(
-                        self,
+                    self._set_skip_validation(
                         field_name,
                         self._undo_repeat_on_field(field_value, self._repeat_indices),
                     )

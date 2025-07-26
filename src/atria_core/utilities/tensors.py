@@ -25,9 +25,9 @@ import numbers
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 
-from pydantic import AfterValidator
-
 from atria_core.logger import get_logger
+
+from pydantic import AfterValidator
 
 if TYPE_CHECKING:
     import torch
@@ -163,7 +163,7 @@ def _apply_to_type(
         input_type: data type of ``x``.
         func: the function to apply on ``x``.
     """
-    if x is None or isinstance(x, input_type):
+    if isinstance(x, input_type):
         return func(x)
     if isinstance(x, str | bytes):
         return x
@@ -179,8 +179,6 @@ def _apply_to_type(
         return cast(Callable, type(x))(
             [_apply_to_type(sample, input_type, func) for sample in x]
         )
-    if strict:
-        raise TypeError(f"x must contain {input_type}, dicts or lists; found {type(x)}")
     return x
 
 
@@ -197,9 +195,9 @@ def _convert_to_device(
         The converted object, mapping, or sequence.
     """
     import torch
-    if isinstance(x, torch.Tensor):
-        return x.to(device)
-    return x 
+
+    return _apply_to_type(x, torch.Tensor, lambda t: t.to(device))
+
 
 def _validate_tensor(self):
     import torch
