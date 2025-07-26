@@ -17,10 +17,12 @@ Version: 1.0.0
 License: MIT
 """
 
-import types
+from __future__ import annotations
 
-from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
-from rich.pretty import RichReprResult, pretty_repr
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rich.pretty import RichReprResult
 
 
 class RepresentationMixin:
@@ -52,6 +54,8 @@ class RepresentationMixin:
         Yields:
             RichReprResult: A generator of key-value pairs for the specified fields only.
         """
+        import types
+
         repr_fields = getattr(self.__class__, "__repr_fields__", set())
         if len(repr_fields) == 0:
             repr_fields = self.__dict__.keys()
@@ -61,12 +65,11 @@ class RepresentationMixin:
                 continue
 
             value = getattr(self, field_name)
-
-            # Safely represent bound methods, functions, or other callables
             if isinstance(value, types.MethodType):
                 safe_value = value.__func__
             else:
                 safe_value = value
+
             if safe_value is not None:
                 yield field_name, safe_value
 
@@ -77,6 +80,9 @@ class RepresentationMixin:
         Returns:
             str: A developer-friendly string representation of the object.
         """
+
+        from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
+        from rich.pretty import pretty_repr
 
         return pretty_repr(
             self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=128, max_depth=8
@@ -89,6 +95,10 @@ class RepresentationMixin:
         Returns:
             str: A human-readable string representation of the object.
         """
+
+        from atria_core.constants import _MAX_REPR_PRINT_ELEMENTS
+        from rich.pretty import pretty_repr
+
         return pretty_repr(
             self, max_length=_MAX_REPR_PRINT_ELEMENTS, max_string=128, max_depth=8
         )

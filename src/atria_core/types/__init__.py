@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 import lazy_loader as lazy
 
 
+from .model_outputs.outputs import *
+
 if TYPE_CHECKING:
     from .common import (
         ConfigType,
@@ -64,11 +66,7 @@ __getattr__, __dir__, __all__ = lazy.attach(
             "SplitInfo",
         ],
         "generic.annotated_object": ["AnnotatedObject", "AnnotatedObjectList"],
-        "generic.bounding_box": [
-            "BoundingBox",
-            "BoundingBoxList",
-            "BoundingBoxMode",
-        ],
+        "generic.bounding_box": ["BoundingBox", "BoundingBoxList", "BoundingBoxMode"],
         "generic.ground_truth": [
             "OCRGT",
             "SERGT",

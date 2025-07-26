@@ -43,6 +43,7 @@ class TaskType(str, enum.Enum):
     sequence_classification = "sequence_classification"
     semantic_entity_recognition = "semantic_entity_recognition"
     layout_entity_recognition = "layout_entity_recognition"
+    layout_analysis = "layout_analysis"
     question_answering = "question_answering"
     visual_question_answering = "visual_question_answering"
     object_detection = "object_detection"
