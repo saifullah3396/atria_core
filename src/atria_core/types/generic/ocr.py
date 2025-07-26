@@ -31,13 +31,13 @@ class OCR(BaseDataModel):
         return value
 
     def _load(self):
-        if self.content is None:
-            if self.file_path is None:
-                raise ValueError("Either file_path or content must be provided.")
+        if self.content is not None:
+            return {}
+        if self.file_path is None:
+            raise ValueError("Either file_path or content must be provided.")
 
-            self.content = _load_bytes_from_uri(self.file_path)
-            if self.content.startswith("b'"):
-                self.content = ast.literal_eval(self.content).decode("utf-8")
+        content = _load_bytes_from_uri(self.file_path)
+        return {"content": content}
 
     def _unload(self):
         self.content = None
@@ -58,4 +58,6 @@ class OCR(BaseDataModel):
             return None
         if isinstance(value, bytes):
             return _decompress_string(value)
+        if value.startswith("b'"):
+            value = ast.literal_eval(value).decode("utf-8")
         return value

@@ -5,59 +5,61 @@ from pydantic import BaseModel
 
 class TensorConvertible(BaseModel):
     """
-    A mixin class for converting models to their tensor data representation and back.
+    A mixin class for converting models to and from tensor-compatible versions immutably.
     """
 
-    def to_tensor(self):
-        self._to_tensor()
-        return self
-
-    def _to_tensor(self) -> None:
+    def to_tensor(self) -> Self:
         from atria_core.utilities.tensors import _convert_to_tensor
 
+        updated_fields = {}
+
         for field_name in self.__class__.model_fields:
+            value = getattr(self, field_name)
+
             try:
-                field_value = getattr(self, field_name)
-                if isinstance(field_value, TensorConvertible):
-                    field_value.to_tensor()
+                if isinstance(value, TensorConvertible):
+                    updated_fields[field_name] = value.to_tensor()
                 elif (
-                    isinstance(field_value, list)
-                    and len(field_value) > 0
-                    and isinstance(field_value[0], TensorConvertible)
+                    isinstance(value, list)
+                    and value
+                    and isinstance(value[0], TensorConvertible)
                 ):
                     raise RuntimeError(
                         f"Field '{field_name}' contains list of TensorConvertible, which is not supported."
                     )
                 else:
-                    setattr(self, field_name, _convert_to_tensor(field_value))
+                    updated_fields[field_name] = _convert_to_tensor(value)
             except Exception as e:
                 raise RuntimeError(
                     f"Error converting field '{field_name}' to tensor"
                 ) from e
 
-    def to_raw(self) -> Self:
-        self._to_raw()
-        return self
+        return self.model_copy(update=updated_fields)
 
-    def _to_raw(self) -> None:
+    def to_raw(self) -> Self:
         from atria_core.utilities.tensors import _convert_from_tensor
 
+        updated_fields = {}
+
         for field_name in self.__class__.model_fields:
+            value = getattr(self, field_name)
+
             try:
-                field_value = getattr(self, field_name)
-                if isinstance(field_value, TensorConvertible):
-                    field_value.to_raw()
+                if isinstance(value, TensorConvertible):
+                    updated_fields[field_name] = value.to_raw()
                 elif (
-                    isinstance(field_value, list)
-                    and len(field_value) > 0
-                    and isinstance(field_value[0], TensorConvertible)
+                    isinstance(value, list)
+                    and value
+                    and isinstance(value[0], TensorConvertible)
                 ):
                     raise RuntimeError(
                         f"Field '{field_name}' contains list of TensorConvertible, which is not supported."
                     )
                 else:
-                    setattr(self, field_name, _convert_from_tensor(field_value))
+                    updated_fields[field_name] = _convert_from_tensor(value)
             except Exception as e:
                 raise RuntimeError(
                     f"Error converting field '{field_name}' to raw format"
                 ) from e
+
+        return self.model_copy(update=updated_fields)

@@ -37,16 +37,6 @@ class DataModelTestBase:
             "Model instance is not a BaseDataModel"
         )
 
-    def test_load_unload(self, model_instance: BaseDataModel) -> None:
-        """
-        Test the load method of the model instance.
-        """
-        assert not model_instance._is_loaded, "Model instance should be unloaded"
-        model_instance.load()
-        assert model_instance._is_loaded, "Model instance should be loaded"
-        model_instance.unload()
-        assert not model_instance._is_loaded, "Model instance should be unloaded again"
-
     def test_to_from_row(self, model_instance: BaseDataModel) -> None:
         """
         Test the conversion to and from a row representation.

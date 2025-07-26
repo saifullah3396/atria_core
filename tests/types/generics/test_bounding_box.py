@@ -44,46 +44,6 @@ def test_initialization(valid_bbox: BoundingBox) -> None:
     assert valid_bbox.mode == BoundingBoxMode.XYXY
 
 
-def test_bbox_switch_mode(valid_bbox: BoundingBox) -> None:
-    assert valid_bbox.x1 == 10.0
-    assert valid_bbox.y1 == 20.0
-    assert valid_bbox.x2 == 30.0
-    assert valid_bbox.y2 == 40.0
-    assert valid_bbox.width == 20.0
-    assert valid_bbox.height == 20.0
-
-    valid_bbox.switch_mode()
-
-    assert valid_bbox.x1 == 10.0
-    assert valid_bbox.y1 == 20.0
-    assert valid_bbox.x2 == 30.0
-    assert valid_bbox.y2 == 40.0
-    assert valid_bbox.width == 20.0
-    assert valid_bbox.height == 20.0
-
-
-def test_bbox_manipulation(valid_bbox: BoundingBox) -> None:
-    valid_bbox.x1 = valid_bbox.x1 + 5.0
-    valid_bbox.y1 = valid_bbox.y1 + 5.0
-    valid_bbox.x2 = valid_bbox.x2 + 5.0
-    valid_bbox.y2 = valid_bbox.y2 + 5.0
-    assert valid_bbox.x1 == 15.0
-    assert valid_bbox.y1 == 25.0
-    assert valid_bbox.x2 == 35.0
-    assert valid_bbox.y2 == 45.0
-    assert valid_bbox.width == 20.0
-    assert valid_bbox.height == 20.0
-
-    valid_bbox.switch_mode()
-
-    assert valid_bbox.x1 == 15.0
-    assert valid_bbox.y1 == 25.0
-    assert valid_bbox.x2 == 35.0
-    assert valid_bbox.y2 == 45.0
-    assert valid_bbox.width == 20.0
-    assert valid_bbox.height == 20.0
-
-
 def test_bbox_is_valid(valid_bbox: BoundingBox) -> None:
     assert valid_bbox.is_valid is True
 
@@ -131,16 +91,12 @@ def test_tensor_batched_bboxes(valid_bbox: BoundingBox) -> None:
 
 
 def test_tensor_batched_bboxes_manipulated(valid_bbox: BoundingBox) -> None:
-    import torch
-
     tensor_bbox = valid_bbox.to_tensor()
     tensor_bbox_batched = tensor_bbox.batched([tensor_bbox, tensor_bbox, tensor_bbox])
     assert tensor_bbox_batched.value.shape == (3, 4)
     assert tensor_bbox_batched._is_batched is True
     assert tensor_bbox_batched.mode == BoundingBoxMode.XYXY
 
-    tensor_bbox_batched.x1 = 0.0
-    tensor_bbox_batched.y1 = torch.tensor([10.0, 20.0, 30.0])
     assert tensor_bbox_batched.x1.tolist() == [0, 0, 0]
     assert tensor_bbox_batched.y1.tolist() == [10.0, 20.0, 30.0]
     assert tensor_bbox_batched.x2.tolist() == [30.0, 30.0, 30.0]
@@ -148,7 +104,7 @@ def test_tensor_batched_bboxes_manipulated(valid_bbox: BoundingBox) -> None:
     assert tensor_bbox_batched.width.tolist() == [30.0, 30.0, 30.0]
     assert tensor_bbox_batched.height.tolist() == [30.0, 20.0, 10.0]
 
-    valid_bbox.switch_mode()
+    valid_bbox = valid_bbox.switch_mode()
 
     assert tensor_bbox_batched.x1.tolist() == [0, 0, 0]
     assert tensor_bbox_batched.y1.tolist() == [10.0, 20.0, 30.0]

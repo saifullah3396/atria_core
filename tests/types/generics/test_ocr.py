@@ -40,5 +40,5 @@ def test_load_from_url(mock_get: MagicMock) -> None:
     mock_get.return_value = mock_response
 
     raw_image = OCR(file_path="https://example.com/test_image.txt")
-    raw_image.load()
+    raw_image = raw_image.load()
     assert raw_image.content is not None

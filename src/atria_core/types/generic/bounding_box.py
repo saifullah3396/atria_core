@@ -30,19 +30,33 @@ class BoundingBox(BaseDataModel):
     def switch_mode(self):
         assert not self._is_batched, "Cannot switch mode for batched bounding boxes."
         if _is_tensor_type(self.value):
+            import torch
+
             if self.mode == BoundingBoxMode.XYXY:
-                self.value[..., 2], self.value[..., 3] = self.width, self.height
-                self.mode = BoundingBoxMode.XYWH
+                return self.model_copy(
+                    value=torch.cat([self.x1, self.y1, self.width, self.height]),
+                    mode=BoundingBoxMode.XYWH,
+                )
             else:
-                self.value[..., 2], self.value[..., 3] = self.x2, self.y2
-                self.mode = BoundingBoxMode.XYXY
+                return self.model_copy(
+                    value=torch.cat([self.x1, self.y1, self.x2, self.y2]),
+                    mode=BoundingBoxMode.XYXY,
+                )
         else:
             if self.mode == BoundingBoxMode.XYXY:
-                self.value = [self.x1, self.y1, self.width, self.height]
-                self.mode = BoundingBoxMode.XYWH
+                return self.model_copy(
+                    update={
+                        "value": [self.x1, self.y1, self.width, self.height],
+                        "mode": BoundingBoxMode.XYWH,
+                    }
+                )
             else:
-                self.value = [self.x1, self.y1, self.x2, self.y2]
-                self.mode = BoundingBoxMode.XYXY
+                return self.model_copy(
+                    update={
+                        "value": [self.x1, self.y1, self.x2, self.y2],
+                        "mode": BoundingBoxMode.XYXY,
+                    }
+                )
         return self
 
     @field_validator("mode", mode="before")
@@ -84,20 +98,10 @@ class BoundingBox(BaseDataModel):
         idx = (..., 0) if _is_tensor_type(self.value) else 0
         return self.value[idx]
 
-    @x1.setter
-    def x1(self, value: Union[float, "torch.Tensor"]):
-        idx = (..., 0) if _is_tensor_type(self.value) else 0
-        self.value[idx] = value
-
     @property
     def y1(self) -> Union[float, "torch.Tensor"]:
         idx = (..., 1) if _is_tensor_type(self.value) else 1
         return self.value[idx]
-
-    @y1.setter
-    def y1(self, value: Union[float, "torch.Tensor"]):
-        idx = (..., 1) if _is_tensor_type(self.value) else 1
-        self.value[idx] = value
 
     @property
     def x2(self) -> Union[float, "torch.Tensor"]:
@@ -107,14 +111,6 @@ class BoundingBox(BaseDataModel):
             idx = (..., 2) if _is_tensor_type(self.value) else 2
             return self.value[idx]
 
-    @x2.setter
-    def x2(self, value: Union[float, "torch.Tensor"]):
-        if self.mode == BoundingBoxMode.XYWH:
-            raise ValueError("Cannot set x2 directly in XYWH mode. Use width instead.")
-        else:
-            idx = (..., 2) if _is_tensor_type(self.value) else 2
-            self.value[idx] = value
-
     @property
     def y2(self) -> Union[float, "torch.Tensor"]:
         if self.mode == BoundingBoxMode.XYWH:
@@ -122,14 +118,6 @@ class BoundingBox(BaseDataModel):
         else:
             idx = (..., 3) if _is_tensor_type(self.value) else 3
             return self.value[idx]
-
-    @y2.setter
-    def y2(self, value: Union[float, "torch.Tensor"]):
-        if self.mode == BoundingBoxMode.XYWH:
-            raise ValueError("Cannot set x2 directly in XYWH mode. Use width instead.")
-        else:
-            idx = (..., 3) if _is_tensor_type(self.value) else 3
-            self.value[idx] = value
 
     @property
     def width(self) -> Union[float, "torch.Tensor"]:
@@ -139,14 +127,6 @@ class BoundingBox(BaseDataModel):
         else:
             return self.x2 - self.x1
 
-    @width.setter
-    def width(self, value: Union[float, "torch.Tensor"]):
-        if self.mode == BoundingBoxMode.XYWH:
-            idx = (..., 2) if _is_tensor_type(self.value) else 2
-            self.value[idx] = value
-        else:
-            raise ValueError("Cannot set width directly in XYXY mode. Use x2 instead.")
-
     @property
     def height(self) -> Union[float, "torch.Tensor"]:
         if self.mode == BoundingBoxMode.XYWH:
@@ -154,14 +134,6 @@ class BoundingBox(BaseDataModel):
             return self.value[idx]
         else:
             return self.y2 - self.y1
-
-    @height.setter
-    def height(self, value: Union[float, "torch.Tensor"]):
-        if self.mode == BoundingBoxMode.XYWH:
-            idx = (..., 3) if _is_tensor_type(self.value) else 3
-            self.value[idx] = value
-        else:
-            raise ValueError("Cannot set height directly in XYXY mode. Use y2 instead.")
 
     def normalize(self, width: float, height: float) -> "BoundingBox":
         """
@@ -184,16 +156,29 @@ class BoundingBox(BaseDataModel):
         assert self.x2 <= width, "x2 must be less than or equal to width."
         assert self.y2 <= height, "y2 must be less than or equal to height."
         if self.mode == BoundingBoxMode.XYWH:
-            self.x1 /= width
-            self.y1 /= height
-            self.width /= width
-            self.height /= height
+            return self.model_copy(
+                update={
+                    "value": [
+                        self.x1 / width,
+                        self.y1 / height,
+                        self.width / width,
+                        self.height / height,
+                    ],
+                    "mode": BoundingBoxMode.XYXY,
+                }
+            )
         else:
-            self.x1 /= width
-            self.y1 /= height
-            self.x2 /= width
-            self.y2 /= height
-        return self
+            return self.model_copy(
+                update={
+                    "value": [
+                        self.x1 / width,
+                        self.y1 / height,
+                        self.x2 / width,
+                        self.y2 / height,
+                    ],
+                    "mode": BoundingBoxMode.XYXY,
+                }
+            )
 
 
 class BoundingBoxList(BaseDataModel):

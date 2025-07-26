@@ -73,10 +73,14 @@ class TestDocumentInstance(DataModelTestBase):
         """
         Test the conversion of the model instance to a tensor.
         """
-        model_instance.load()
+        print("model_instance1", model_instance.image.content)
+        model_instance = model_instance.load()
+        print("model_instance2", model_instance.image.content)
         tensor_model = model_instance.to_tensor()
+        print("tensor_model", tensor_model.image.content)
         assert tensor_model is not None, "Tensor conversion returned None"
         roundtrip_model = tensor_model.to_raw()
+        print("roundtrip_model", roundtrip_model.image.content)
         assert isinstance(roundtrip_model, model_instance.__class__), (
             "Raw conversion did not return a BaseDataModel"
         )

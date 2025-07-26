@@ -43,16 +43,6 @@ def test_raw_label_initialization(valid_label):
     assert valid_label.name == "Label1"
 
 
-def test_raw_label_value_update(valid_label):
-    valid_label.value = 2
-    assert valid_label.value == 2
-
-
-def test_raw_label_name_update(valid_label):
-    valid_label.name = "UpdatedLabel"
-    assert valid_label.name == "UpdatedLabel"
-
-
 def test_to_tensor(valid_label: Label) -> None:
     valid_label.load()
     tensor = valid_label.to_tensor()
@@ -72,20 +62,6 @@ def test_tensor_label_creates_valid_scalar_instance(scalar_tensor_label: Label) 
     """Test that Label properly initializes with scalar tensor and name."""
     assert scalar_tensor_label.value.ndim == 0  # Scalar tensor has 0 dimensions
     assert scalar_tensor_label.name == "SingleLabel"
-
-
-def test_tensor_label_allows_scalar_value_updates(scalar_tensor_label: Label) -> None:
-    """Test that tensor value can be updated with another scalar tensor."""
-    new_value = torch.tensor(4)
-    scalar_tensor_label.value = new_value
-    assert torch.equal(scalar_tensor_label.value, new_value)
-
-
-def test_tensor_label_allows_name_updates(scalar_tensor_label: Label) -> None:
-    """Test that label name can be updated to a new string value."""
-    new_name = "UpdatedLabel"
-    scalar_tensor_label.name = new_name
-    assert scalar_tensor_label.name == new_name
 
 
 def test_tensor_label_rejects_float_dtype() -> None:

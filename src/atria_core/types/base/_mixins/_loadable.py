@@ -1,6 +1,6 @@
 from typing import Self
 
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel
 
 
 class Loadable(BaseModel):
@@ -8,52 +8,36 @@ class Loadable(BaseModel):
     A mixin class for managing the loading and unloading of model fields.
     """
 
-    _is_loaded = PrivateAttr(default=False)
-
     def load(self) -> Self:
-        """
-        Loads all fields of the model, with enhanced logging and error handling.
+        updated_fields = {}
 
-        Returns:
-            Self: The instance with fields loaded.
+        for field_name in self.__class__.model_fields:
+            value = getattr(self, field_name)
+            if isinstance(value, Loadable):
+                updated_fields[field_name] = value.load()
 
-        Raises:
-            Exception: If loading fails for any field.
-        """
-        if not self._is_loaded:
-            for field_name in self.__class__.model_fields:
-                field_value = getattr(self, field_name)
-                if isinstance(field_value, Loadable):
-                    field_value.load()
-            self._load()
-            self._is_loaded = True
-        return self
+        updated_fields.update(self._load())
+        return self.model_copy(update=updated_fields)
 
     def unload(self) -> Self:
-        """
-        Unloads all fields of the model, with enhanced logging and error handling.
+        updated_fields = {}
 
-        Returns:
-            Self: The instance with fields unloaded.
+        for field_name in self.__class__.model_fields:
+            value = getattr(self, field_name)
+            if isinstance(value, Loadable):
+                updated_fields[field_name] = value.unload()
 
-        Raises:
-            Exception: If unloading fails for any field.
-        """
-        if self._is_loaded:
-            for field_name in self.__class__.model_fields:
-                field_value = getattr(self, field_name)
-                if isinstance(field_value, Loadable):
-                    field_value.unload()
-            self._unload()
-            self._is_loaded = False
-        return self
+        updated_fields.update(self._unload())
+        return self.model_copy(update=updated_fields)
 
     def _load(self) -> None:
         """
         Placeholder for custom load logic.
         """
+        return {}
 
     def _unload(self) -> None:
         """
         Placeholder for custom unload logic.
         """
+        return {}

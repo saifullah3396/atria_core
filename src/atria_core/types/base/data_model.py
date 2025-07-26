@@ -1,8 +1,6 @@
 import types
 from typing import Any, Union, get_args, get_origin
 
-from pydantic import BaseModel, ConfigDict
-
 from atria_core.logger.logger import get_logger
 from atria_core.types.base._mixins._file_path_convertible import FilePathConvertible
 from atria_core.types.base._mixins._loadable import Loadable
@@ -11,6 +9,7 @@ from atria_core.types.base._mixins._table_serializable import TableSerializable
 from atria_core.types.base._mixins._tensor_convertible import TensorConvertible
 from atria_core.types.base._mixins._to_device_convertible import ToDeviceConvertible
 from atria_core.utilities.repr import RepresentationMixin
+from pydantic import BaseModel, ConfigDict
 
 logger = get_logger(__name__)
 
@@ -30,7 +29,7 @@ class BaseDataModel(  # type: ignore[misc]
 ):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
-        validate_assignment=True,
+        frozen=True,
         extra="forbid",
         strict=True,
     )

@@ -1,6 +1,9 @@
 from pathlib import Path
 from typing import Any, Self
 
+from pydantic import field_validator, model_validator
+from rich.repr import RichReprResult
+
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import (
@@ -9,8 +12,6 @@ from atria_core.types.typing.common import (
     ValidatedPILImage,
     _is_tensor_type,
 )
-from pydantic import field_validator, model_validator
-from rich.repr import RichReprResult
 
 logger = get_logger(__name__)
 
@@ -109,41 +110,49 @@ class Image(BaseDataModel):
                 return len(self.content.getbands())
 
     def _load(self):
-        if self.content is None:
-            from atria_core.utilities.encoding import _bytes_to_image
-            from atria_core.utilities.file import _load_bytes_from_uri
+        if self.content is not None:
+            return {}
+        from atria_core.utilities.encoding import _bytes_to_image
+        from atria_core.utilities.file import _load_bytes_from_uri
 
-            if self.file_path is None:
-                raise ValueError(
-                    "Image file path is not set. Please set file_path before loading."
-                )
+        if self.file_path is None:
+            raise ValueError(
+                "Image file path is not set. Please set file_path before loading."
+            )
 
-            self.content = _bytes_to_image(_load_bytes_from_uri(self.file_path))
+        return {"content": _bytes_to_image(_load_bytes_from_uri(self.file_path))}
 
     def _unload(self) -> None:
-        self.content = None
+        return {"content": None}
 
-    def _to_tensor(self) -> None:
-        if self.content is not None and not _is_tensor_type(self.content):
-            import torch
-            from torchvision.transforms.functional import to_tensor
+    def to_tensor(self) -> None:
+        if self.content is None or _is_tensor_type(self.content):
+            return self
 
-            if self._is_batched:
-                assert isinstance(self.content, list) and len(self.content) > 0, (
-                    "Expected a list of PIL Images for batched images."
-                )
-                try:
-                    self.content = torch.stack([to_tensor(img) for img in self.content])
-                except Exception:
-                    self.content = [to_tensor(img) for img in self.content]
-            else:
-                self.content = to_tensor(self.content)
+        import torch
+        from torchvision.transforms.functional import to_tensor
 
-    def _to_raw(self) -> None:
-        if self.content is not None and _is_tensor_type(self.content):
-            from torchvision.transforms.functional import to_pil_image
+        if self._is_batched:
+            assert isinstance(self.content, list) and len(self.content) > 0, (
+                "Expected a list of PIL Images for batched images."
+            )
+            try:
+                tensor_content = torch.stack([to_tensor(img) for img in self.content])
+            except Exception:
+                tensor_content = [to_tensor(img) for img in self.content]
+        else:
+            tensor_content = to_tensor(self.content)
+        return self.model_copy(update={"content": tensor_content})
 
-            self.content = to_pil_image(self.content)
+    def to_raw(self) -> None:
+        from PIL.Image import Image as PILImage
+
+        if self.content is None or isinstance(self.content, PILImage):
+            return self
+
+        from torchvision.transforms.functional import to_pil_image
+
+        return self.model_copy(update={"content": to_pil_image(self.content)})
 
     def to_rgb(self) -> Self:
         assert self.content is not None, (
@@ -151,14 +160,14 @@ class Image(BaseDataModel):
         )
         if _is_tensor_type(self.content):
             repeats = (1, 3, 1, 1) if self._is_batched else (3, 1, 1)
-            self.content = self.content.repeat(*repeats)
+            rgb_content = self.content.repeat(*repeats)
         else:
-            self.content = (
+            rgb_content = (
                 [x.convert("RGB") for x in self.content]
                 if self._is_batched
                 else self.content.convert("RGB")
             )
-        return self
+        return self.model_copy(update={"content": rgb_content})
 
     def to_grayscale(self) -> Self:
         assert self.content is not None, (
@@ -167,14 +176,14 @@ class Image(BaseDataModel):
         if _is_tensor_type(self.content):
             from torchvision.transforms.functional import rgb_to_grayscale
 
-            self.content = rgb_to_grayscale(self.content, num_output_channels=1)
+            gray_scale_content = rgb_to_grayscale(self.content, num_output_channels=1)
         else:
-            self.content = (
+            gray_scale_content = (
                 [x.convert("L") for x in self.content]
                 if self._is_batched
                 else self.content.convert("L")
             )
-        return self
+        return self.model_copy(update={"content": gray_scale_content})
 
     def resize(self, width: int, height: int) -> Self:
         assert self.content is not None, (
@@ -183,7 +192,7 @@ class Image(BaseDataModel):
         if _is_tensor_type(self.content):
             from torchvision.transforms.functional import InterpolationMode, resize
 
-            self.content = resize(
+            resized_content = resize(
                 self.content,
                 [height, width],
                 interpolation=InterpolationMode.BICUBIC,
@@ -196,17 +205,15 @@ class Image(BaseDataModel):
                 assert (self.content, list) and len(self.content) > 0, (
                     "Expected a list of PIL Images for batched images."
                 )
-                self.content = [
+                resized_content = [
                     x.resize((width, height), resample=Resampling.BICUBIC)
                     for x in self.content
                 ]
-                self.source_width, self.source_height = width, height
             else:
-                self.content = self.content.resize(
+                resized_content = self.content.resize(
                     (width, height), resample=Resampling.BICUBIC
                 )
-                self.source_width, self.source_height = width, height
-        return self
+        return self.model_copy(update={"content": resized_content})
 
     def normalize(
         self, mean: float | tuple[float, ...], std: float | tuple[float, ...]
@@ -222,8 +229,8 @@ class Image(BaseDataModel):
 
         mean_list = list(mean) if isinstance(mean, tuple) else mean
         std_list = list(std) if isinstance(std, tuple) else std
-        self.content = normalize(self.content, mean=mean_list, std=std_list)
-        return self
+        normalized_content = normalize(self.content, mean=mean_list, std=std_list)
+        return self.model_copy(update={"content": normalized_content})
 
     def __rich_repr__(self) -> RichReprResult:  # type: ignore
         """
@@ -233,8 +240,8 @@ class Image(BaseDataModel):
             RichReprResult: A generator of key-value pairs or values for the object's attributes.
         """
         yield from super().__rich_repr__()
-        if not self._is_batched:
-            if self.content is not None:
-                yield "width", self.width
-                yield "height", self.height
-                yield "channels", self.channels
+        # if not self._is_batched:
+        #     if self.content is not None:
+        #         yield "width", self.width
+        #         yield "height", self.height
+        #         yield "channels", self.channels
