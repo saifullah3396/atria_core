@@ -1,72 +1,60 @@
 from abc import abstractmethod
 from collections.abc import Mapping
 from functools import cached_property
-from typing import Any
+from typing import Any, Callable
 
 from pydantic import BaseModel, ConfigDict
 
+from atria_core.logger import get_logger
 from atria_core.utilities.repr import RepresentationMixin
+
+logger = get_logger(__name__)
 
 
 class DataTransform(BaseModel, RepresentationMixin):
     model_config = ConfigDict(
-        arbitrary_types_allowed=True, validate_assignment=False, extra="forbid"
+        arbitrary_types_allowed=True, validate_assignment=True, extra="forbid"
     )
-
-    apply_path: str | None = None
-
-    @property
-    def name(self) -> str:
-        return self.__class__.__name__
+    _is_initialized: bool = False
 
     @cached_property
     def config(self) -> dict:
-        return self.prepare_build_config()
+        return self._prepare_build_config()
 
-    def prepare_build_config(self):
+    def initialize(self) -> None:
+        """
+        Initializes the data transform. This method should be overridden by subclasses
+        to perform any necessary initialization.
+        """
+        if not self._is_initialized:
+            self._lazy_post_init()
+            self._is_initialized = True
+        return self
+
+    def _prepare_build_config(self):
         from hydra_zen import builds
         from omegaconf import OmegaConf
 
         init_fields = {k: getattr(self, k) for k in self.__class__.model_fields}
-        cfg = builds(
-            self.__class__,
-            populate_full_signature=True,
-            **init_fields,
-        )
+        cfg = builds(self.__class__, populate_full_signature=True, **init_fields)
         return OmegaConf.to_container(OmegaConf.create(cfg))
 
-    def _validate_and_apply_transforms(
-        self, input: Any | Mapping[str, Any], apply_path_override: str | None = None
-    ) -> Mapping[str, Any]:
-        apply_path = apply_path_override or self.apply_path
-        if apply_path is not None:
-            attrs = apply_path.split(".")
-            obj = input
-            for attr in attrs[:-1]:
-                obj = getattr(obj, attr)
-            current_attr = getattr(obj, attrs[-1])
-            if current_attr is None:
-                # If the attribute is None, we cannot apply the transformation
-                # and should raise an error or handle it gracefully.
-                raise ValueError(
-                    f"You must provide a valid input for '{apply_path}' to apply the transformation '{self.name}'."
-                    f"'{current_attr}' in object {obj}"
-                )
-            setattr(obj, attrs[-1], self._apply_transforms(current_attr))
-            return input
-        else:
-            return self._apply_transforms(input)
+    def _lazy_post_init(self) -> None:
+        """
+        Initializes the data transform. This method should be overridden by subclasses
+        to perform any necessary initialization.
+        """
+        pass
 
     def __call__(
         self,
         input: Any | Mapping[str, Any] | list[Mapping[str, Any]],
-        apply_path: str | None = None,
     ) -> Any | Mapping[str, Any] | list[Mapping[str, Any]]:
+        self.initialize()
+
         if isinstance(input, list):
-            return [self(s, apply_path=apply_path) for s in input]
-        return self._validate_and_apply_transforms(
-            input, apply_path_override=apply_path
-        )
+            return [self._apply_transforms(s) for s in input]
+        return self._apply_transforms(input)
 
     @abstractmethod
     def _apply_transforms(self, input: Any) -> Any:
@@ -75,18 +63,52 @@ class DataTransform(BaseModel, RepresentationMixin):
         )
 
 
+class ComposedTransform(DataTransform, RepresentationMixin):
+    transforms: list[Callable]
+
+    def _lazy_post_init(self) -> None:
+        for tf in self.transforms:
+            if hasattr(tf, "initialize"):
+                tf.initialize()
+
+    def _apply_transforms(self, input: Any) -> Any:
+        for t in self.transforms:
+            input = t(input)
+        return input
+
+
 class DataTransformsDict(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True, validate_assignment=False, extra="forbid"
     )
 
-    train: DataTransform | None = None
-    evaluation: DataTransform | None = None
+    train: DataTransform | dict[str, DataTransform] | ComposedTransform | None = None
+    evaluation: DataTransform | dict[str, DataTransform] | ComposedTransform | None = (
+        None
+    )
+
+    def compose(self) -> None:
+        """
+        Initializes all data transforms in the dictionary.
+        This method should be called before applying any transformations.
+        """
+        for key in ["train", "evaluation"]:
+            transform = getattr(self, key)
+            if isinstance(transform, DataTransform):
+                transform = ComposedTransform(transforms=[transform])
+            elif isinstance(transform, dict):
+                transform = ComposedTransform(transforms=list(transform.values()))
+            transform.initialize()
+            setattr(self, key, transform)
+            logger.info(f"Initialized [{key}] data transforms: %s", transform)
 
     @property
     def build_config(self) -> dict:
         from hydra_zen import builds
         from omegaconf import OmegaConf
+
+        # Ensure transforms are composed before building config
+        self.compose()
 
         return OmegaConf.to_container(
             OmegaConf.create(
@@ -98,13 +120,3 @@ class DataTransformsDict(BaseModel):
                 )
             )
         )
-
-
-class Compose(RepresentationMixin):
-    def __init__(self, transforms):
-        self.transforms = transforms
-
-    def __call__(self, input):
-        for t in self.transforms:
-            input = t(input)
-        return input
