@@ -1,7 +1,7 @@
 from abc import abstractmethod
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import cached_property
-from typing import Any, Callable
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -50,8 +50,7 @@ class DataTransform(BaseModel, RepresentationMixin):
         pass
 
     def __call__(
-        self,
-        input: Any | Mapping[str, Any] | list[Mapping[str, Any]],
+        self, input: Any | Mapping[str, Any] | list[Mapping[str, Any]]
     ) -> Any | Mapping[str, Any] | list[Mapping[str, Any]]:
         self.initialize()
 
@@ -107,7 +106,6 @@ class DataTransformsDict(BaseModel):
                 transform = ComposedTransform(transforms=list(transform.values()))
             transform.initialize()
             setattr(self, key, transform)
-            logger.info(f"Initialized [{key}] data transforms: %s", transform)
 
         self._compose = True
 
@@ -118,9 +116,6 @@ class DataTransformsDict(BaseModel):
 
         # Ensure transforms are composed before building config
         self.compose()
-
-        print(self.train)
-        print(self.train.build_config)
 
         return OmegaConf.to_container(
             OmegaConf.create(
