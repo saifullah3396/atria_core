@@ -117,9 +117,6 @@ class DataTransformsDict(BaseModel):
         from hydra_zen import builds
         from omegaconf import OmegaConf
 
-        # Ensure transforms are composed before building config
-        self.compose()
-
         return OmegaConf.to_container(
             OmegaConf.create(
                 builds(
