@@ -87,30 +87,29 @@ class DataTransformsDict(BaseModel):
         arbitrary_types_allowed=True, validate_assignment=False, extra="forbid"
     )
 
-    _compose: bool = False
     train: DataTransform | dict[str, DataTransform] | ComposedTransform | None = None
     evaluation: DataTransform | dict[str, DataTransform] | ComposedTransform | None = (
         None
     )
 
-    def compose(self) -> None:
-        """
-        Initializes all data transforms in the dictionary.
-        This method should be called before applying any transformations.
-        """
-        if self._compose:
-            return
+    @property
+    def composed_train(self) -> ComposedTransform | None:
+        return self.compose("train") if self.train else None
 
-        for key in ["train", "evaluation"]:
-            transform = getattr(self, key)
-            if isinstance(transform, DataTransform):
-                transform = ComposedTransform(transforms=[transform])
-            elif isinstance(transform, dict):
-                transform = ComposedTransform(transforms=list(transform.values()))
-            transform.initialize()
-            setattr(self, key, transform)
+    @property
+    def composed_evaluation(self) -> ComposedTransform | None:
+        return self.compose("evaluation") if self.evaluation else None
 
-        self._compose = True
+    def compose(self, key="train"):
+        transform = getattr(self, key)
+        if isinstance(transform, DataTransform):
+            composed_transform = ComposedTransform(transforms=[transform])
+        elif isinstance(transform, dict):
+            composed_transform = ComposedTransform(transforms=list(transform.values()))
+        else:
+            composed_transform = transform  # Return as-is if not a known type
+
+        return composed_transform.initialize()
 
     @property
     def build_config(self) -> dict:
