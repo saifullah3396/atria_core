@@ -41,7 +41,14 @@ class DataTransform(BaseModel, RepresentationMixin):
             if isinstance(value, DataTransform):
                 init_args[key] = value.build_config
             elif isinstance(value, dict):
-                init_args[key] = {k: v.build_config for k, v in value.items()}
+                init_args[key] = {
+                    k: v.build_config if isinstance(v, DataTransform) else v
+                    for k, v in value.items()
+                }
+            elif isinstance(value, list):
+                init_args[key] = [
+                    v.build_config if isinstance(v, DataTransform) else v for v in value
+                ]
             else:
                 init_args[key] = value
         cfg = builds(self.__class__, populate_full_signature=True, **init_args)
