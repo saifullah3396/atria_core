@@ -41,8 +41,6 @@ if TYPE_CHECKING:
     from diffusers.models.autoencoders.vae import DiagonalGaussianDistribution
     from mmdet.structures import DetDataSample
 
-    from atria_core.types import Label
-
 
 @dataclass(frozen=True)
 class ModelOutput:
@@ -69,8 +67,10 @@ class ClassificationModelOutput(ModelOutput):
     """
 
     logits: torch.Tensor | None = None
-    prediction: torch.Tensor | None = None
-    label: Label | None = None
+    gt_label: torch.Tensor | None = None
+    gt_label_name: list[str] | None = None
+    predicted_label: torch.Tensor | None = None
+    predicted_label_name: list[str] | None = None
 
 
 @dataclass(frozen=True)
