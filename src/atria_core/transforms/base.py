@@ -35,11 +35,16 @@ class DataTransform(BaseModel, RepresentationMixin):
         from hydra_zen import builds
         from omegaconf import OmegaConf
 
-        cfg = builds(
-            self.__class__,
-            populate_full_signature=True,
-            **{key: getattr(self, key) for key in self.model_fields_set},
-        )
+        init_args = {}
+        for key in self.model_fields_set:
+            value = getattr(self, key)
+            if isinstance(value, DataTransform):
+                init_args[key] = value.build_config
+            elif isinstance(value, dict):
+                init_args[key] = {k: v.build_config for k, v in value.items()}
+            else:
+                init_args[key] = value
+        cfg = builds(self.__class__, populate_full_signature=True, **init_args)
         return OmegaConf.to_container(OmegaConf.create(cfg))
 
     def _lazy_post_init(self) -> None:
