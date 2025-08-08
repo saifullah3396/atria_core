@@ -52,7 +52,7 @@ class ModelOutput:
         loss (Optional[""torch.Tensor""]): The loss value associated with the model output.
     """
 
-    loss: torch.Tensor
+    loss: torch.Tensor | None = None
 
 
 @dataclass(frozen=True)
