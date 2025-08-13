@@ -36,6 +36,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from atria_core.types.generic.bounding_box import BoundingBoxMode
+
 if TYPE_CHECKING:
     import torch
     from diffusers.models.autoencoders.vae import DiagonalGaussianDistribution
@@ -67,9 +69,10 @@ class ClassificationModelOutput(ModelOutput):
     """
 
     logits: torch.Tensor | None = None
-    gt_label: torch.Tensor | None = None
+    prediction_probs: torch.Tensor | None = None
+    gt_label_value: torch.Tensor | None = None
     gt_label_name: list[str] | None = None
-    predicted_label: torch.Tensor | None = None
+    predicted_label_value: torch.Tensor | None = None
     predicted_label_name: list[str] | None = None
 
 
@@ -85,8 +88,14 @@ class TokenClassificationModelOutput(ModelOutput):
     """
 
     logits: torch.Tensor | None = None
-    predicted_labels: list[list[str]] | None = None
-    target_labels: list[list[str]] | None = None
+    predicted_label_names: list[list[str]] | None = None
+    predicted_label_values: list[torch.Tensor] | None = None
+    target_label_names: list[list[str]] | None = None
+    target_label_values: torch.Tensor | None = None
+    prediction_probs: list[torch.Tensor] | None = None
+    words: list[list[str]] | None = None
+    word_bboxes: torch.Tensor | None = None
+    word_bboxes_mode: BoundingBoxMode | None = None
 
 
 @dataclass(frozen=True)
@@ -104,7 +113,12 @@ class LayoutTokenClassificationModelOutput(ModelOutput):
     logits: torch.Tensor | None = None
     token_labels: torch.Tensor | None = None
     token_bboxes: torch.Tensor | None = None
-    predicted_labels: list[list[str]] | None = None
+    predicted_label_names: list[list[str]] | None = None
+    predicted_label_values: torch.Tensor | None = None
+    prediction_probs: torch.Tensor | None = None
+    words: list[list[str]] | None = None
+    word_bboxes: torch.Tensor | None = None
+    word_bboxes_mode: BoundingBoxMode | None = None
 
 
 @dataclass(frozen=True)
