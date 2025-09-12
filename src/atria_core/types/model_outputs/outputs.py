@@ -33,6 +33,7 @@ License: MIT
 
 from __future__ import annotations
 
+import collections
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -87,7 +88,7 @@ class TokenClassificationModelOutput(ModelOutput):
         target_labels (Optional[List[List[str]]): The ground truth labels for each token.
     """
 
-    logits: torch.Tensor | None = None
+    logits: torch.Tensor | list[torch.Tensor] | None = None
     predicted_label_names: list[list[str]] | None = None
     predicted_label_values: list[torch.Tensor] | None = None
     target_label_names: list[list[str]] | None = None
@@ -99,7 +100,7 @@ class TokenClassificationModelOutput(ModelOutput):
 
 
 @dataclass(frozen=True)
-class LayoutTokenClassificationModelOutput(ModelOutput):
+class LayoutTokenClassificationModelOutput(TokenClassificationModelOutput):
     """
     Output for layout token classification tasks.
 
@@ -110,15 +111,8 @@ class LayoutTokenClassificationModelOutput(ModelOutput):
         predicted_labels (Optional[List[List[str]]): The predicted labels for each token.
     """
 
-    logits: torch.Tensor | None = None
     token_labels: torch.Tensor | None = None
     token_bboxes: torch.Tensor | None = None
-    predicted_label_names: list[list[str]] | None = None
-    predicted_label_values: torch.Tensor | None = None
-    prediction_probs: torch.Tensor | None = None
-    words: list[list[str]] | None = None
-    word_bboxes: torch.Tensor | None = None
-    word_bboxes_mode: BoundingBoxMode | None = None
 
 
 @dataclass(frozen=True)
@@ -151,13 +145,7 @@ class SequenceQAModelOutput(ModelOutput):
         gold_answers (Optional[List[str]]): The gold standard answers.
     """
 
-    start_logits: torch.Tensor | None = None
-    end_logits: torch.Tensor | None = None
-    predicted_answers: list[str] | None = None
-    words: list[list[str]] | None = None
-    word_ids: torch.Tensor = None
-    sequence_ids: torch.Tensor = None
-    question_id: torch.Tensor = None
+    predicted_answers: collections.OrderedDict | None = None
     gold_answers: list[list[str]] | None = None
 
 
