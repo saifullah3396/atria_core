@@ -54,26 +54,6 @@ class BaseDataModel(  # type: ignore[misc]
         else:
             return [field_annotation]
 
-    @classmethod
-    def _verify_types(cls, type) -> None:
-        non_none_types = cls._get_types(type)
-
-        for t in non_none_types:
-            if get_origin(t) in [list, tuple]:
-                for tt in get_args(t):
-                    if tt and issubclass(tt, BaseDataModel):
-                        raise TypeError(
-                            f"Field {type} is a list of {tt} or its children. "
-                            f"{(cls)} does not support nested lists of {BaseDataModel} as children."
-                        )
-
-    @classmethod
-    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
-        super().__pydantic_init_subclass__(**kwargs)
-
-        for _, field in cls.model_fields.items():
-            cls._verify_types(field.annotation)
-
     def model_dump(self, *args, **kwargs):
         self.to_raw()
         return super().model_dump(*args, round_trip=True, **kwargs)
