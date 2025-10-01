@@ -25,8 +25,8 @@ class TensorConvertible(BaseModel):
                     and len(field_value) > 0
                     and isinstance(field_value[0], TensorConvertible)
                 ):
-                    raise RuntimeError(
-                        f"Field '{field_name}' contains list of TensorConvertible, which is not supported."
+                    setattr(
+                        self, field_name, [item.to_tensor() for item in field_value]
                     )
                 else:
                     setattr(self, field_name, _convert_to_tensor(field_value))
@@ -52,9 +52,7 @@ class TensorConvertible(BaseModel):
                     and len(field_value) > 0
                     and isinstance(field_value[0], TensorConvertible)
                 ):
-                    raise RuntimeError(
-                        f"Field '{field_name}' contains list of TensorConvertible, which is not supported."
-                    )
+                    setattr(self, field_name, [item.to_raw() for item in field_value])
                 else:
                     setattr(self, field_name, _convert_from_tensor(field_value))
             except Exception as e:

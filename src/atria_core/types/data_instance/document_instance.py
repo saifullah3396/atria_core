@@ -1,7 +1,7 @@
 from pydantic import model_validator
 
 from atria_core.types.data_instance.base import BaseDataInstance
-from atria_core.types.generic.ground_truth import GroundTruth
+from atria_core.types.generic.document_content import DocumentContent
 from atria_core.types.generic.image import Image
 from atria_core.types.generic.ocr import OCR
 from atria_core.types.typing.common import IntField
@@ -12,7 +12,7 @@ class DocumentInstance(BaseDataInstance):
     total_num_pages: IntField = 1
     image: Image
     ocr: OCR | None = None
-    gt: GroundTruth = GroundTruth()
+    content: DocumentContent | None = None
 
     @model_validator(mode="after")
     def validate_fields(self) -> "DocumentInstance":
@@ -21,7 +21,7 @@ class DocumentInstance(BaseDataInstance):
         if self.image is None and self.ocr is None:
             raise ValueError("At least one of image or ocr must be provided")
 
-        if self.ocr is not None and self.gt.ocr is None:
+        if self.ocr is not None and self.content is None:
             # here we load the ocr content if it is not already loaded
             # in order to parse it into its ground truth format
             # this is necessary because the ocr content will not be serialized if required for the table
@@ -35,7 +35,7 @@ class DocumentInstance(BaseDataInstance):
             if self.ocr.type is None:
                 raise ValueError("OCR type not found after loading")
 
-            self.gt.ocr = OCRProcessor.parse(
+            self.content = OCRProcessor.parse(
                 raw_ocr=self.ocr.content, ocr_type=self.ocr.type
             )
 

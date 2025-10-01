@@ -27,14 +27,7 @@ class TestImageInstance(DataModelTestBase):
                 "source_width": pa.int64(),
                 "source_height": pa.int64(),
             },
-            "gt": {
-                "classification": pa.string(),
-                "ser": pa.string(),
-                "ocr": pa.string(),
-                "qa": pa.string(),
-                "vqa": pa.string(),
-                "layout": pa.string(),
-            },
+            "annotations": pa.string(),
         }
 
     def expected_table_schema_flattened(self) -> dict[str, pa.DataType]:
@@ -49,12 +42,7 @@ class TestImageInstance(DataModelTestBase):
             "image_content": pa.binary(),
             "image_source_width": pa.int64(),
             "image_source_height": pa.int64(),
-            "gt_classification": pa.string(),
-            "gt_ser": pa.string(),
-            "gt_ocr": pa.string(),
-            "gt_qa": pa.string(),
-            "gt_vqa": pa.string(),
-            "gt_layout": pa.string(),
+            "annotations": pa.string(),
         }
 
     def test_to_from_tensor(self, model_instance: ImageInstance) -> None:

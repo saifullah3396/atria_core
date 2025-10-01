@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
-from atria_core.logger.logger import get_logger
 from pydantic import BaseModel, PrivateAttr
+
+from atria_core.logger.logger import get_logger
 
 if TYPE_CHECKING:
     import torch
@@ -224,11 +225,7 @@ class Batchable(BaseModel):
                 list structure if batching fails.
         """
         try:
-            nested_cls = values[0][0].__class__
-            # First batch each sublist
-            batched_list = [nested_cls.batched(sublist) for sublist in values]
-            # Then batch the batched sublists
-            return nested_cls.batched(batched_list)
+            return values
         except Exception as e:
             raise RuntimeError(
                 f"Failed to batch nested list of Batchables in field '{cls.__name__}': "

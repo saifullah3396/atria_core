@@ -99,9 +99,8 @@ class ToDeviceConvertible(BaseModel):
                     and len(field_value) > 0
                     and isinstance(field_value[0], ToDeviceConvertible)
                 ):
-                    raise RuntimeError(
-                        f"Field '{field_name}' contains list of ToDeviceConvertible, which is not supported."
-                    )
+                    for item in field_value:
+                        item.to_device(device=device)
                 else:
                     self._set_skip_validation(
                         field_name, _convert_to_device(field_value, device=device)

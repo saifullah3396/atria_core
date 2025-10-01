@@ -10,6 +10,7 @@ logger = get_logger(__name__)
 
 
 class DataModelTestBase:
+    throws_error_on_operations = False
     factory: type[factory.Factory]
 
     def expected_table_schema(self) -> dict[str, pa.DataType]:
@@ -58,7 +59,8 @@ class DataModelTestBase:
             "New instance should be a BaseDataModel"
         )
         assert new_instance.model_dump() == model_instance.model_dump(), (
-            "New instance does not match original"
+            f"New instance does not match original, "
+            f"Expected: {model_instance.model_dump()}, Got: {new_instance.model_dump()}"
         )
 
     def test_schema(self, model_instance: BaseDataModel) -> None:
@@ -66,9 +68,30 @@ class DataModelTestBase:
         Test the schema generation of the model instance.
         """
         schema = model_instance.table_schema()
-        assert schema == self.expected_table_schema(), (
-            "Schema does not match expected schema"
-            f"Expected: {self.expected_table_schema()}, Got: {schema}"
+        expected = self.expected_table_schema()
+
+        def compare_dicts_recursively(dict1, dict2, path=""):
+            differences = []
+            all_keys = set(dict1.keys()) | set(dict2.keys())
+
+            for key in all_keys:
+                current_path = f"{path}.{key}" if path else str(key)
+
+                if key not in dict1:
+                    differences.append(f"Missing key in actual: {current_path}")
+                elif key not in dict2:
+                    differences.append(f"Unexpected key in actual: {current_path}")
+                elif dict1[key] != dict2[key]:
+                    differences.append(
+                        f"Value mismatch at {current_path}: expected {dict2[key]}, got {dict1[key]}"
+                    )
+
+            return differences
+
+        differences = compare_dicts_recursively(schema, expected)
+        assert schema == expected, (
+            "Schema does not match expected schema.\n"
+            "Differences found:\n" + "\n".join(differences)
         )
 
     def test_schema_flattened(self, model_instance: BaseDataModel) -> None:
@@ -76,16 +99,35 @@ class DataModelTestBase:
         Test the schema generation of the model instance.
         """
         schema = model_instance.table_schema_flattened()
-        assert schema == self.expected_table_schema_flattened(), (
-            "Flattened schema does not match expected schema"
-            f"Expected: {self.expected_table_schema_flattened()}, Got: {schema}"
+        expected = self.expected_table_schema_flattened()
+        mismatched_keys = []
+        for key in set(schema.keys()) | set(expected.keys()):
+            if key not in schema:
+                mismatched_keys.append(f"Missing key: {key}")
+            elif key not in expected:
+                mismatched_keys.append(f"Unexpected key: {key}")
+            elif schema[key] != expected[key]:
+                mismatched_keys.append(
+                    f"Type mismatch for {key}: expected {expected[key]}, got {schema[key]}"
+                )
+
+        assert schema == expected, (
+            f"Schema does not match expected schema. Mismatched keys: {mismatched_keys}. "
+            f"Expected: {expected}, Got: {schema}"
         )
 
     def test_to_from_tensor(self, model_instance: BaseDataModel) -> None:
         """
         Test the conversion of the model instance to a tensor.
         """
+
         model_instance.load()
+
+        if self.throws_error_on_operations:
+            with pytest.raises(RuntimeError):
+                model_instance.load().to_tensor()
+            return
+
         tensor_model = model_instance.to_tensor()
         assert tensor_model is not None, "Tensor conversion returned None"
         roundtrip_model = tensor_model.to_raw()
@@ -100,6 +142,11 @@ class DataModelTestBase:
         Test the to_device method of the tensor data model.
         """
         import torch
+
+        if self.throws_error_on_operations:
+            with pytest.raises(RuntimeError):
+                model_instance.load().to_tensor()
+            return
 
         def validate_device(device: str | torch.device):
             instance = model_instance.load().to_tensor().to_device(device)
@@ -122,6 +169,11 @@ class DataModelTestBase:
         Test the collation of multiple instances of the child class.
         """
         import torch
+
+        if self.throws_error_on_operations:
+            with pytest.raises(RuntimeError):
+                model_instance.load().to_tensor()
+            return
 
         instances = [
             model_instance.load().to_tensor(),

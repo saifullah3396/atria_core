@@ -1,42 +1,45 @@
 IMPORT_CHECK = [
-    # datasets config
-    "AtriaDatasetConfig",
-    "AtriaHuggingfaceDatasetConfig",
-    "AtriaHubDatasetConfig",
-    # datasets metadata
-    "DatasetShardInfo",
-    "SplitInfo",
-    "DatasetLabels",
-    "DatasetMetadata",
-    "DatasetStorageInfo",
-    # datasets splits
-    "SplitConfig",
+    # common types
+    "ConfigType",
     "DatasetSplitType",
-    # instance types
+    "GANStage",
+    "ModelType",
+    "OCRType",
+    "TaskType",
+    "TrainingStage",
+    # data instance types
+    "BaseDataInstance",
     "DocumentInstance",
     "ImageInstance",
+    # datasets metadata
+    "DatasetLabels",
+    "DatasetMetadata",
+    "DatasetShardInfo",
+    "SplitConfig",
+    "SplitInfo",
     # generic types
+    "AnnotatedObject",
+    "AnnotatedObjectList",
     "BoundingBox",
+    "BoundingBoxList",
+    "BoundingBoxMode",
+    "DocumentContent",
+    "Annotation",
+    "ClassificationAnnotation",
+    "EntityLabelingAnnotation",
+    "LayoutAnalysisAnnotation",
+    "ExtractiveQAAnnotation",
+    "GenerativeQAAnnotation",
     "Image",
     "Label",
+    "LabelList",
     "OCR",
-    "OCRType",
-    "GroundTruth",
-    "OCRGT",
-    "SERGT",
-    "ClassificationGT",
-    "LayoutAnalysisGT",
-    "QuestionAnswerGT",
-    "VisualQuestionAnswerGT",
-    "AnnotatedObject",
-    "QuestionAnswerPair",
-    "TokenizedQuestionAnswerPair",
+    "ExtractiveQAPair",
+    "GenerativeQAItem",
 ]
 
 
 def test_imports():
     for name in IMPORT_CHECK:
-        try:
-            __import__("atria_core.types", fromlist=[name])
-        except ImportError as e:
-            raise ImportError(f"Failed to import {name}: {e}") from e
+        module = __import__("atria_core.types", fromlist=[name])
+        assert hasattr(module, name), f"Cannot import {name} from atria_core.types"

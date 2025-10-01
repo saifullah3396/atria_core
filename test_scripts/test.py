@@ -40,7 +40,7 @@ from atria_core.types.generic.bounding_box import (
     BoundingBoxList,
     BoundingBoxMode,
 )
-from atria_core.types.generic.ground_truth import (
+from atria_core.types.generic.annotations import (
     OCRGT,
     SERGT,
     ClassificationGT,
@@ -52,7 +52,7 @@ from atria_core.types.generic.ground_truth import (
 from atria_core.types.generic.image import Image
 from atria_core.types.generic.label import Label, LabelList
 from atria_core.types.generic.ocr import OCR
-from atria_core.types.generic.question_answer_pair import QuestionAnswerPair
+from atria_core.types.generic.question_answer_pair import ExtractiveQAPair
 
 import numpy as np
 

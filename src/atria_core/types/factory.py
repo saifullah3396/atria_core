@@ -8,20 +8,22 @@ from atria_core.types.generic.annotated_object import (
     AnnotatedObject,
     AnnotatedObjectList,
 )
-from atria_core.types.generic.bounding_box import BoundingBox, BoundingBoxList
-from atria_core.types.generic.ground_truth import (
-    OCRGT,
-    SERGT,
-    ClassificationGT,
-    GroundTruth,
-    LayoutAnalysisGT,
-    QuestionAnswerGT,
-    VisualQuestionAnswerGT,
+from atria_core.types.generic.annotations import (
+    ClassificationAnnotation,
+    EntityLabelingAnnotation,
+    ExtractiveQAAnnotation,
+    GenerativeQAAnnotation,
+    LayoutAnalysisAnnotation,
 )
+from atria_core.types.generic.bounding_box import BoundingBox, BoundingBoxList
+from atria_core.types.generic.document_content import DocumentContent
 from atria_core.types.generic.image import Image
 from atria_core.types.generic.label import Label, LabelList
 from atria_core.types.generic.ocr import OCR
-from atria_core.types.generic.question_answer_pair import QuestionAnswerPair
+from atria_core.types.generic.question_answer_pair import (
+    ExtractiveQAPair,
+    GenerativeQAItem,
+)
 
 MOCK_HOCR_TESSERACT = """
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -108,15 +110,24 @@ class BoundingBoxListFactory(factory.Factory):
         return model_class.from_list(BoundingBoxFactory.build_batch(10))
 
 
-class QuestionAnswerPairFactory(factory.Factory):
+class ExtractiveQAPairFactory(factory.Factory):
     class Meta:
-        model = QuestionAnswerPair
+        model = ExtractiveQAPair
 
     id = factory.LazyFunction(lambda: fake.random_int(1, 1000))
     question_text = factory.LazyFunction(lambda: fake.sentence())
     answer_start = factory.LazyFunction(lambda: [fake.random_int(0, 50)])
     answer_end = factory.LazyFunction(lambda: [fake.random_int(51, 100)])
     answer_text = factory.LazyFunction(lambda: [fake.sentence()])
+
+
+class GenerativeQAItemFactory(factory.Factory):
+    class Meta:
+        model = GenerativeQAItem
+
+    input_prefix = factory.LazyFunction(lambda: fake.sentence())
+    output_prefix = factory.LazyFunction(lambda: fake.sentence())
+    output = factory.LazyFunction(lambda: fake.paragraph())
 
 
 class AnnotatedObjectFactory(factory.Factory):
@@ -218,51 +229,60 @@ class ImageFactory(factory.Factory):
         return model_class(*args, **kwargs)
 
 
-class GroundTruthFactory(factory.Factory):
+class DocumentContentFactory(factory.Factory):
     class Meta:
-        model = GroundTruth
+        model = DocumentContent
 
-    classification = factory.LazyFunction(
-        lambda: ClassificationGT(label=LabelFactory.build())
+    words: list[str] = factory.LazyFunction(lambda: fake.words(nb=20))
+    word_confs: list[float] = factory.LazyFunction(
+        lambda: [fake.pyfloat(min_value=0.0, max_value=1.0) for _ in range(20)]
     )
-    ser = factory.LazyFunction(
-        lambda: SERGT(
-            words=fake.words(nb=5),
-            word_bboxes=BoundingBoxListFactory.build(),
-            word_labels=LabelListFactory.build(),
-            segment_level_bboxes=BoundingBoxListFactory.build(),
-        )
+    word_angles: list[float] = factory.LazyFunction(
+        lambda: [fake.pyfloat(min_value=0.0, max_value=360.0) for _ in range(20)]
     )
-    ocr = factory.LazyFunction(
-        lambda: OCRGT(
-            words=fake.words(nb=10),
-            word_bboxes=BoundingBoxListFactory.build(),
-            word_confs=[fake.pyfloat(min_value=0.0, max_value=1.0) for _ in range(10)],
-            word_angles=[
-                fake.pyfloat(min_value=0.0, max_value=360.0) for _ in range(10)
-            ],
-        )
+    word_bboxes: BoundingBoxList = factory.SubFactory(BoundingBoxListFactory)
+    word_segment_level_bboxes: BoundingBoxList = factory.SubFactory(
+        BoundingBoxListFactory
     )
-    qa = factory.LazyFunction(
-        lambda: QuestionAnswerGT(
-            qa_pair=QuestionAnswerPairFactory.build(), words=fake.words(nb=8)
-        )
+
+
+class ClassificationAnnotationFactory(factory.Factory):
+    class Meta:
+        model = ClassificationAnnotation
+
+    label = factory.SubFactory(LabelFactory)
+
+
+class EntityLabelingAnnotationFactory(factory.Factory):
+    class Meta:
+        model = EntityLabelingAnnotation
+
+    word_labels = factory.SubFactory(LabelListFactory)
+
+
+class ExtractiveQAAnnotationFactory(factory.Factory):
+    class Meta:
+        model = ExtractiveQAAnnotation
+
+    qa_pairs = factory.List(
+        [factory.SubFactory(ExtractiveQAPairFactory) for _ in range(3)]
     )
-    vqa = factory.LazyFunction(
-        lambda: VisualQuestionAnswerGT(
-            qa_pair=QuestionAnswerPairFactory.build(),
-            words=fake.words(nb=8),
-            word_bboxes=BoundingBoxListFactory.build(),
-            segment_level_bboxes=BoundingBoxListFactory.build(),
-        )
+
+
+class GenerativeQAAnnotationFactory(factory.Factory):
+    class Meta:
+        model = GenerativeQAAnnotation
+
+    qa_pairs = factory.List(
+        [factory.SubFactory(GenerativeQAItemFactory) for _ in range(3)]
     )
-    layout = factory.LazyFunction(
-        lambda: LayoutAnalysisGT(
-            annotated_objects=AnnotatedObjectListFactory.build(),
-            words=fake.words(nb=15),
-            word_bboxes=BoundingBoxListFactory.build(),
-        )
-    )
+
+
+class LayoutAnalysisAnnotationFactory(factory.Factory):
+    class Meta:
+        model = LayoutAnalysisAnnotation
+
+    annotated_objects = factory.SubFactory(AnnotatedObjectListFactory)
 
 
 class ImageInstanceFactory(factory.Factory):
@@ -272,7 +292,15 @@ class ImageInstanceFactory(factory.Factory):
     index = factory.LazyFunction(lambda: fake.random_int(min=0, max=1000))
     sample_id = factory.LazyFunction(lambda: str(fake.uuid4()))
     image = factory.SubFactory(ImageFactory)
-    gt = factory.SubFactory(GroundTruthFactory)
+    annotations = factory.List(
+        [
+            factory.SubFactory(ClassificationAnnotationFactory),
+            factory.SubFactory(EntityLabelingAnnotationFactory),
+            factory.SubFactory(LayoutAnalysisAnnotationFactory),
+            factory.SubFactory(ExtractiveQAAnnotationFactory),
+            factory.SubFactory(GenerativeQAAnnotationFactory),
+        ]
+    )
 
 
 class DocumentInstanceFactory(factory.Factory):
@@ -283,4 +311,13 @@ class DocumentInstanceFactory(factory.Factory):
     sample_id = factory.LazyFunction(lambda: str(fake.uuid4()))
     image = factory.SubFactory(ImageFactory)
     ocr = factory.SubFactory(OCRFactory)
-    gt = factory.SubFactory(GroundTruthFactory)
+    content = factory.SubFactory(DocumentContentFactory)
+    annotations = factory.List(
+        [
+            factory.SubFactory(ClassificationAnnotationFactory),
+            factory.SubFactory(EntityLabelingAnnotationFactory),
+            factory.SubFactory(LayoutAnalysisAnnotationFactory),
+            factory.SubFactory(ExtractiveQAAnnotationFactory),
+            factory.SubFactory(GenerativeQAAnnotationFactory),
+        ]
+    )

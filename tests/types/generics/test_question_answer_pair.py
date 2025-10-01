@@ -1,15 +1,15 @@
 import pyarrow as pa
 
-from atria_core.types.factory import QuestionAnswerPairFactory
+from atria_core.types.factory import ExtractiveQAPairFactory
 from tests.types.data_model_test_base import DataModelTestBase
 
 
-class TestQuestionAnswerPair(DataModelTestBase):
+class TestExtractiveQAPair(DataModelTestBase):
     """
-    Test class for QuestionAnswerPair.
+    Test class for ExtractiveQAPair.
     """
 
-    factory = QuestionAnswerPairFactory
+    factory = ExtractiveQAPairFactory
 
     def expected_table_schema(self) -> dict[str, pa.DataType]:
         """

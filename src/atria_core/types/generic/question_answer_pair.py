@@ -1,5 +1,3 @@
-from pydantic import model_validator
-
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import (
     IntField,
@@ -7,9 +5,10 @@ from atria_core.types.typing.common import (
     ListStrField,
     StrField,
 )
+from pydantic import model_validator
 
 
-class QuestionAnswerPair(BaseDataModel):
+class ExtractiveQAPair(BaseDataModel):
     id: IntField
     question_text: StrField
     answer_start: ListIntField
@@ -25,3 +24,9 @@ class QuestionAnswerPair(BaseDataModel):
             "answer_start and answer_text must have the same length"
         )
         return self
+
+
+class GenerativeQAItem(BaseDataModel):
+    input_prefix: StrField
+    output_prefix: StrField
+    output: StrField

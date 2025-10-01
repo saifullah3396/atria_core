@@ -1,6 +1,9 @@
 from pathlib import Path
 from typing import Any, Self
 
+from pydantic import field_validator, model_validator
+from rich.repr import RichReprResult
+
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import (
@@ -9,8 +12,6 @@ from atria_core.types.typing.common import (
     ValidatedPILImage,
     _is_tensor_type,
 )
-from pydantic import field_validator, model_validator
-from rich.repr import RichReprResult
 
 logger = get_logger(__name__)
 

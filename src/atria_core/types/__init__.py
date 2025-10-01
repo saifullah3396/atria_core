@@ -27,21 +27,21 @@ if TYPE_CHECKING:
         SplitConfig,
         SplitInfo,
     )
+    from .generic.document_content import DocumentContent
     from .generic.annotated_object import AnnotatedObject, AnnotatedObjectList
     from .generic.bounding_box import BoundingBox, BoundingBoxList, BoundingBoxMode
-    from .generic.ground_truth import (
-        OCRGT,
-        SERGT,
-        ClassificationGT,
-        GroundTruth,
-        LayoutAnalysisGT,
-        QuestionAnswerGT,
-        VisualQuestionAnswerGT,
+    from .generic.annotations import (
+        Annotation,
+        EntityLabelingAnnotation,
+        ClassificationAnnotation,
+        LayoutAnalysisAnnotation,
+        GenerativeQAAnnotation,
+        ExtractiveQAAnnotation,
     )
     from .generic.image import Image
     from .generic.label import Label, LabelList
     from .generic.ocr import OCR
-    from .generic.question_answer_pair import QuestionAnswerPair
+    from .generic.question_answer_pair import ExtractiveQAPair, GenerativeQAItem
 
 __getattr__, __dir__, __all__ = lazy.attach(
     __name__,
@@ -67,18 +67,18 @@ __getattr__, __dir__, __all__ = lazy.attach(
         ],
         "generic.annotated_object": ["AnnotatedObject", "AnnotatedObjectList"],
         "generic.bounding_box": ["BoundingBox", "BoundingBoxList", "BoundingBoxMode"],
-        "generic.ground_truth": [
-            "OCRGT",
-            "SERGT",
-            "ClassificationGT",
-            "GroundTruth",
-            "LayoutAnalysisGT",
-            "QuestionAnswerGT",
-            "VisualQuestionAnswerGT",
+        "generic.document_content": ["DocumentContent"],
+        "generic.annotations": [
+            "Annotation",
+            "ClassificationAnnotation",
+            "EntityLabelingAnnotation",
+            "LayoutAnalysisAnnotation",
+            "ExtractiveQAAnnotation",
+            "GenerativeQAAnnotation",
         ],
         "generic.image": ["Image"],
         "generic.label": ["Label", "LabelList"],
         "generic.ocr": ["OCR"],
-        "generic.question_answer_pair": ["QuestionAnswerPair"],
+        "generic.question_answer_pair": ["ExtractiveQAPair", "GenerativeQAItem"],
     },
 )
