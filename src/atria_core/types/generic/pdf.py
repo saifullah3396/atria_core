@@ -2,11 +2,11 @@ from functools import cached_property
 
 from PIL.Image import Image as PILImage
 
-from atria_core.types.data_instance.base import BaseDataInstance
+from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import IntField, OptStrField
 
 
-class PDF(BaseDataInstance):
+class PDF(BaseDataModel):
     file_path: OptStrField = None
     num_pages: IntField = None
 
