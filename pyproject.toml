@@ -7,27 +7,23 @@ name = "atria_core"
 version = "0.0.0"                                                                                                    
 description = "atria is a PyTorch-based toolkit designed for training/testing machine/deep learning models at scale."
 readme = "README.md"
-requires-python = "==3.11.*"
+requires-python = ">=3.11"
 license = { file = "LICENSE.txt" }
 authors = [{ name = "Saifullah", email = "saifullah.saifullah@dfki.de" }]
 dependencies = [
-    "coloredlogs==15.0.1",
-    "lazy_loader==0.4",
-    "numpy==1.26.4",
-    "omegaconf==2.3.0",
-    "Pillow==10.0.0",
-    "rich==14.0.0",
-    "beautifulsoup4==4.12.2",
+    "coloredlogs>=15.0.1",
+    "lazy_loader>=0.4",
+    "numpy>=1.26.4",
+    "omegaconf>=2.3.0",
+    "Pillow>=10.0.0",
+    "rich>=14.0.0",
+    "beautifulsoup4>=4.12.2",
     "imagesize>=1.4.1",
     "pyarrow>=20.0.0",
     "pydantic>=2.11.7",
-    "faker",
-    "factory-boy",
-    "coverage",
-    "pytest",
     "codename>=1.1",
-    "lazy-imports>=1.0.0",
     "lxml>=6.0.0",
+    "pypdf2>=3.0.1",
 ]
 
 
@@ -39,8 +35,8 @@ test = [
     "coverage", 
 ]
 with-torch = [
-    "torch==2.1.2",
-    "torchvision==0.16.2",
+    "torch>=2.1.2",
+    "torchvision>=0.16.2",
 ]
 
 [tool.coverage.report]
@@ -129,6 +125,9 @@ dev = [
     "ruff>=0.12.2",
     "ipykernel>=6.29.5",
     "factory-boy>=3.3.3",
+    "faker",
+    "coverage",
+    "pytest",
 ]
 
 [tool.mypy]

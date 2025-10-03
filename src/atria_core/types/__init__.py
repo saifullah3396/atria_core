@@ -38,6 +38,7 @@ if TYPE_CHECKING:
         GenerativeQAAnnotation,
         ExtractiveQAAnnotation,
     )
+    from .generic.pdf import PDF
     from .generic.image import Image
     from .generic.label import Label, LabelList
     from .generic.ocr import OCR
@@ -77,6 +78,7 @@ __getattr__, __dir__, __all__ = lazy.attach(
             "GenerativeQAAnnotation",
         ],
         "generic.image": ["Image"],
+        "generic.pdf": ["PDF"],
         "generic.label": ["Label", "LabelList"],
         "generic.ocr": ["OCR"],
         "generic.question_answer_pair": ["ExtractiveQAPair", "GenerativeQAItem"],

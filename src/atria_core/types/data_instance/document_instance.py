@@ -4,13 +4,12 @@ from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.document_content import DocumentContent
 from atria_core.types.generic.image import Image
 from atria_core.types.generic.ocr import OCR
-from atria_core.types.typing.common import IntField
+from atria_core.types.generic.pdf import PDF
 
 
 class DocumentInstance(BaseDataInstance):
-    page_id: IntField = 0
-    total_num_pages: IntField = 1
-    image: Image
+    pdf: PDF | None = None
+    image: Image | None = None
     ocr: OCR | None = None
     content: DocumentContent | None = None
 
@@ -18,8 +17,13 @@ class DocumentInstance(BaseDataInstance):
     def validate_fields(self) -> "DocumentInstance":
         from atria_core.types.ocr_parsers.hocr_parser import OCRProcessor
 
-        if self.image is None and self.ocr is None:
-            raise ValueError("At least one of image or ocr must be provided")
+        # Ensure we have either image or PDF
+        if self.image is None and self.pdf is None:
+            raise ValueError("Either image or pdf must be provided")
+
+        # Ensure we don't have both image and PDF
+        if self.image is not None and self.pdf is not None:
+            raise ValueError("Cannot have both image and pdf. Choose one.")
 
         if self.ocr is not None and self.content is None:
             # here we load the ocr content if it is not already loaded

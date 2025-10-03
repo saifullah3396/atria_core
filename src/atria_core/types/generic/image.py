@@ -1,9 +1,6 @@
 from pathlib import Path
 from typing import Any, Self
 
-from pydantic import field_validator, model_validator
-from rich.repr import RichReprResult
-
 from atria_core.logger.logger import get_logger
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import (
@@ -12,6 +9,8 @@ from atria_core.types.typing.common import (
     ValidatedPILImage,
     _is_tensor_type,
 )
+from pydantic import field_validator, model_validator
+from rich.repr import RichReprResult
 
 logger = get_logger(__name__)
 
@@ -208,6 +207,23 @@ class Image(BaseDataModel):
                 )
                 self.source_width, self.source_height = width, height
         return self
+
+    def resize_with_aspect_ratio(self, max_size: int) -> Self:
+        assert self.content is not None, (
+            "Image content is not loaded. Call load() first."
+        )
+        assert max_size > 0, "max_size must be a positive integer."
+        width, height = self.size
+        if max(width, height) <= max_size:
+            return self
+        if width >= height:
+            new_width = max_size
+            new_height = int((max_size / width) * height)
+        else:
+            new_height = max_size
+            new_width = int((max_size / height) * width)
+        width, height = new_width, new_height
+        return self.resize(width, height)
 
     def normalize(
         self, mean: float | tuple[float, ...], std: float | tuple[float, ...]
