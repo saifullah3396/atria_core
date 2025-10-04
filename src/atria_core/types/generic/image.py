@@ -200,12 +200,10 @@ class Image(BaseDataModel):
                     x.resize((width, height), resample=Resampling.BICUBIC)
                     for x in self.content
                 ]
-                self.source_width, self.source_height = width, height
             else:
                 self.content = self.content.resize(
                     (width, height), resample=Resampling.BICUBIC
                 )
-                self.source_width, self.source_height = width, height
         return self
 
     def resize_with_aspect_ratio(self, max_size: int) -> Self:

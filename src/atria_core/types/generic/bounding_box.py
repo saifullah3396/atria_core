@@ -1,8 +1,6 @@
 import enum
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Union
 
-from pydantic import field_validator
-
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import (
     ListFloatField,
@@ -10,6 +8,7 @@ from atria_core.types.typing.common import (
     _is_tensor_type,
     _tensor_validator,
 )
+from pydantic import field_validator
 
 if TYPE_CHECKING:
     import torch
@@ -26,24 +25,42 @@ class BoundingBox(BaseDataModel):
     mode: Annotated[BoundingBoxMode, TableSchemaMetadata(pa_type="string")] = (
         BoundingBoxMode.XYXY
     )
+    normalized: bool = False
 
-    def switch_mode(self):
+    def switch_mode(self) -> "BoundingBox":
         assert not self._is_batched, "Cannot switch mode for batched bounding boxes."
         if _is_tensor_type(self.value):
             if self.mode == BoundingBoxMode.XYXY:
-                self.value[..., 2], self.value[..., 3] = self.width, self.height
-                self.mode = BoundingBoxMode.XYWH
+                new_value = self.value.clone()
+                new_value[..., 2], new_value[..., 3] = self.width, self.height
+                return BoundingBox(
+                    value=new_value,
+                    mode=BoundingBoxMode.XYWH,
+                    normalized=self.normalized,
+                )
             else:
-                self.value[..., 2], self.value[..., 3] = self.x2, self.y2
-                self.mode = BoundingBoxMode.XYXY
+                new_value = self.value.clone()
+                new_value[..., 2], new_value[..., 3] = self.x2, self.y2
+                return BoundingBox(
+                    value=new_value,
+                    mode=BoundingBoxMode.XYXY,
+                    normalized=self.normalized,
+                )
         else:
             if self.mode == BoundingBoxMode.XYXY:
-                self.value = [self.x1, self.y1, self.width, self.height]
-                self.mode = BoundingBoxMode.XYWH
+                new_value = [self.x1, self.y1, self.width, self.height]
+                return BoundingBox(
+                    value=new_value,
+                    mode=BoundingBoxMode.XYWH,
+                    normalized=self.normalized,
+                )
             else:
-                self.value = [self.x1, self.y1, self.x2, self.y2]
-                self.mode = BoundingBoxMode.XYXY
-        return self
+                new_value = [self.x1, self.y1, self.x2, self.y2]
+                return BoundingBox(
+                    value=new_value,
+                    mode=BoundingBoxMode.XYXY,
+                    normalized=self.normalized,
+                )
 
     @field_validator("mode", mode="before")
     @classmethod
@@ -184,16 +201,27 @@ class BoundingBox(BaseDataModel):
         assert self.x2 <= width, "x2 must be less than or equal to width."
         assert self.y2 <= height, "y2 must be less than or equal to height."
         if self.mode == BoundingBoxMode.XYWH:
-            self.x1 /= width
-            self.y1 /= height
-            self.width /= width
-            self.height /= height
+            return BoundingBox(
+                value=[
+                    self.x1 / width,
+                    self.y1 / height,
+                    self.width / width,
+                    self.height / height,
+                ],
+                mode=self.mode,
+                normalized=True,
+            )
         else:
-            self.x1 /= width
-            self.y1 /= height
-            self.x2 /= width
-            self.y2 /= height
-        return self
+            return BoundingBox(
+                value=[
+                    self.x1 / width,
+                    self.y1 / height,
+                    self.x2 / width,
+                    self.y2 / height,
+                ],
+                mode=self.mode,
+                normalized=True,
+            )
 
 
 class BoundingBoxList(BaseDataModel):
@@ -205,6 +233,7 @@ class BoundingBoxList(BaseDataModel):
     mode: Annotated[BoundingBoxMode, TableSchemaMetadata(pa_type="string")] = (
         BoundingBoxMode.XYXY
     )
+    normalized: bool = False
 
     @field_validator("mode", mode="before")
     @classmethod
@@ -221,6 +250,7 @@ class BoundingBoxList(BaseDataModel):
         return cls(
             value=[bbox.value for bbox in bboxes],
             mode=bboxes[0].mode if bboxes else BoundingBoxMode.XYXY,
+            normalized=bboxes[0].normalized if bboxes else False,
         )
 
     @field_validator("value", mode="after")
@@ -237,3 +267,46 @@ class BoundingBoxList(BaseDataModel):
                 "Expected a 2D tensor with shape (N, 4) for bounding boxes."
             )
         return value
+
+    def normalize(self, width: float, height: float) -> "BoundingBoxList":
+        """
+        Normalizes the bounding box coordinates to the range [0, 1].
+
+        Args:
+            width (float): The width of the image or document.
+            height (float): The height of the image or document.
+
+        Returns:
+            BoundingBox: The normalized bounding box.
+
+        Raises:
+            AssertionError: If the bounding box coordinates are invalid.
+        """
+        assert width > 0, "Width must be greater than 0."
+        assert height > 0, "Height must be greater than 0."
+
+        def normalize_bbox(
+            bbox: list[float], width: float, height: float
+        ) -> list[float]:
+            x1, y1, x2, y2 = bbox
+            assert x1 <= width, "x1 must be less than or equal to width."
+            assert y1 <= height, "y1 must be less than or equal to height."
+            assert x2 <= width, "x2 must be less than or equal to width."
+            assert y2 <= height, "y2 must be less than or equal to height."
+            if self.mode == BoundingBoxMode.XYWH:
+                x1 /= width
+                y1 /= height
+                width /= width
+                height /= height
+            else:
+                x1 /= width
+                y1 /= height
+                x2 /= width
+                y2 /= height
+            return [x1, y1, x2, y2]
+
+        return BoundingBoxList(
+            value=[normalize_bbox(bbox, width, height) for bbox in self.value],
+            normalized=True,
+            mode=self.mode,
+        )

@@ -1,13 +1,13 @@
-from pydantic import model_validator
-
 from atria_core.types.data_instance.base import BaseDataInstance
 from atria_core.types.generic.document_content import DocumentContent
 from atria_core.types.generic.image import Image
 from atria_core.types.generic.ocr import OCR
 from atria_core.types.generic.pdf import PDF
+from pydantic import model_validator
 
 
 class DocumentInstance(BaseDataInstance):
+    page_id: int | None = None
     pdf: PDF | None = None
     image: Image | None = None
     ocr: OCR | None = None

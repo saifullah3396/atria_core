@@ -1,9 +1,8 @@
 from functools import cached_property
 
-from PIL.Image import Image as PILImage
-
 from atria_core.types.base.data_model import BaseDataModel
 from atria_core.types.typing.common import IntField, OptStrField
+from PIL.Image import Image as PILImage
 
 
 class PDF(BaseDataModel):
@@ -41,13 +40,13 @@ class PDF(BaseDataModel):
         # Load number of pages if not already set
         if self.num_pages is None:
             try:
-                import PyPDF2
+                import pymupdf
 
-                with open(self.file_path, "rb") as file:
-                    pdf_reader = PyPDF2.PdfReader(file)
-                    self.num_pages = len(pdf_reader.pages)
-            except ImportError:
-                # Fallback to pdf2image if PyPDF2 is not available
+                doc = pymupdf.open(self.file_path)
+                self.num_pages = doc.page_count
+                doc.close()
+            except (ImportError, Exception):
+                # Fallback to pdf2image if pymupdf is not available or fails
                 from pdf2image import convert_from_path
 
                 pages = convert_from_path(self.file_path)

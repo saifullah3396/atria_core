@@ -1,5 +1,4 @@
 import bs4
-
 from atria_core.types.generic.bounding_box import BoundingBox, BoundingBoxList
 from atria_core.types.generic.document_content import DocumentContent
 from atria_core.types.generic.ocr import OCRType
@@ -54,7 +53,9 @@ class HOCRProcessor:
 
             x1, y1, x2, y2 = map(int, title[5 : title.find(";")].split())
             words.append(word.text.strip())
-            word_bboxes.append(BoundingBox(value=[x1 / w, y1 / h, x2 / w, y2 / h]))
+            word_bboxes.append(
+                BoundingBox(value=[x1 / w, y1 / h, x2 / w, y2 / h], normalized=True)
+            )
             word_angles.append(textangle)
             word_confs.append(conf)
 
