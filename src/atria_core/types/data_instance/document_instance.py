@@ -21,10 +21,6 @@ class DocumentInstance(BaseDataInstance):
         if self.image is None and self.pdf is None:
             raise ValueError("Either image or pdf must be provided")
 
-        # Ensure we don't have both image and PDF
-        if self.image is not None and self.pdf is not None:
-            raise ValueError("Cannot have both image and pdf. Choose one.")
-
         if self.ocr is not None and self.content is None:
             # here we load the ocr content if it is not already loaded
             # in order to parse it into its ground truth format

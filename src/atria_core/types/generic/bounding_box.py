@@ -288,22 +288,29 @@ class BoundingBoxList(BaseDataModel):
         def normalize_bbox(
             bbox: list[float], width: float, height: float
         ) -> list[float]:
-            x1, y1, x2, y2 = bbox
-            assert x1 <= width, "x1 must be less than or equal to width."
-            assert y1 <= height, "y1 must be less than or equal to height."
-            assert x2 <= width, "x2 must be less than or equal to width."
-            assert y2 <= height, "y2 must be less than or equal to height."
             if self.mode == BoundingBoxMode.XYWH:
+                x1, y1, w, h = bbox
+                assert x1 <= width, "x1 must be less than or equal to width."
+                assert y1 <= height, "y1 must be less than or equal to height."
+                assert w <= width, "x2 must be less than or equal to width."
+                assert h <= height, "y2 must be less than or equal to height."
                 x1 /= width
                 y1 /= height
-                width /= width
-                height /= height
+                w /= width
+                h /= height
+                return [x1, y1, w, h]
             else:
+                x1, y1, x2, y2 = bbox
+                print("bbox", bbox, width, height)
+                assert x1 <= width, "x1 must be less than or equal to width."
+                assert y1 <= height, "y1 must be less than or equal to height."
+                assert x2 <= width, "x2 must be less than or equal to width."
+                assert y2 <= height, "y2 must be less than or equal to height."
                 x1 /= width
                 y1 /= height
                 x2 /= width
                 y2 /= height
-            return [x1, y1, x2, y2]
+                return [x1, y1, x2, y2]
 
         return BoundingBoxList(
             value=[normalize_bbox(bbox, width, height) for bbox in self.value],
