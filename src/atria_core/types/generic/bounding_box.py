@@ -301,7 +301,6 @@ class BoundingBoxList(BaseDataModel):
                 return [x1, y1, w, h]
             else:
                 x1, y1, x2, y2 = bbox
-                print("bbox", bbox, width, height)
                 assert x1 <= width, "x1 must be less than or equal to width."
                 assert y1 <= height, "y1 must be less than or equal to height."
                 assert x2 <= width, "x2 must be less than or equal to width."
